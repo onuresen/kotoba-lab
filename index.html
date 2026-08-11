@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kotoba Lab — Japanese reading, kanji & study</title>
+
+<!-- fonts -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Zen+Old+Mincho:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+<!-- ui-system skeleton, then washi-sumi skin, then this tool's layer.
+     Local copies on purpose (ui-system is a catalog, not a dependency) so this
+     folder stays portable — see ui-system/README.md "copy, never link". -->
+<link rel="stylesheet" href="ui-base.css">
+<link rel="stylesheet" href="palettes/washi-sumi.css">
+<link rel="stylesheet" href="japanese-reader.css">
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap head-inner">
+    <div class="brand">
+      <span class="brand-mark">言</span>
+      <div>
+        <h1>Kotoba Lab</h1>
+        <p class="tagline">Japanese reading, kanji exploration, and study.</p>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab is-active" data-tab="analyze">Analyze</button>
+      <button class="tab" data-tab="read">Read</button>
+      <button class="tab" data-tab="kanji">Kanji</button>
+      <button class="tab" data-tab="review">Review<span class="tab-badge" id="tab-due" hidden></span></button>
+      <button class="tab" data-tab="mywords">My Words</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Visible by default and hidden by app.js once boot() succeeds. It has to
+       live in the markup: when the page is opened as file://, the browser
+       blocks the ES module outright, so no script of ours ever runs to report
+       it — the page just sits there ignoring every click and paste. -->
+  <div id="boot-warning" class="boot-warning">
+    <strong>This page isn't running — it needs to be served over http.</strong>
+    <p>Opened straight from the file system (<code>file://</code>), the browser blocks its
+    scripts and dictionary files, so nothing responds: pasting text does nothing, and the
+    tabs don't switch.</p>
+    <p>Double-click <code>serve.cmd</code> in this <code>Kotoba-Lab</code> folder — it starts a
+    small local server and reopens this page properly. From a terminal, <code>npm start</code>
+    or <code>node serve.mjs</code> do the same.</p>
+  </div>
+
+  <!-- Shown by app.js when ui-base.css is missing from this folder. Unlike the
+       banner above, scripts ARE running in that case — only the CSS is gone. -->
+  <div id="style-warning" class="boot-warning" hidden></div>
+
+  <!-- shared input -->
+  <section class="card input-card">
+    <div class="ui-section-header">
+      <span class="ui-section-title">Text</span>
+      <span class="ui-section-line"></span>
+      <span class="hint" id="charcount">0 chars</span>
+    </div>
+    <textarea id="input" class="textarea jp-input" placeholder="日本語のテキストをここに貼り付けてください…  (paste any Japanese text)"></textarea>
+    <div class="input-actions">
+      <div class="samples-row">
+        <span class="label">Samples</span>
+        <div id="samples" class="samples"></div>
+      </div>
+      <button id="clear" class="btn btn-ghost">Clear</button>
+    </div>
+    <div class="tok-row">
+      <label class="file-btn btn btn-ghost">Import .txt<input type="file" id="import-file" accept=".txt,text/plain" hidden></label>
+      <label class="check"><input type="checkbox" id="precise"> Precise tokenizer <span class="hint">(kuromoji · loads ~18&nbsp;MB once, then offline)</span></label>
+      <span id="precise-status" class="hint"></span>
+    </div>
+  </section>
+
+  <!-- ANALYZE -->
+  <section class="panel is-active" data-panel="analyze">
+    <div class="grid-2">
+      <div class="card">
+        <div class="ui-section-header"><span class="ui-section-title">Readability estimate</span><span class="ui-section-line"></span></div>
+        <div id="readability"></div>
+      </div>
+      <div class="card">
+        <div class="ui-section-header"><span class="ui-section-title">Overview</span><span class="ui-section-line"></span></div>
+        <div id="overview" class="stat-row"></div>
+        <div class="ui-section-header" style="margin-top:14px"><span class="ui-section-title">Kanji by JLPT level</span><span class="ui-section-line"></span></div>
+        <div id="kanji-dist"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ui-section-header"><span class="ui-section-title">Your coverage</span><span class="ui-section-line"></span></div>
+      <div id="coverage"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="ui-section-header"><span class="ui-section-title">Kanji frequency</span><span class="ui-section-line"></span></div>
+        <div class="table-scroll">
+          <table class="freq"><thead><tr><th>#</th><th>Kanji</th><th class="num">Count</th><th>JLPT</th></tr></thead>
+          <tbody id="kanji-tbody"></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ui-section-header"><span class="ui-section-title">Word frequency</span><span class="ui-section-line"></span></div>
+        <div class="table-scroll">
+          <table class="freq"><thead><tr><th>#</th><th>Word</th><th class="num">Count</th><th>JLPT</th></tr></thead>
+          <tbody id="word-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ui-section-header"><span class="ui-section-title">Export study words → Anki (TSV)</span><span class="ui-section-line"></span></div>
+      <div class="flash-controls">
+        <label class="label inline">Include level
+          <select id="flash-level" class="select">
+            <option value="5">N5 and harder</option>
+            <option value="4" selected>N4 and harder</option>
+            <option value="3">N3 and harder</option>
+            <option value="2">N2 and harder</option>
+            <option value="1">N1 only</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="flash-ungraded" checked> ungraded words</label>
+        <button id="flash-copy" class="btn">Copy TSV</button>
+        <button id="flash-download" class="btn btn-primary">Download .tsv</button>
+      </div>
+      <p class="hint">Fields: <code>word · reading · meaning · JLPT level · sentence</code> (tab-separated). Words picked off the frequency table have no sentence — that column is empty here, and filled for cards you saved while reading.</p>
+    </div>
+  </section>
+
+  <!-- READ -->
+  <section class="panel" data-panel="read">
+    <div class="read-toolbar card">
+      <label class="check"><input type="checkbox" id="furigana" checked> Furigana</label>
+      <div class="legend">
+        <span class="lg"><i class="sw jlpt-n5"></i>N5</span>
+        <span class="lg"><i class="sw jlpt-n4"></i>N4</span>
+        <span class="lg"><i class="sw jlpt-n3"></i>N3</span>
+        <span class="lg"><i class="sw jlpt-n2"></i>N2</span>
+        <span class="lg"><i class="sw jlpt-n1"></i>N1</span>
+        <span class="lg"><i class="sw jlpt-ungraded"></i>—</span>
+      </div>
+    </div>
+    <div class="grid-read">
+      <div class="card reading-card"><div id="reading" class="reading"></div></div>
+      <div class="card info-card"><div id="info"></div></div>
+    </div>
+  </section>
+
+  <!-- KANJI -->
+  <section class="panel" data-panel="kanji" id="kanji-panel">
+    <div class="card kanji-toolbar">
+      <div class="kanji-intro">
+        <div>
+          <span class="label">Kanji library</span>
+          <h2>Browse all 6,813 kanji</h2>
+          <p class="hint">Search the dictionary directly, then open any result in the same Radical Tree used throughout Kotoba Lab.</p>
+        </div>
+        <label class="kanji-search">
+          <span class="label">Search</span>
+          <input id="kanji-search" class="input" type="search" autocomplete="off" placeholder="Kanji, meaning, on’yomi, or kun’yomi">
+        </label>
+      </div>
+
+      <div class="kanji-filter-block">
+        <span class="label">JLPT level</span>
+        <div class="kanji-levels" role="group" aria-label="Filter by JLPT level">
+          <button type="button" class="btn kanji-level is-active" data-kanji-level="all" aria-pressed="true">All</button>
+          <button type="button" class="btn kanji-level" data-kanji-level="5" aria-pressed="false">N5</button>
+          <button type="button" class="btn kanji-level" data-kanji-level="4" aria-pressed="false">N4</button>
+          <button type="button" class="btn kanji-level" data-kanji-level="3" aria-pressed="false">N3</button>
+          <button type="button" class="btn kanji-level" data-kanji-level="2" aria-pressed="false">N2</button>
+          <button type="button" class="btn kanji-level" data-kanji-level="1" aria-pressed="false">N1</button>
+          <button type="button" class="btn kanji-level" data-kanji-level="ungraded" aria-pressed="false">Ungraded</button>
+        </div>
+      </div>
+
+      <div class="kanji-filter-row">
+        <label class="label">Strokes
+          <select id="kanji-strokes" class="select">
+            <option value="all">Any count</option>
+            <option value="1-5">1–5</option>
+            <option value="6-10">6–10</option>
+            <option value="11-15">11–15</option>
+            <option value="16-20">16–20</option>
+            <option value="21+">21+</option>
+          </select>
+        </label>
+        <label class="label">Learning state
+          <select id="kanji-known" class="select">
+            <option value="all">Known and unknown</option>
+            <option value="unknown">Unknown only</option>
+            <option value="known">Known only</option>
+          </select>
+        </label>
+        <label class="label">Sort
+          <select id="kanji-sort" class="select">
+            <option value="jlpt">JLPT, then strokes</option>
+            <option value="strokes">Stroke count</option>
+            <option value="kanji">Dictionary order</option>
+            <option value="meaning">Meaning A–Z</option>
+          </select>
+        </label>
+        <label class="label">Group
+          <select id="kanji-group" class="select">
+            <option value="none">No grouping</option>
+            <option value="jlpt">JLPT level</option>
+            <option value="strokes">Stroke bands</option>
+          </select>
+        </label>
+        <button type="button" id="kanji-reset" class="btn btn-ghost">Reset filters</button>
+      </div>
+    </div>
+
+    <div class="kanji-results-head">
+      <span id="kanji-result-count" class="hint"></span>
+      <span class="hint">Select a card to draw and decompose it.</span>
+    </div>
+    <div id="kanji-results"></div>
+    <button type="button" id="kanji-more" class="btn btn-ghost kanji-more" hidden>Show more</button>
+  </section>
+
+  <!-- REVIEW -->
+  <section class="panel" data-panel="review" id="review-panel">
+    <div class="card">
+      <div class="ui-section-header">
+        <span class="ui-section-title">Today</span>
+        <span class="ui-section-line"></span>
+        <label class="label inline">New per session
+          <select id="srs-new-limit" class="select">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="40">40</option>
+            <option value="9999">All</option>
+          </select>
+        </label>
+        <label class="label inline">Direction
+          <select id="srs-direction" class="select">
+            <option value="recognition" selected>JP → EN</option>
+            <option value="recall">EN → JP</option>
+          </select>
+        </label>
+      </div>
+      <div id="srs-stats" class="stat-row"></div>
+    </div>
+
+    <div class="card srs-stage" id="srs-stage"></div>
+
+    <p class="hint">Scheduling is SM-2-lite: two learning steps (1&nbsp;min, 10&nbsp;min), then intervals grow by each card's ease. <kbd>Space</kbd> shows the answer / answers <em>Good</em>; <kbd>1</kbd>–<kbd>4</kbd> grade directly. Progress is stored in this browser only, alongside your deck.</p>
+  </section>
+
+  <!-- MY WORDS -->
+  <section class="panel" data-panel="mywords" id="mywords-panel">
+    <div class="card">
+      <div class="ui-section-header">
+        <span class="ui-section-title">Known</span>
+        <span class="ui-section-line"></span>
+        <span class="hint" id="mw-known-count"></span>
+        <button id="mw-clear-known" class="btn btn-ghost btn-danger-ghost">Clear</button>
+      </div>
+      <p class="hint">Marked "✓ Known" while reading. Personalizes the coverage meter and dims these in the Read tab.</p>
+      <div class="label" style="margin-top:10px">Words</div>
+      <div id="mw-known-words" class="chips"></div>
+      <div class="label" style="margin-top:10px">Kanji</div>
+      <div id="mw-known-kanji" class="chips"></div>
+    </div>
+
+    <div class="card">
+      <div class="ui-section-header">
+        <span class="ui-section-title">Saved deck</span>
+        <span class="ui-section-line"></span>
+        <span class="hint" id="mw-deck-count"></span>
+        <button id="mw-clear-deck" class="btn btn-ghost btn-danger-ghost">Clear</button>
+      </div>
+      <p class="hint">Saved with "☆ Save" while reading. <strong>Next</strong> is when each card comes back in the <a href="#" class="go-review">Review</a> tab; clearing the deck clears its review history too.</p>
+      <div class="table-scroll">
+        <table class="freq"><thead><tr><th>Word</th><th>Meaning &amp; sentence</th><th>JLPT</th><th>Next</th><th></th></tr></thead>
+        <tbody id="mw-deck-tbody"></tbody></table>
+      </div>
+      <div class="flash-controls" style="margin-top:12px">
+        <button id="mw-copy" class="btn">Copy TSV</button>
+        <button id="mw-download" class="btn btn-primary">Download .tsv</button>
+      </div>
+      <p class="hint">Fields: <code>word · reading · meaning · JLPT level · sentence</code> (tab-separated). Good for Anki — but it drops each card's schedule, so it isn't a backup. Use the backup below for that.</p>
+    </div>
+
+    <div class="card">
+      <div class="ui-section-header">
+        <span class="ui-section-title">Backup &amp; restore</span>
+        <span class="ui-section-line"></span>
+        <span class="hint" id="mw-backup-count"></span>
+      </div>
+      <p class="hint">Everything on this page lives in <strong>this browser only</strong> — clearing site data ends it. A backup is one <code>.json</code> file holding your deck <em>with its review scheduling</em>, both known lists, and your study history: the way to move it to another browser or get it back.</p>
+      <div class="flash-controls" style="margin-top:12px">
+        <button id="mw-backup-download" class="btn btn-primary">Download backup (.json)</button>
+        <label class="file-btn btn">Restore from backup<input type="file" id="mw-backup-file" accept=".json,application/json" hidden></label>
+      </div>
+      <p class="hint">Restoring <strong>merges</strong> — it never deletes what's already here. Where the same word exists on both sides, the one you studied more recently wins, so importing an older backup can't undo newer progress, and importing the same file twice does nothing.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap site-foot">
+  <p>Static · offline · no AI. Tokenizer: instant dictionary longest-match, or precise kuromoji (vendored, loads once). Data: <a href="data/ATTRIBUTION.md">Kanjium / EDRDG (CC BY-SA 4.0) + KanjiVG (CC BY-SA 3.0)</a>.
+  Part of <a href="../index.html">Vibe Coding</a> · washi-sumi palette.</p>
+</footer>
+
+<div id="toast" class="ui-toast"></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

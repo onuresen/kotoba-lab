@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "source": {
+    "release": "r20250816",
+    "url": "https://github.com/KanjiVG/kanjivg/releases/download/r20250816/kanjivg-20250816-main.zip",
+    "sha256": "69a2944ec1183086fdee5ba9c1f48bc306b867480a95b2f337f3203bf50689a3"
+  },
+  "artifact": {
+    "path": "data/kanjivg.json",
+    "bytes": 5842350,
+    "sha256": "5936251d60c3b6377593a9e4d5abefaf86e2727dd592c1a136ee8ccb9fce0101"
+  }
+}

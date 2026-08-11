@@ -1,0 +1,464 @@
+/* =============================================================================
+   japanese-reader.css — Kotoba Lab tool layer.
+   Loads AFTER ui-base.css + palettes/washi-sumi.css. Built from the ui-system
+   token contract (var(--surface) / var(--text) / …) so it theme-flips with the
+   palette. The ONLY genuinely new, domain-specific things here are:
+     (1) the JLPT N5→N1 color scale, and
+     (2) furigana / ruby typography.
+   Vermilion (--accent) is kept for actions/signals; the JLPT scale is a
+   separate hue ramp so red stays meaningful (unknown / hardest).
+   ============================================================================= */
+
+/* ---- JLPT color scale (domain-specific, easy → hard, distinct from accent) - */
+:root {
+  --jlpt-n5: #2f8f6f;  /* green   — easiest */
+  --jlpt-n4: #2f74b5;  /* blue    */
+  --jlpt-n3: #6a57c9;  /* indigo  */
+  --jlpt-n2: #c0791d;  /* amber   */
+  --jlpt-n1: #b23a6d;  /* magenta — hardest */
+  --jlpt-ungraded: #9a8f7c; /* muted paper-gray */
+}
+.jlpt-n5 { --jl: var(--jlpt-n5); }
+.jlpt-n4 { --jl: var(--jlpt-n4); }
+.jlpt-n3 { --jl: var(--jlpt-n3); }
+.jlpt-n2 { --jl: var(--jlpt-n2); }
+.jlpt-n1 { --jl: var(--jlpt-n1); }
+.jlpt-ungraded { --jl: var(--jlpt-ungraded); }
+
+/* ---- page frame ------------------------------------------------------------ */
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+.site-head {
+  position: sticky; top: 0; z-index: var(--z-sticky);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.head-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  font-family: var(--font-display);
+  font-size: 30px; line-height: 1; color: var(--on-accent);
+  background: var(--accent); border-radius: var(--r-md);
+  width: 46px; height: 46px; display: grid; place-items: center;
+  box-shadow: var(--shadow-sm);
+}
+.brand h1 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: 0.2px; }
+.tagline { margin: 2px 0 0; font-size: 12px; color: var(--text2); }
+
+/* ---- tabs ------------------------------------------------------------------ */
+.tabs { display: flex; gap: 4px; background: var(--surface2); padding: 4px; border-radius: var(--r-pill); overflow-x: auto; }
+.tab {
+  border: none; background: transparent; cursor: pointer;
+  font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--text2);
+  padding: 7px 18px; border-radius: var(--r-pill); transition: background .15s var(--ease), color .15s var(--ease);
+}
+.tab:hover { color: var(--text); }
+.tab.is-active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
+@media (max-width: 780px) {
+  .head-inner { align-items: stretch; flex-direction: column; gap: 10px; }
+  .tabs { scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 1 0 auto; padding-inline: 14px; white-space: nowrap; }
+}
+
+main.wrap { padding-top: 20px; padding-bottom: 28px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ---- panels + grids -------------------------------------------------------- */
+.panel { display: none; flex-direction: column; gap: 16px; }
+.panel.is-active { display: flex; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-read { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+@media (max-width: 780px) { .grid-2, .grid-read { grid-template-columns: 1fr; } }
+
+/* ---- input ----------------------------------------------------------------- */
+/* Tall by default: this box holds whole passages, not a phrase. ui-base gives
+   it resize:vertical, so it can still be dragged shorter. */
+.jp-input { font-family: var(--font-body); font-size: 16px; min-height: 300px; line-height: 1.9; }
+@media (max-width: 780px) { .jp-input { min-height: 220px; } }
+.input-actions { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+.samples-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.samples { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn.sample { font-size: 11px; padding: 5px 10px; }
+.label.inline { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
+.tok-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+/* A <label> wrapping a hidden file input, so it needs the pointer .btn has.
+   The compact sizing belongs to the tok-row control specifically — elsewhere
+   (the backup restore button) it sits beside a full-size .btn and must match. */
+.file-btn { cursor: pointer; }
+.tok-row .file-btn { font-size: 11px; padding: 5px 12px; }
+.tok-row .check .hint { font-weight: 400; }
+#precise-status { color: var(--accent2-text); font-family: var(--font-mono); }
+
+/* ---- readability ----------------------------------------------------------- */
+.read-score { display: flex; align-items: baseline; gap: 16px; margin: 6px 0 12px; }
+.score-num { font-family: var(--font-display); font-size: 44px; font-weight: 700; line-height: 1; color: var(--accent); }
+.score-num span { font-size: 16px; color: var(--text3); font-weight: 600; }
+.score-band strong { display: block; font-size: 15px; }
+.read-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.read-metrics div { font-size: 12px; color: var(--text2); display: flex; align-items: baseline; gap: 8px; }
+.read-metrics span { font-family: var(--font-mono); font-size: 15px; color: var(--text); min-width: 44px; }
+
+/* ---- overview stats -------------------------------------------------------- */
+.stat-row { display: flex; flex-wrap: wrap; gap: 18px; }
+.stat { display: flex; flex-direction: column; }
+.stat-num { font-family: var(--font-display); font-size: 24px; font-weight: 700; line-height: 1.1; }
+.stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ---- JLPT distribution bar ------------------------------------------------- */
+.dist-bar { display: flex; height: 14px; border-radius: var(--r-pill); overflow: hidden; margin: 8px 0 10px; background: var(--surface2); }
+.dist-bar .seg { background: var(--jl); }
+.dist-legend, .legend { display: flex; flex-wrap: wrap; gap: 10px 14px; }
+.lg { font-size: 11px; color: var(--text2); display: inline-flex; align-items: center; gap: 5px; }
+.lg b { color: var(--text); font-family: var(--font-mono); }
+.sw { width: 11px; height: 11px; border-radius: 3px; background: var(--jl); display: inline-block; }
+
+/* ---- frequency tables ------------------------------------------------------ */
+.table-scroll { max-height: 340px; overflow-y: auto; }
+table.freq { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.freq th { position: sticky; top: 0; background: var(--surface); text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); padding: 6px 8px; border-bottom: 1px solid var(--border); }
+table.freq td { padding: 5px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.freq .rank { color: var(--text3); font-family: var(--font-mono); font-size: 11px; width: 28px; }
+table.freq .num, table.freq th.num { text-align: right; font-family: var(--font-mono); }
+table.freq .jp { font-family: var(--font-display); font-size: 17px; display: flex; align-items: center; gap: 8px; }
+table.freq .jp .rd { font-family: var(--font-body); font-size: 12px; color: var(--text2); }
+/* The saved sentence, under the meaning in My Words. One line, clipped — the
+   full text is in the title attribute and on the review card.
+   The cap is viewport-relative because a table column is sized by its content:
+   a fixed 46ch here dictates the column width and pushes the whole deck table
+   into horizontal scroll on a phone, where it otherwise fits. */
+.mw-sentence {
+  display: block; margin-top: 3px;
+  font-family: var(--font-display); font-size: 12px; color: var(--text3);
+  max-width: min(46ch, 34vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chip { color: var(--jl); }
+.freq .rank, .freq .hint { font-weight: 400; }
+td.hint, .hint { color: var(--text3); font-size: 12px; }
+
+/* ---- flashcard controls ---------------------------------------------------- */
+.flash-controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 8px 0 6px; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); cursor: pointer; }
+.flash-controls .select { width: auto; }
+
+/* ---- Read tab -------------------------------------------------------------- */
+.read-toolbar { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 12px 18px; }
+.reading {
+  font-family: var(--font-display);
+  font-size: 22px; line-height: 2.5;      /* room for furigana above the line */
+  color: var(--text);
+}
+.reading ruby { ruby-align: center; }
+.reading rt { font-family: var(--font-body); font-size: 10px; color: var(--text2); font-weight: 400; }
+.reading.no-furigana rt { visibility: hidden; }
+.reading .k { color: var(--jl); cursor: pointer; border-radius: 3px; transition: background .12s; }
+.reading .k:hover { background: color-mix(in srgb, var(--jl) 14%, transparent); }
+.reading .tok.word { cursor: pointer; }
+.reading .tok.word:hover { background: var(--accent-dim); border-radius: 4px; }
+.reading .is-picked { background: color-mix(in srgb, var(--accent) 20%, transparent); border-radius: 3px; }
+.reading .kana, .reading .run { }
+/* already-known: quiet it down so unfamiliar words keep visual priority */
+.reading .k.is-known { color: var(--text3); }
+.reading .tok.word.is-known { color: var(--text3); }
+.reading .tok.word.is-known rt { opacity: 0.6; }
+
+/* info panel */
+.info-card { position: sticky; top: 84px; }
+.info-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.info-glyph { font-family: var(--font-display); font-size: 40px; line-height: 1; color: var(--jl); }
+.info-word { font-family: var(--font-display); font-size: 26px; }
+.info-reading { font-size: 15px; color: var(--text2); margin: 0 0 4px; }
+.info-gloss { font-size: 15px; color: var(--text); margin: 2px 0 8px; font-weight: 500; }
+.info-yomi { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.info-yomi div { font-size: 14px; color: var(--text2); }
+.info-yomi .label { display: inline-block; margin: 0 8px 0 0; min-width: 70px; }
+.info-actions { display: flex; gap: 8px; margin-top: 12px; }
+.info-kchars { margin-top: 14px; }
+.info-kchars .k { font-family: var(--font-display); font-size: 22px; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+.info-kchars .k:hover { background: color-mix(in srgb, var(--jl) 14%, transparent); }
+.info-actions .act-save[data-saved="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent); }
+.info-actions .act-known[data-known="true"] { color: var(--accent); border-color: var(--accent-glow); background: var(--accent-dim); }
+
+/* ---- coverage meter --------------------------------------------------------- */
+.cov-row { display: grid; grid-template-columns: 120px 1fr 40px; align-items: center; gap: 10px; margin: 8px 0; }
+.cov-label { font-size: 12px; color: var(--text2); }
+.cov-bar { height: 10px; border-radius: var(--r-pill); background: var(--surface2); overflow: hidden; }
+.cov-fill { display: block; height: 100%; background: var(--accent); border-radius: var(--r-pill); transition: width .3s var(--ease); }
+.cov-pct { font-family: var(--font-mono); font-size: 12px; text-align: right; color: var(--text); }
+
+/* ---- Review tab (spaced repetition) ------------------------------------------ */
+.tab-badge {
+  margin-left: 6px; padding: 1px 6px; border-radius: var(--r-pill);
+  background: var(--accent); color: var(--on-accent);
+  font-family: var(--font-mono); font-size: 10px; line-height: 1.6;
+}
+.tab.is-active .tab-badge { background: var(--accent); }
+
+.input-card[hidden] { display: none; } /* Review hides the shared Text box */
+
+/* ---- failure banners --------------------------------------------------------
+   Every value carries a literal fallback on purpose: one of these fires
+   precisely WHEN ui-base.css is missing, so a banner styled only from
+   ui-system tokens would render as invisible-ish plain text at the moment it
+   matters most. This file always loads (it sits beside index.html).          */
+.boot-warning {
+  border: 1px solid var(--accent, #b23a2f); border-left-width: 4px;
+  border-radius: var(--r-md, 8px);
+  background: var(--accent-dim, #f4e2dd); color: var(--text, #1c1a17);
+  padding: 14px 18px; font-size: 13px; line-height: 1.6;
+  font-family: var(--font-body, system-ui, -apple-system, Segoe UI, sans-serif);
+  max-width: 1080px; margin: 0 auto;
+}
+.boot-warning strong { display: block; margin-bottom: 6px; font-size: 14px; color: var(--accent, #b23a2f); }
+.boot-warning p { margin: 6px 0 0; color: var(--text2, #57534a); }
+.boot-warning code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  background: var(--surface2, #ece5d8); padding: 1px 5px; border-radius: 4px;
+}
+.boot-warning[hidden] { display: none; }
+
+.srs-stage { display: flex; flex-direction: column; gap: 18px; min-height: 340px; }
+.srs-meta { display: flex; align-items: center; gap: 10px; }
+
+/* the card face: prompt on top, answer revealed underneath, vertically centred */
+.srs-face { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 10px 0; }
+.srs-word { font-family: var(--font-display); font-size: 52px; line-height: 1.25; color: var(--jl); }
+.srs-gloss-front { font-size: 22px; font-weight: 500; max-width: 34ch; }
+.srs-back { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); width: 100%; max-width: 460px; }
+.srs-reading { font-size: 17px; color: var(--text2); }
+.srs-gloss { font-size: 16px; font-weight: 500; max-width: 38ch; }
+
+/* The sentence the card was saved from. Quieter than the answer above it — it
+   is evidence, not the thing being tested — with the word itself picked out. */
+.srs-context {
+  font-family: var(--font-display);
+  font-size: 15px; line-height: 1.9;
+  color: var(--text2);
+  max-width: 42ch; text-align: center;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--r-sm);
+}
+/* --accent-dim is a low-alpha tint, so the word reads as highlighted without
+   the text colour changing — full --text keeps it the most legible thing in
+   the block, which is the point. */
+.srs-context mark {
+  background: var(--accent-dim);
+  color: var(--text);
+  font-weight: 600;
+  padding: 0 2px; border-radius: 3px;
+}
+
+.srs-kanji { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+.srs-kchar {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-family: var(--font-display); font-size: 22px; color: var(--jl);
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: 6px 10px; min-width: 58px; cursor: pointer;
+}
+.srs-kchar:hover { border-color: var(--accent); background: var(--accent-dim); }
+.srs-kchar i { font-family: var(--font-body); font-style: normal; font-size: 10px; color: var(--text3); }
+
+/* grade row — one column per answer, each showing what it costs you */
+.srs-grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.srs-grade { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; }
+.srs-grade .g-when { font-family: var(--font-mono); font-size: 11px; opacity: 0.75; }
+.srs-show { justify-self: stretch; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; }
+.g-key {
+  font-family: var(--font-mono); font-size: 10px; line-height: 1.6;
+  border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; opacity: 0.6;
+}
+@media (max-width: 560px) {
+  .srs-grades { grid-template-columns: repeat(2, 1fr); }
+  .srs-word { font-size: 40px; }
+}
+
+kbd {
+  font-family: var(--font-mono); font-size: 0.85em;
+  background: var(--surface2); border: 1px solid var(--border); border-bottom-width: 2px;
+  border-radius: 4px; padding: 0 4px;
+}
+
+/* ---- My Words tab ------------------------------------------------------------ */
+.due-now { font-family: var(--font-mono); font-size: 11px; color: var(--accent); }
+.btn-danger-ghost { margin-left: auto; color: var(--accent); border-color: transparent; background: transparent; font-size: 11px; padding: 4px 8px; }
+.btn-danger-ghost:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: var(--accent-glow); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.known-chip {
+  display: inline-flex; align-items: stretch; overflow: hidden;
+  font-family: var(--font-mono); font-size: 12px; color: var(--jl, var(--text));
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-pill);
+  transition: border-color .12s, background .12s;
+}
+.known-chip:hover { border-color: var(--accent); background: var(--accent-dim); }
+.known-chip-label, .known-kanji-open, .known-rm {
+  border: 0; background: transparent; color: inherit; font: inherit; line-height: 1;
+}
+.known-chip-label, .known-kanji-open { padding: 5px 4px 5px 10px; }
+.known-kanji-open { cursor: pointer; font-family: var(--font-display); font-size: 17px; }
+.known-rm { padding: 4px 8px 4px 5px; cursor: pointer; color: var(--text3); }
+.known-rm:hover { color: var(--accent); }
+
+/* ---- Kanji library -------------------------------------------------------- */
+.kanji-toolbar { display: flex; flex-direction: column; gap: 18px; }
+.kanji-intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .72fr); gap: 24px; align-items: end; }
+.kanji-intro h2 { margin: 3px 0 4px; font-family: var(--font-display); font-size: 25px; }
+.kanji-search { display: flex; flex-direction: column; gap: 6px; }
+.kanji-search .input { width: 100%; }
+.kanji-filter-block { display: flex; flex-direction: column; gap: 7px; }
+.kanji-levels { display: flex; flex-wrap: wrap; gap: 6px; }
+.kanji-level { padding: 5px 11px; }
+.kanji-level.is-active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.kanji-filter-row {
+  display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)) auto;
+  gap: 10px; align-items: end;
+}
+.kanji-filter-row .label { display: flex; flex-direction: column; gap: 5px; }
+.kanji-results-head { display: flex; justify-content: space-between; gap: 12px; padding: 0 2px; }
+.kanji-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.kanji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.kanji-card {
+  appearance: none; display: grid; grid-template-columns: 58px minmax(0, 1fr) auto;
+  gap: 11px; align-items: start; min-height: 112px; padding: 13px;
+  color: var(--text); font: inherit; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  transition: border-color .15s var(--ease), background .15s var(--ease), transform .15s var(--ease);
+}
+.kanji-card:hover { border-color: var(--jl); background: color-mix(in srgb, var(--jl) 5%, var(--surface)); transform: translateY(-1px); }
+.kanji-card[data-known="true"] { border-color: color-mix(in srgb, var(--accent) 38%, var(--border)); }
+.kanji-card-glyph { font-family: var(--font-display); font-size: 46px; line-height: 1; color: var(--jl); text-align: center; }
+.kanji-card-copy { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.kanji-card-copy strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 13px; line-height: 1.35; }
+.kanji-card-reading { overflow: hidden; color: var(--text2); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.kanji-card-meta { color: var(--text3); font-family: var(--font-mono); font-size: 10px; }
+.kanji-more { align-self: center; min-width: 160px; }
+@media (max-width: 780px) {
+  .kanji-intro { grid-template-columns: 1fr; gap: 14px; }
+  .kanji-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kanji-filter-row > .btn { grid-column: 1 / -1; }
+  .kanji-results-head { flex-direction: column; gap: 2px; }
+}
+@media (max-width: 480px) {
+  .kanji-filter-row { grid-template-columns: 1fr; }
+  .kanji-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- Kanji Radical Tree overlay ------------------------------------------- */
+body.kt-open { overflow: hidden; }
+.kt-overlay {
+  position: fixed; inset: 0; z-index: calc(var(--z-modal) + 1);
+  display: grid; place-items: center; padding: 18px;
+  background: color-mix(in srgb, var(--text) 52%, transparent);
+  backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+}
+.kt-overlay[hidden] { display: none; }
+.kt-shell {
+  width: min(920px, 100%); max-height: calc(100vh - 36px); overflow: auto;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-md);
+}
+.kt-head {
+  position: sticky; top: 0; z-index: 2;
+  display: grid; grid-template-columns: minmax(92px, 1fr) auto minmax(92px, 1fr);
+  align-items: center; gap: 12px; padding: 14px 18px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+.kt-heading { text-align: center; }
+.kt-heading .label { margin: 0; }
+.kt-heading h2 { margin: 1px 0 0; font-family: var(--font-display); font-size: 21px; }
+.kt-back { justify-self: start; }
+.kt-back[hidden] { display: none; }
+.kt-close { justify-self: end; }
+.kt-status {
+  min-height: 300px; display: flex; align-items: center; justify-content: center; gap: 10px;
+  color: var(--text2); font-size: 13px;
+}
+.kt-status:empty { display: none; }
+.kt-spinner {
+  width: 18px; height: 18px; border: 2px solid var(--border2); border-top-color: var(--accent);
+  border-radius: var(--r-pill); animation: kt-spin .7s linear infinite;
+}
+.kt-body { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(250px, .8fr); }
+.kt-stage { min-height: 520px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px; }
+.kt-glyph { width: min(360px, 68vw); aspect-ratio: 1; color: var(--text); border-radius: var(--r-lg); }
+.kt-glyph[role="button"] { cursor: pointer; }
+.kt-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.kt-stroke {
+  fill: none; stroke: currentColor; stroke-width: 2.35;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.kt-component {
+  color: var(--text); transform: translate(0, 0);
+  transition: transform .32s var(--ease), color .18s var(--ease), opacity .18s var(--ease);
+}
+.kt-component[data-color-slot="0"], .kt-component-open[data-color-slot="0"] { --kt-part-color: var(--accent2-text); }
+.kt-component[data-color-slot="1"], .kt-component-open[data-color-slot="1"] { --kt-part-color: var(--accent); }
+.kt-component[data-color-slot="2"], .kt-component-open[data-color-slot="2"] { --kt-part-color: color-mix(in srgb, var(--accent2-text) 62%, var(--accent)); }
+.kt-component[data-color-slot="3"], .kt-component-open[data-color-slot="3"] { --kt-part-color: color-mix(in srgb, var(--accent2-text) 58%, var(--text2)); }
+.kt-component[data-color-slot="4"], .kt-component-open[data-color-slot="4"] { --kt-part-color: color-mix(in srgb, var(--accent) 58%, var(--text2)); }
+.kt-hit { fill: transparent; stroke: none; pointer-events: all; }
+.kt-component[aria-disabled="true"] { pointer-events: none; }
+.kt-overlay.is-exploded .kt-component {
+  transform: translate(var(--kt-x), var(--kt-y)); cursor: pointer; color: var(--kt-part-color);
+}
+.kt-overlay.is-exploded .kt-component:hover,
+.kt-overlay.is-exploded .kt-component:focus { filter: brightness(.78); }
+.kt-overlay.is-exploded .kt-loose-strokes { opacity: .35; }
+.kt-component-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: -6px; }
+.kt-component-list[hidden] { display: none; }
+.kt-component-open {
+  min-width: 76px; display: flex; align-items: baseline; justify-content: center; gap: 6px;
+  border-color: color-mix(in srgb, var(--kt-part-color) 34%, var(--border));
+}
+.kt-component-open strong { font-family: var(--font-display); font-size: 22px; color: var(--kt-part-color); }
+.kt-component-open span { color: var(--text3); font-family: var(--font-mono); font-size: 10px; }
+.kt-instruction { min-height: 18px; margin: 6px 0 14px; text-align: center; }
+.kt-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.kt-info { padding: 30px 26px; background: var(--surface2); border-left: 1px solid var(--border); }
+.kt-info-head { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 12px; }
+.kt-info-glyph { font-family: var(--font-display); font-size: 54px; line-height: 1; color: var(--accent); }
+.kt-info h3 { margin: 0; font-family: var(--font-display); font-size: 20px; }
+.kt-info h3 + p { margin: 3px 0 14px; color: var(--text2); }
+.kt-info-actions { margin-top: 16px; }
+.kt-known[data-known="true"] { color: var(--accent); border-color: var(--accent-glow); background: var(--accent-dim); }
+
+@keyframes kt-spin { to { transform: rotate(1turn); } }
+@keyframes kt-draw { to { stroke-dashoffset: 0; } }
+.kt-overlay:not([data-reduced-motion="true"]) .kt-stroke.is-drawing {
+  stroke-dasharray: var(--kt-length); stroke-dashoffset: var(--kt-length);
+  animation: kt-draw var(--kt-duration) var(--kt-delay) var(--ease) forwards;
+}
+.kt-overlay[data-reduced-motion="true"] .kt-component { transition: opacity .12s var(--ease); }
+.kt-overlay[data-reduced-motion="true"].is-exploded .kt-component {
+  transform: none; opacity: .82; color: var(--kt-part-color);
+}
+.kt-overlay[data-reduced-motion="true"] .kt-spinner { animation: none; }
+
+@media (max-width: 720px) {
+  .kt-overlay { padding: 0; }
+  .kt-shell { width: 100%; height: 100%; max-height: none; border-radius: 0; }
+  .kt-head { grid-template-columns: auto 1fr auto; padding: 10px 12px; }
+  .kt-heading .label { display: none; }
+  .kt-heading h2 { font-size: 17px; }
+  .kt-body { grid-template-columns: 1fr; }
+  .kt-stage { min-height: auto; padding: 22px 18px; }
+  .kt-glyph { width: min(300px, 80vw); }
+  .kt-info { border-left: 0; border-top: 1px solid var(--border); padding: 22px 18px; }
+}
+
+/* ---- misc ------------------------------------------------------------------ */
+code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface2); padding: 1px 5px; border-radius: 4px; }
+.site-foot { padding: 20px; color: var(--text3); font-size: 12px; }
+.site-foot a { color: var(--accent); }
+p.hint { margin: 8px 0 0; }

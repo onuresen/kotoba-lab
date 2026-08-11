@@ -1,0 +1,43 @@
+/* =============================================================================
+   Washi-Sumi palette — "Paper & Ink"  ·  ui-system v1.1.0
+   Light, warm, editorial. Washi-paper surfaces + sumi-ink text, restrained
+   vermilion (朱 shu / hanko-seal red) accent, ai-indigo (藍) secondary signal.
+
+   REASON FOR A NEW SHELF ENTRY (per ui-system/README.md rule):
+     The existing shelf is Executive (cool navy, boardroom) and Lime-Editorial
+     (dark, lime). Neither carries a warm-paper, Japanese-craft register. Kotoba
+     Lab (Japanese reading & text analysis) earns a themed skin: paper for long-
+     form reading, and — deliberately — a RESTRAINED red. Red is this tool's most
+     important *signal* (unknown / above-your-level / JLPT-hard), so vermilion is
+     used sparingly as the accent and must not flood the UI. The JLPT N5→N1 scale
+     lives in the tool's own CSS (a different hue ramp), keeping red meaningful.
+
+   Load AFTER ui-base.css.   Fonts (host page): Zen Old Mincho / Fraunces (display),
+   DM Sans (body), JetBrains Mono (mono).
+   See esen-vault › concepts/Shared-UI-System.md
+   ============================================================================= */
+:root {
+  --bg:        #ece3d3;   /* washi — warm paper ground */
+  --surface:   #f7f2e8;   /* lighter paper — cards sit above the ground */
+  --surface2:  #e5dcc9;
+  --surface3:  #dacfb8;
+
+  --border:    #d8ccb4;
+  --border2:   #c4b492;
+
+  --text:      #2b2620;   /* sumi — warm near-black ink */
+  --text2:     #574f42;   /* meaningful secondary */
+  --text3:     #8b8070;   /* metadata / hints ONLY */
+
+  --accent:        #c1352b;   /* vermilion / seal-ink red — the one color, used sparingly */
+  --on-accent:     #f7f2e8;   /* paper-white on the red fill */
+  /* --accent-dim / --accent-glow derive from --accent in ui-base.css */
+
+  --accent2:       #2e4a6b;   /* ai-indigo — secondary signal, use sparingly */
+  --accent2-dim:   rgba(46, 74, 107, 0.10);
+  --accent2-text:  #24405e;
+
+  --font-display: 'Zen Old Mincho', 'Fraunces', Georgia, 'Yu Mincho', serif;
+  --font-body:    'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+}

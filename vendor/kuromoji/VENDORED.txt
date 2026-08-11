@@ -1,0 +1,3 @@
+kuromoji.js v0.1.2 (Apache-2.0) — vendored for offline use.
+Source: https://github.com/takuyaa/kuromoji.js
+build/kuromoji.js + dict/ copied verbatim. See LICENSE-2.0.txt.
