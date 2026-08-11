@@ -11,5 +11,5 @@
     "kanjivg:build": "node tools/build-kanjivg.mjs",
     "kanjivg:check": "node tools/build-kanjivg.mjs --check"
   },
-  "license": "CC-BY-SA-4.0"
+  "license": "MIT"
 }

@@ -3,18 +3,15 @@
    Light, warm, editorial. Washi-paper surfaces + sumi-ink text, restrained
    vermilion (朱 shu / hanko-seal red) accent, ai-indigo (藍) secondary signal.
 
-   REASON FOR A NEW SHELF ENTRY (per ui-system/README.md rule):
-     The existing shelf is Executive (cool navy, boardroom) and Lime-Editorial
-     (dark, lime). Neither carries a warm-paper, Japanese-craft register. Kotoba
-     Lab (Japanese reading & text analysis) earns a themed skin: paper for long-
-     form reading, and — deliberately — a RESTRAINED red. Red is this tool's most
+   DESIGN INTENT:
+     Kotoba Lab uses a warm-paper, Japanese-craft register: paper for long-form
+     reading, and — deliberately — a RESTRAINED red. Red is this tool's most
      important *signal* (unknown / above-your-level / JLPT-hard), so vermilion is
      used sparingly as the accent and must not flood the UI. The JLPT N5→N1 scale
      lives in the tool's own CSS (a different hue ramp), keeping red meaningful.
 
    Load AFTER ui-base.css.   Fonts (host page): Zen Old Mincho / Fraunces (display),
    DM Sans (body), JetBrains Mono (mono).
-   See esen-vault › concepts/Shared-UI-System.md
    ============================================================================= */
 :root {
   --bg:        #ece3d3;   /* washi — warm paper ground */

@@ -9,9 +9,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Zen+Old+Mincho:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 
-<!-- ui-system skeleton, then washi-sumi skin, then this tool's layer.
-     Local copies on purpose (ui-system is a catalog, not a dependency) so this
-     folder stays portable — see ui-system/README.md "copy, never link". -->
+<!-- Shared UI primitives, then the washi-sumi skin, then this tool's layer.
+     All styles are local so the application remains portable. -->
 <link rel="stylesheet" href="ui-base.css">
 <link rel="stylesheet" href="palettes/washi-sumi.css">
 <link rel="stylesheet" href="japanese-reader.css">
@@ -309,8 +308,7 @@
 </main>
 
 <footer class="wrap site-foot">
-  <p>Static · offline · no AI. Tokenizer: instant dictionary longest-match, or precise kuromoji (vendored, loads once). Data: <a href="data/ATTRIBUTION.md">Kanjium / EDRDG (CC BY-SA 4.0) + KanjiVG (CC BY-SA 3.0)</a>.
-  Part of <a href="../index.html">Vibe Coding</a> · washi-sumi palette.</p>
+  <p>Browser-only · no account · no AI. Tokenizer: instant dictionary longest-match, or precise kuromoji (vendored, loads once). Data: <a href="data/ATTRIBUTION.md">Kanjium / EDRDG (CC BY-SA 4.0) + KanjiVG (CC BY-SA 3.0)</a>.</p>
 </footer>
 
 <div id="toast" class="ui-toast"></div>

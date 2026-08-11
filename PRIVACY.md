@@ -1,0 +1,27 @@
+# Privacy
+
+Kotoba Lab is a static, browser-only application. It has no user accounts,
+analytics, advertising, application backend, or cloud synchronization.
+
+## Text and study data
+
+- Text you paste or import is processed in the browser and is not uploaded by
+  Kotoba Lab.
+- Saved cards, review scheduling, known words, known kanji, and review history
+  are stored in your browser's `localStorage`.
+- Saved cards may include the sentence in which a word was encountered.
+- Clearing site data removes this local state. Use the JSON backup feature in
+  **My Words** if you want to retain or move it.
+- Backup and TSV files are created locally and are only sent elsewhere if you
+  choose to share or upload them.
+
+## Network requests
+
+The hosted application downloads its HTML, styles, scripts, dictionaries, and
+vendored tokenizer from the same static site. It also requests optional fonts
+from Google Fonts; the application falls back to system fonts if they are not
+available.
+
+As with any website, the hosting provider and font provider may receive normal
+request information such as an IP address and browser headers. Kotoba Lab does
+not transmit pasted Japanese text or study data in those requests.

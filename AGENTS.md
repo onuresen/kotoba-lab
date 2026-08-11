@@ -5,10 +5,20 @@
 - **v9.0.0 current.** Radical Tree component coloring and the standalone Kanji
   library are ✓ Done.
 - Component/radical reverse browsing is a candidate follow-up, not implemented.
-- The authoritative design record is
-  `../docs/superpowers/specs/2026-08-11-kanji-radical-tree-design.md`.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
+
+## Public repository conventions
+
+- This repository is the canonical, self-contained Kotoba Lab source.
+- Keep documentation public-facing. Do not add local absolute paths, private
+  vault links, generated portfolio notes, or dependencies on sibling repos.
+- Original source uses the top-level MIT license. Preserve the separate
+  licenses and attribution described in `data/ATTRIBUTION.md` and
+  `vendor/kuromoji/VENDORED.txt`.
+- The privacy promise is documented in `PRIVACY.md`: Japanese text and study
+  state stay in the browser. Any future networked feature requires an explicit
+  privacy and architecture decision before implementation.
 
 ## File map
 
@@ -22,6 +32,9 @@
 - `data/kanjivg.manifest.json` — pinned input and artifact checksums used by CI.
 - `js/app.js` — retryable lazy loader plus delegated doorway integration.
 - `japanese-reader.css` — app-specific styles, including the tree overlay.
+- `README.md` — concise public overview, local setup, architecture, and license
+  boundaries.
+- `PRIVACY.md` — public description of local storage and network requests.
 
 ## Kanji Radical Tree conventions
 

@@ -1,0 +1,16 @@
+# Local editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local logs, coverage, and temporary files
+*.log
+coverage/
+tmp/
+temp/
+
+# The project currently has no dependencies, but keep accidental installs out.
+node_modules/

@@ -1,15 +1,9 @@
 /* =============================================================================
-   ui-base.css — Shared Tier-A base for the maker-layer tools
-   VERSION 1.1.0   ·   CANONICAL SOURCE — edit ONLY here.
-
-   Canonical home:   github.com/onuresen/Vibe_Coding › ui-system/ui-base.css
-   Design reference: esen-vault › concepts/Shared-UI-System.md
-
-   ⚠ Do NOT edit downstream copies. This file is the single source of truth;
-     all tools consume this version. Bump VERSION (semver) on any change here.
+   ui-base.css — Shared UI primitives used by Kotoba Lab
+   VERSION 1.1.0
 
    WHAT THIS IS
-   The portable skeleton every "Tier A — Full" tool uses: the token contract,
+   The portable skeleton used by the application: the token contract,
    the radius/z-index scales, and the shared UI primitives (.btn / .card / .input
    / .label / .empty-state / .ui-modal / .ui-section / .ui-row hover-bar).
 
@@ -17,15 +11,12 @@
    1. Load fonts in the host page (do NOT @import here — it blocks render):
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-   2. Load this file, THEN a palette block from ui-system/palettes/ that overrides
-      the palette tokens (Lime-Editorial, Layer-Semantic, Executive, Catppuccin,
-      Slate). Skeleton shared, skin per tool.
+   2. Load this file, THEN a palette block that overrides the palette tokens.
    3. Style values, keep names. Restyle the skin, never rename the contract.
    4. Theme-flip rule: any DOM surface that must change between light and dark
       references a token (var(--surface) / var(--bg-soft) / …), never a hardcoded
       hex — a literal colour cannot re-theme. This holds for a tool's own runtime
-      dark mode too (e.g. ONEXUS's onexus-style.js native tokens). It's how ONEXUS
-      shipped a white minimap in dark mode; don't repeat it.
+      dark mode too.
    ============================================================================= */
 
 :root {
