@@ -2,9 +2,10 @@
 
 ## Current release and backlog
 
-- **v9.0.0 current.** Radical Tree component coloring and the standalone Kanji
-  library are ✓ Done.
-- Component/radical reverse browsing is a candidate follow-up, not implemented.
+- **v9.1.0 current.** Radical Tree component coloring, the standalone Kanji
+  library, and Group A stroke/reading families are ✓ Done.
+- Group B component/radical reverse browsing is next; Group C study workspaces
+  remain deferred until Group B is complete.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -29,7 +30,7 @@
 - `js/kanjitree.js` — full-screen SVG overlay, animation, drill-down, focus,
   reduced motion, and known-kanji control.
 - `js/kanji-browser.js` — pure dictionary catalog search, filtering, sorting,
-  and grouping; no DOM or storage.
+  sections, and exact-stroke/shared-reading families; no DOM or storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
 - `data/kanjivg.manifest.json` — pinned input and artifact checksums used by CI.
@@ -70,6 +71,17 @@
   hiragana/katakana and punctuation-insensitive readings.
 - Filters add no persisted preferences. Known/unknown uses the existing
   `kotoba-lab:known-kanji` set.
+- `buildKanjiFamilies()` owns family membership. Exact strokes are
+  single-membership; on’yomi and kun’yomi are multi-membership, so one kanji
+  may appear in several reading families.
+- Split readings on `、`, normalize hiragana/katakana for matching, remove
+  source `*` markers, and compare the full spoken kun reading without
+  dictionary okurigana parentheses. Keep the original dictionary strings on
+  cards.
+- Shared-reading families require at least two matching kanji and sort by
+  family size, then Japanese label. Exact-stroke families sort numerically.
+- The selected family is ephemeral UI state. Do not add a localStorage key for
+  browsing preferences.
 
 ## Persistent state
 
@@ -89,7 +101,7 @@ npm run kanjivg:check
 
 `npm test` must keep the explicit `node --test "js/*.test.js"` glob. Browser QA
 must cover Read, Review, My Words, and Kanji-library doorways,
-search/filter/group/paging, explode/drill/back, `Esc` focus restoration,
+search/filter/group/family switching/paging, explode/drill/back, `Esc` focus restoration,
 known-state propagation, atomic/missing entries, reduced motion, and clean
 offline-first-load failure. The only module script in `index.html` remains
 `js/app.js`; its imports define load order.

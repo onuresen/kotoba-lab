@@ -13,7 +13,13 @@ import { serializeBackup, backupFilename, parseBackup, mergeState, describeMerge
 import { sentenceAt, contextParts } from './context.js';
 import { isKanji } from './script.js';
 import { createKanjiTree } from './kanjitree.js';
-import { buildKanjiCatalog, filterKanji, groupKanji } from './kanji-browser.js';
+import {
+  buildKanjiCatalog,
+  buildKanjiFamilies,
+  filterKanji,
+  groupKanji,
+  isFamilyMode,
+} from './kanji-browser.js';
 import {
   newCard, cardOf, isNew, schedule, preview, formatWait,
   buildQueue, queueStats, GRADES, GRADE_LABELS,
@@ -32,6 +38,7 @@ let kanjiTree = null;
 let kanjiVGPromise = null;
 let kanjiCatalog = [];
 let kanjiBrowseLimit = 60;
+let kanjiBrowseFamily = '';
 const kanjiBrowseLevels = new Set();
 
 // persisted, personal — survive across sessions in this browser only
@@ -348,23 +355,59 @@ function renderKanjiBrowser() {
     isKnown: (char) => knownKanji.has(char),
   });
   const groupMode = $('#kanji-group').value;
-  const allGroups = groupKanji(rows, groupMode);
-  const perGroup = groupMode === 'none'
+  const familyMode = isFamilyMode(groupMode);
+  const familyTools = $('#kanji-family-tools');
+  const familySelect = $('#kanji-family');
+  let families = [];
+  let activeFamily = null;
+  let resultRows = rows;
+  let allGroups;
+
+  if (familyMode) {
+    families = buildKanjiFamilies(rows, groupMode);
+    if (!families.some((family) => family.key === kanjiBrowseFamily)) {
+      kanjiBrowseFamily = families[0]?.key || '';
+    }
+    activeFamily = families.find((family) => family.key === kanjiBrowseFamily) || null;
+    resultRows = activeFamily?.rows || [];
+    allGroups = activeFamily ? [activeFamily] : [];
+    familyTools.hidden = false;
+    familySelect.innerHTML = families.length
+      ? families.map((family) => `<option value="${esc(family.key)}">${esc(family.label)} — ${family.rows.length.toLocaleString()} kanji</option>`).join('')
+      : '<option value="">No shared families</option>';
+    familySelect.value = kanjiBrowseFamily;
+    $('#kanji-family-summary').textContent = families.length
+      ? groupMode === 'stroke-exact'
+        ? `${families.length.toLocaleString()} exact stroke-count families match the current filters.`
+        : `${families.length.toLocaleString()} shared-reading families match the current filters. A kanji may belong to more than one family.`
+      : 'No family has enough matching kanji. Broaden the filters to continue.';
+  } else {
+    familyTools.hidden = true;
+    familySelect.innerHTML = '';
+    $('#kanji-family-summary').textContent = '';
+    allGroups = groupKanji(rows, groupMode);
+  }
+
+  const perGroup = groupMode === 'none' || familyMode
     ? kanjiBrowseLimit
     : Math.max(12, Math.floor(kanjiBrowseLimit / Math.max(allGroups.length, 1)));
-  const visibleGroups = allGroups.map((group) => ({ ...group, rows: group.rows.slice(0, perGroup) }));
+  const visibleGroups = allGroups.map((group) => ({ ...group, totalRows: group.rows.length, rows: group.rows.slice(0, perGroup) }));
   const visibleCount = visibleGroups.reduce((sum, group) => sum + group.rows.length, 0);
 
-  $('#kanji-result-count').textContent = rows.length
-    ? `Showing ${visibleCount.toLocaleString()} of ${rows.length.toLocaleString()} matches · ${kanjiCatalog.length.toLocaleString()} total`
+  $('#kanji-result-count').textContent = familyMode
+    ? activeFamily
+      ? `Showing ${visibleCount.toLocaleString()} of ${resultRows.length.toLocaleString()} kanji in ${activeFamily.label} · ${families.length.toLocaleString()} families`
+      : `No families match · ${rows.length.toLocaleString()} filtered kanji`
+    : rows.length
+      ? `Showing ${visibleCount.toLocaleString()} of ${rows.length.toLocaleString()} matches · ${kanjiCatalog.length.toLocaleString()} total`
     : `No matches · ${kanjiCatalog.length.toLocaleString()} total`;
-  $('#kanji-results').innerHTML = rows.length
+  $('#kanji-results').innerHTML = resultRows.length
     ? visibleGroups.map((group) => `<section class="kanji-group">
-        ${group.label ? `<div class="ui-section-header"><span class="ui-section-title">${esc(group.label)}</span><span class="ui-section-line"></span><span class="hint">${group.rows.length} shown</span></div>` : ''}
+        ${group.label ? `<div class="ui-section-header"><span class="ui-section-title">${esc(group.label)}</span><span class="ui-section-line"></span><span class="hint">${group.rows.length.toLocaleString()} of ${group.totalRows.toLocaleString()}</span></div>` : ''}
         <div class="kanji-grid">${group.rows.map(kanjiCard).join('')}</div>
       </section>`).join('')
-    : `<div class="card empty-state"><span class="e-icon">字</span><div class="e-title">No kanji match these filters</div><div class="e-sub">Try another reading, meaning, level, or stroke range.</div></div>`;
-  $('#kanji-more').hidden = visibleCount >= rows.length;
+    : `<div class="card empty-state"><span class="e-icon">字</span><div class="e-title">${familyMode ? 'No kanji family matches these filters' : 'No kanji match these filters'}</div><div class="e-sub">Try another reading, meaning, level, or stroke range.</div></div>`;
+  $('#kanji-more').hidden = visibleCount >= resultRows.length;
 
   document.querySelectorAll('.kanji-level').forEach((button) => {
     const value = button.dataset.kanjiLevel;
@@ -380,6 +423,7 @@ function resetKanjiBrowser() {
   $('#kanji-known').value = 'all';
   $('#kanji-sort').value = 'jlpt';
   $('#kanji-group').value = 'none';
+  kanjiBrowseFamily = '';
   kanjiBrowseLevels.clear();
   kanjiBrowseLimit = 60;
   renderKanjiBrowser();
@@ -718,8 +762,18 @@ function wireUi() {
       renderKanjiBrowser();
     }
   });
-  ['#kanji-strokes', '#kanji-known', '#kanji-sort', '#kanji-group'].forEach((selector) => {
+  ['#kanji-strokes', '#kanji-known', '#kanji-sort'].forEach((selector) => {
     $(selector).addEventListener('change', () => { kanjiBrowseLimit = 60; renderKanjiBrowser(); });
+  });
+  $('#kanji-group').addEventListener('change', () => {
+    kanjiBrowseFamily = '';
+    kanjiBrowseLimit = 60;
+    renderKanjiBrowser();
+  });
+  $('#kanji-family').addEventListener('change', (event) => {
+    kanjiBrowseFamily = event.target.value;
+    kanjiBrowseLimit = 60;
+    renderKanjiBrowser();
   });
   $('#kanji-more').addEventListener('click', () => { kanjiBrowseLimit += 60; renderKanjiBrowser(); });
   $('#kanji-reset').addEventListener('click', resetKanjiBrowser);

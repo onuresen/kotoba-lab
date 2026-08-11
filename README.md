@@ -19,8 +19,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Read:** furigana, JLPT-colored kanji, dictionary details, saved words, and
   known-word or known-kanji tracking.
 - **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning;
-  combine JLPT, stroke-count, and known-state filters; then sort or group the
-  results.
+  combine JLPT, stroke-count, and known-state filters; then browse ordinary
+  cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
+  an on’yomi or kun’yomi.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
   and drill into its decomposition using committed KanjiVG data.
 - **Review:** study saved words with an SM-2-inspired schedule, interval

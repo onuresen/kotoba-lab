@@ -14,6 +14,27 @@ function readingForm(value) {
     .replace(/[\s、,;；・()（）.]/g, '');
 }
 
+function katakanaForm(value) {
+  return String(value || '').replace(/[ぁ-ゖ]/g, (char) => String.fromCharCode(char.charCodeAt(0) + 0x60));
+}
+
+function splitReadings(value, kind) {
+  const seen = new Set();
+  return String(value || '')
+    .split(/[、,]/)
+    .map((reading) => reading.trim().replace(/\*/g, ''))
+    .filter(Boolean)
+    .map((display) => {
+      const spoken = display.replace(/[()（）]/g, '');
+      const key = readingForm(spoken);
+      return {
+        key,
+        display: kind === 'on' ? katakanaForm(key) : key,
+      };
+    })
+    .filter((reading) => reading.key && !seen.has(reading.key) && seen.add(reading.key));
+}
+
 function levelRank(level) {
   return level == null ? 5 : 5 - level;
 }
@@ -37,8 +58,43 @@ export function buildKanjiCatalog(kanjiMap) {
       enumerable: false,
       value: readingForm([item.char, item.meaning, item.on, item.kun].join(' ')),
     });
+    Object.defineProperties(item, {
+      _onReadings: { enumerable: false, value: splitReadings(item.on, 'on') },
+      _kunReadings: { enumerable: false, value: splitReadings(item.kun, 'kun') },
+    });
     return item;
   }).sort(codePointOrder);
+}
+
+export function isFamilyMode(mode) {
+  return mode === 'stroke-exact' || mode === 'on-reading' || mode === 'kun-reading';
+}
+
+export function buildKanjiFamilies(rows, mode) {
+  if (!isFamilyMode(mode)) return [];
+  const families = new Map();
+  const add = (key, label, item) => {
+    if (!families.has(key)) families.set(key, { key, label, rows: [] });
+    families.get(key).rows.push(item);
+  };
+
+  for (const item of rows) {
+    if (mode === 'stroke-exact') {
+      if (item.strokes > 0) add(String(item.strokes), `${item.strokes} ${item.strokes === 1 ? 'stroke' : 'strokes'}`, item);
+      continue;
+    }
+    const readings = mode === 'on-reading' ? item._onReadings : item._kunReadings;
+    const suffix = mode === 'on-reading' ? 'on’yomi' : 'kun’yomi';
+    for (const reading of readings) add(reading.key, `${reading.display} ${suffix}`, item);
+  }
+
+  const result = [...families.values()];
+  if (mode === 'stroke-exact') {
+    return result.sort((a, b) => Number(a.key) - Number(b.key));
+  }
+  return result
+    .filter((family) => family.rows.length >= 2)
+    .sort((a, b) => b.rows.length - a.rows.length || a.label.localeCompare(b.label, 'ja'));
 }
 
 export function filterKanji(catalog, options = {}) {

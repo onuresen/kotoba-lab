@@ -166,7 +166,7 @@
         <div>
           <span class="label">Kanji library</span>
           <h2>Browse all 6,813 kanji</h2>
-          <p class="hint">Search the dictionary directly, then open any result in the same Radical Tree used throughout Kotoba Lab.</p>
+          <p class="hint">Search the dictionary directly or explore stroke and reading families, then open any result in the shared Radical Tree.</p>
         </div>
         <label class="kanji-search">
           <span class="label">Search</span>
@@ -213,14 +213,24 @@
             <option value="meaning">Meaning A–Z</option>
           </select>
         </label>
-        <label class="label">Group
+        <label class="label">View
           <select id="kanji-group" class="select">
-            <option value="none">No grouping</option>
-            <option value="jlpt">JLPT level</option>
+            <option value="none">Kanji cards</option>
+            <option value="jlpt">JLPT sections</option>
             <option value="strokes">Stroke bands</option>
+            <option value="stroke-exact">Exact stroke families</option>
+            <option value="on-reading">Shared on’yomi families</option>
+            <option value="kun-reading">Shared kun’yomi families</option>
           </select>
         </label>
         <button type="button" id="kanji-reset" class="btn btn-ghost">Reset filters</button>
+      </div>
+
+      <div id="kanji-family-tools" class="kanji-family-tools" hidden>
+        <label class="label">Family
+          <select id="kanji-family" class="select"></select>
+        </label>
+        <p id="kanji-family-summary" class="hint"></p>
       </div>
     </div>
 
