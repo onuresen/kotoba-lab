@@ -19,6 +19,9 @@
 - The privacy promise is documented in `PRIVACY.md`: Japanese text and study
   state stay in the browser. Any future networked feature requires an explicit
   privacy and architecture decision before implementation.
+- GitHub Pages publishes `main` at `https://onuresen.github.io/kotoba-lab/`
+  through `.github/workflows/pages.yml`. Keep deployment test-gated and do not
+  grant Pages write or OIDC permissions to the pull-request test job.
 
 ## File map
 
@@ -35,6 +38,8 @@
 - `README.md` — concise public overview, local setup, architecture, and license
   boundaries.
 - `PRIVACY.md` — public description of local storage and network requests.
+- `.github/workflows/pages.yml` — tests pushes and pull requests; deploys the
+  static repository root only after tests pass on `main`.
 
 ## Kanji Radical Tree conventions
 

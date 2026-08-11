@@ -1,5 +1,9 @@
 # Kotoba Lab
 
+[![Test and deploy Pages](https://github.com/onuresen/kotoba-lab/actions/workflows/pages.yml/badge.svg)](https://github.com/onuresen/kotoba-lab/actions/workflows/pages.yml)
+
+**[Open Kotoba Lab](https://onuresen.github.io/kotoba-lab/)**
+
 Kotoba Lab is a browser-based Japanese reading and kanji study tool. Paste a
 text to analyze and read it, browse the kanji library directly, save unfamiliar
 words, and review them with built-in spaced repetition.
@@ -70,6 +74,10 @@ npm run kanjivg:check
 
 These commands use a pinned KanjiVG release. Regular `npm test` verifies the
 committed artifact checksum without requiring a network connection.
+
+Pushes to `main` are tested and then published to GitHub Pages by
+`.github/workflows/pages.yml`. Pull requests run the same tests without
+receiving deployment permissions.
 
 ## Project structure
 
