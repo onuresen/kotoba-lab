@@ -194,6 +194,31 @@ td.hint, .hint { color: var(--text3); font-size: 12px; }
 .cov-fill { display: block; height: 100%; background: var(--accent); border-radius: var(--r-pill); transition: width .3s var(--ease); }
 .cov-pct { font-family: var(--font-mono); font-size: 12px; text-align: right; color: var(--text); }
 
+/* ---- Text-to-Study Journey ------------------------------------------------- */
+.journey-overview, .journey-stage { display: flex; flex-direction: column; gap: 16px; }
+.journey-overview h3, .journey-head h3 { margin: 3px 0 0; font-family: var(--font-display); font-size: 24px; }
+.journey-route { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.journey-stop {
+  display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 2px 9px;
+  padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-md);
+}
+.journey-stop > span { grid-row: 1 / 3; color: var(--text3); font-family: var(--font-mono); font-size: 10px; }
+.journey-stop strong { font-family: var(--font-display); font-size: 28px; color: var(--jl); }
+.journey-stop small { color: var(--text2); font-size: 10px; }
+.journey-overview > .btn { align-self: flex-start; }
+.journey-head, .journey-actions, .journey-complete { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.journey-stage { align-items: center; margin: 16px 0; padding: 24px; text-align: center; background: var(--surface2); border-radius: var(--r-lg); }
+.journey-stage > p { margin: 0; color: var(--text2); }
+.journey-glyph { font-family: var(--font-display); font-size: 82px; line-height: 1; color: var(--jl); }
+.journey-detail { width: min(680px, 100%); display: grid; grid-template-columns: 1fr 1fr; gap: 14px; text-align: left; }
+.journey-detail[hidden] { display: none; }
+.journey-detail > div { padding: 13px 15px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); }
+.journey-detail > div:last-child:nth-child(3) { grid-column: 1 / -1; }
+.journey-detail ul { margin: 6px 0 0; padding-left: 20px; color: var(--text2); }
+.journey-detail blockquote { margin: 7px 0 0; padding: 8px 10px; color: var(--text2); border-left: 2px solid var(--accent); }
+.journey-actions { justify-content: center; }
+@media (max-width: 600px) { .journey-detail { grid-template-columns: 1fr; } .journey-detail > div:last-child:nth-child(3) { grid-column: auto; } }
+
 /* ---- Review tab (spaced repetition) ------------------------------------------ */
 .tab-badge {
   margin-left: 6px; padding: 1px 6px; border-radius: var(--r-pill);

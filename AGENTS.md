@@ -2,10 +2,11 @@
 
 ## Current release and backlog
 
-- **v9.5.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v9.6.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
-- Phonetic Component Lab and Kanji Contrast Lab are ✓ Done.
+- Phonetic Component Lab, Kanji Contrast Lab, and Text-to-Study Journey are
+  ✓ Done. Family Mix Challenge is next.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -35,6 +36,8 @@
   bounded navigation, and shuffle/restart behavior; no DOM or storage.
 - `js/kanji-labs.js` — pure phonetic-signal analysis, contrast-set generation,
   question selection, and session scoring; no DOM or storage.
+- `js/text-journey.js` — pure text-specific route ranking, projected coverage,
+  word/context collection, and ephemeral journey navigation; no DOM/storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
 - `data/kanji-families.json` — committed compact radical/direct-component
@@ -143,6 +146,19 @@
 - Contrast sessions and scores are ephemeral, filter-aware, and use no new
   storage key. Shuffle & restart clears both progress and answers.
 
+## Text-to-Study Journey conventions
+
+- Rank only unknown kanji from the active text, primarily by occurrence count
+  and secondarily by the number of distinct tokenizer words they unlock. Keep
+  the default route bounded to six kanji.
+- Coverage projections count kanji occurrences, matching the Analyze coverage
+  meter. Label the result as projected coverage, never a fluency estimate.
+- Derive words and sentence contexts from the current tokenizer pass. Do not
+  call an external corpus or manufacture example sentences.
+- Journey routes, reveal progress, and navigation are temporary. Mark known is
+  the only persistent action and must reuse `kotoba-lab:known-kanji`; finishing
+  returns to the existing Read view of the unchanged source text.
+
 ## Persistent state
 
 There are exactly four localStorage keys. The Radical Tree adds none:
@@ -165,6 +181,7 @@ search/filter/group/family switching/paging (including lazy structural-family lo
 family-study start/reveal/move/shuffle/known/tree/close behavior,
 phonetic-signal thresholds/evidence/prediction scoring,
 contrast-set bounds/distinct clues/answer scoring,
+text-journey ranking/coverage/context/session navigation,
 explode/drill/back, `Esc` focus restoration,
 known-state propagation, atomic/missing entries, reduced motion, and clean
 offline-first-load failure. The only module script in `index.html` remains

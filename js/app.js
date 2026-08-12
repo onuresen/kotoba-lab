@@ -11,6 +11,13 @@ import { readAozoraFile } from './aozora.js';
 import { createKnownSet, createDeck, createReviewLog } from './storage.js';
 import { serializeBackup, backupFilename, parseBackup, mergeState, describeMerge } from './backup.js';
 import { sentenceAt, contextParts } from './context.js';
+import {
+  buildTextJourney,
+  createJourneySession,
+  currentJourneyStep,
+  moveJourneyStep,
+  revealJourneyStep,
+} from './text-journey.js';
 import { isKanji } from './script.js';
 import { createKanjiTree } from './kanjitree.js';
 import {
@@ -66,6 +73,8 @@ let kanjiBrowseLimit = 60;
 let kanjiBrowseFamily = '';
 let kanjiBrowseActiveFamily = null;
 let kanjiStudySession = null;
+let textJourney = null;
+let textJourneySession = null;
 const kanjiBrowseLevels = new Set();
 
 // persisted, personal — survive across sessions in this browser only
@@ -196,11 +205,14 @@ function run() {
   const kStats = kanjiStats(text, jlpt);
   const wStats = wordStats(tokens);
   current = { tokens, kStats, wStats };
+  textJourneySession = null;
+  textJourney = buildTextJourney(kStats.rows, tokens, kanjiCatalog, (char) => knownKanji.has(char));
 
   renderReadability(readability(text, kStats));
   renderOverview(charMix(text), kStats, wStats);
   renderDist('#kanji-dist', kStats.byLevel, kStats.ungraded, kStats.totalKanji, 'kanji');
   renderCoverage(kStats, wStats);
+  renderTextJourney();
   renderTable('#kanji-tbody', kStats.rows.slice(0, 60), 'kanji', kStats.uniqueKanji);
   renderTable('#word-tbody', wStats.rows.slice(0, 60), 'word', wStats.uniqueWords);
 
@@ -372,10 +384,87 @@ function refreshKnownEverywhere() {
   if (current) {
     applyKnownClasses($('#reading'), isKnown);
     renderCoverage(current.kStats, current.wStats);
+    if (!textJourneySession) {
+      textJourney = buildTextJourney(current.kStats.rows, current.tokens, kanjiCatalog, (char) => knownKanji.has(char));
+    }
+    renderTextJourney();
   }
   renderMyWords();
   renderKanjiBrowser();
   refreshReview();
+}
+
+function journeyWords(item) {
+  return item.words.length
+    ? item.words.map((word) => `<li><strong>${esc(word.surface)}</strong>${word.reading ? ` · ${esc(word.reading)}` : ''}${word.gloss ? ` · ${esc(word.gloss)}` : ''}</li>`).join('')
+    : '<li>No dictionary word match in this tokenizer pass.</li>';
+}
+
+function renderTextJourney(focusAction = '') {
+  const root = $('#text-journey-content');
+  if (!root) return;
+  if (!current || !textJourney) {
+    root.innerHTML = '<p class="hint">Paste Japanese text to build a personal study route.</p>';
+    return;
+  }
+  if (!textJourney.route.length) {
+    root.innerHTML = `<div class="journey-complete"><strong>Every kanji in this text is already marked known.</strong><button type="button" class="btn btn-primary" data-journey-action="reread">Reread the text</button></div>`;
+    return;
+  }
+  if (!textJourneySession) {
+    root.innerHTML = `<div class="journey-overview">
+      <div><span class="eyebrow">Temporary route · ${textJourney.route.length} kanji</span><h3>${textJourney.currentPct}% → ${textJourney.projectedPct}% kanji coverage</h3><p class="hint">Ordered by occurrences unlocked in this text. Nothing is stored unless you mark a kanji known.</p></div>
+      <div class="journey-route">${textJourney.route.map((item, index) => `<div class="journey-stop"><span>${index + 1}</span><strong>${esc(item.char)}</strong><small>${item.occurrences} occurrence${item.occurrences === 1 ? '' : 's'} · ${item.projectedPct}%</small></div>`).join('')}</div>
+      <button type="button" class="btn btn-primary" data-journey-action="start">Start this journey</button>
+    </div>`;
+    return;
+  }
+  const item = currentJourneyStep(textJourneySession);
+  const final = textJourneySession.index === textJourneySession.route.length - 1;
+  const known = knownKanji.has(item.char);
+  root.innerHTML = `<div class="journey-head"><div><span class="eyebrow">Step ${textJourneySession.index + 1} of ${textJourneySession.route.length}</span><h3>${esc(item.char)} · unlocks ${item.occurrences} occurrence${item.occurrences === 1 ? '' : 's'}</h3></div><button type="button" class="btn btn-ghost" data-journey-action="close">Close journey</button></div>
+    <div class="journey-stage">
+      <div class="journey-glyph jlpt-${levelSlug(item.jlpt)}">${esc(item.char)}</div>
+      <p>${textJourneySession.revealed ? esc(item.meaning || 'Meaning unavailable') : 'Recall the meaning, readings, and words from your text.'}</p>
+      <div class="journey-detail" ${textJourneySession.revealed ? '' : 'hidden'}>
+        <div><span class="label">Readings</span><strong>${esc([item.on, item.kun].filter(Boolean).join(' · ') || '—')}</strong></div>
+        <div><span class="label">Words in this text</span><ul>${journeyWords(item)}</ul></div>
+        ${item.contexts.length ? `<div><span class="label">Original context</span>${item.contexts.map((context) => `<blockquote>${esc(context.text)}</blockquote>`).join('')}</div>` : ''}
+      </div>
+    </div>
+    <div class="journey-actions">
+      <button type="button" class="btn btn-ghost" data-journey-action="previous" ${textJourneySession.index === 0 ? 'disabled' : ''}>← Previous</button>
+      <button type="button" class="btn btn-primary" data-journey-action="reveal" ${textJourneySession.revealed ? 'disabled' : ''}>${textJourneySession.revealed ? 'Revealed' : 'Reveal from text'}</button>
+      <button type="button" class="btn btn-ghost" data-journey-action="known">${known ? '✓ Known' : 'Mark known'}</button>
+      <button type="button" class="btn btn-ghost" data-kanji-tree="${esc(item.char)}">Open Radical Tree</button>
+      ${final && textJourneySession.revealed
+        ? '<button type="button" class="btn btn-primary" data-journey-action="reread">Reread text →</button>'
+        : `<button type="button" class="btn btn-ghost" data-journey-action="next" ${final ? 'disabled' : ''}>Next →</button>`}
+    </div>`;
+  if (focusAction) root.querySelector(`[data-journey-action="${focusAction}"]`)?.focus();
+}
+
+function onTextJourneyAction(event) {
+  const button = event.target.closest('[data-journey-action]');
+  if (!button) return;
+  const action = button.dataset.journeyAction;
+  if (action === 'start') textJourneySession = createJourneySession(textJourney);
+  else if (action === 'close') textJourneySession = null;
+  else if (action === 'reveal') textJourneySession = revealJourneyStep(textJourneySession);
+  else if (action === 'previous' || action === 'next') textJourneySession = moveJourneyStep(textJourneySession, action === 'previous' ? -1 : 1);
+  else if (action === 'known') {
+    const item = currentJourneyStep(textJourneySession);
+    const known = knownKanji.toggle(item.char);
+    toast(known ? 'Marked known.' : 'Unmarked.', 'success');
+    refreshKnownEverywhere();
+    renderTextJourney('known');
+    return;
+  } else if (action === 'reread') {
+    switchTab('read');
+    $('#reading').focus?.();
+    return;
+  }
+  renderTextJourney(action === 'start' || action === 'next' || action === 'previous' ? 'reveal' : action === 'reveal' ? (textJourneySession.index === textJourneySession.route.length - 1 ? 'reread' : 'next') : 'start');
 }
 
 // ---- Kanji tab -------------------------------------------------------------
@@ -963,10 +1052,13 @@ function renderSampleChips() {
     `<button class="btn btn-ghost sample" data-i="${i}" title="${esc(s.level)}">${esc(s.title)}</button>`).join('');
 }
 function showEmpty() {
+  textJourney = null;
+  textJourneySession = null;
   ['#readability', '#overview', '#kanji-dist'].forEach((s) => ($(s).innerHTML = ''));
   $('#kanji-tbody').innerHTML = $('#word-tbody').innerHTML = '';
   $('#reading').innerHTML = `<div class="empty-state"><span class="e-icon">✍</span><div class="e-title">Paste Japanese text to begin</div></div>`;
   $('#info').innerHTML = infoHint();
+  renderTextJourney();
 }
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('is-active', t.dataset.tab === name));
@@ -1051,6 +1143,7 @@ function wireUi() {
   $('#kanji-reset').addEventListener('click', resetKanjiBrowser);
   $('#kanji-study-start').addEventListener('click', startKanjiStudy);
   $('#kanji-study-workspace').addEventListener('click', onKanjiStudyAction);
+  $('#text-journey').addEventListener('click', onTextJourneyAction);
   $('#info').addEventListener('click', onInfoAction);
   $('#mywords-panel').addEventListener('click', onMyWordsClick);
   $('#mw-copy').addEventListener('click', () => exportDeck(false));
