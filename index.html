@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kotoba Lab — Japanese reading, kanji & study</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <meta name="description" content="Analyze Japanese text, explore kanji and radicals, save words, and study with browser-only spaced repetition.">
 <link rel="canonical" href="https://onuresen.github.io/kotoba-lab/">
 <meta property="og:type" content="website">
@@ -240,7 +241,10 @@
           <select id="kanji-family" class="select"></select>
         </label>
         <p id="kanji-family-summary" class="hint"></p>
-        <button type="button" id="kanji-study-start" class="btn btn-primary">Study family</button>
+        <div class="kanji-family-actions">
+          <button type="button" id="kanji-study-start" class="btn btn-primary">Study family</button>
+          <button type="button" id="kanji-mix-open" class="btn btn-ghost">Mix families</button>
+        </div>
       </div>
     </div>
 

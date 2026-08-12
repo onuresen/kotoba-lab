@@ -34,6 +34,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Text-to-Study Journey:** turn the current text into a temporary route of
   high-impact unknown kanji, their words and original sentences, projected
   coverage gains, recall steps, and a direct handoff back to rereading.
+- **Family Mix Challenge:** choose two to five stroke, reading, radical, or
+  component families and identify them in a balanced interleaved session that
+  automatically removes ambiguous multi-family answers.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
   and drill into its decomposition using committed KanjiVG data.
 - **Review:** study saved words with an SM-2-inspired schedule, interval

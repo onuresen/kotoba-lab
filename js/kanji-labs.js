@@ -197,3 +197,60 @@ export function contrastScore(session) {
     correct: answers.filter((answer) => answer.correct).length,
   };
 }
+
+export function buildFamilyMix(families, selectedKeys, options = {}) {
+  const keys = [...new Set(Array.isArray(selectedKeys) ? selectedKeys : [])].slice(0, 5);
+  if (keys.length < 2) return null;
+  const selected = keys.map((key) => (Array.isArray(families) ? families : []).find((family) => family.key === key)).filter(Boolean);
+  if (selected.length !== keys.length) return null;
+  const memberships = new Map();
+  for (const family of selected) {
+    for (const row of family.rows || []) {
+      if (!memberships.has(row.char)) memberships.set(row.char, []);
+      memberships.get(row.char).push(family.key);
+    }
+  }
+  const pools = selected.map((family) => ({
+    family,
+    rows: (family.rows || []).filter((row) => memberships.get(row.char)?.length === 1),
+  }));
+  if (pools.some((pool) => !pool.rows.length)) return null;
+  const maxQuestions = Number.isInteger(options.maxQuestions) ? options.maxQuestions : 20;
+  const questions = [];
+  let round = 0;
+  while (questions.length < maxQuestions) {
+    let added = false;
+    for (const pool of pools) {
+      const row = pool.rows[round];
+      if (!row || questions.length >= maxQuestions) continue;
+      questions.push({ ...row, mixFamilyKey: pool.family.key, mixFamilyLabel: pool.family.label });
+      added = true;
+    }
+    if (!added) break;
+    round += 1;
+  }
+  return { key: keys.join('|'), label: `${selected.length}-family mix`, families: selected, rows: questions };
+}
+
+export function createFamilyMixSession(mix) {
+  if (!mix?.rows?.length || mix?.families?.length < 2) return null;
+  return {
+    kind: 'mix', key: mix.key, label: mix.label, families: mix.families,
+    rows: [...mix.rows], index: 0, revealed: false, studied: new Set(), answers: new Map(),
+  };
+}
+
+export function answerFamilyMix(session, familyKey) {
+  const row = session?.rows?.[session?.index];
+  if (!row || !session.families.some((family) => family.key === familyKey)) return session;
+  const answers = new Map(session.answers);
+  answers.set(row.char, { chosen: familyKey, actual: row.mixFamilyKey, correct: familyKey === row.mixFamilyKey });
+  const studied = new Set(session.studied);
+  studied.add(row.char);
+  return { ...session, revealed: true, answers, studied };
+}
+
+export function familyMixScore(session) {
+  const answers = [...(session?.answers?.values() || [])];
+  return { answered: answers.length, correct: answers.filter((answer) => answer.correct).length };
+}

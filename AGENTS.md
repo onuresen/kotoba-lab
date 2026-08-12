@@ -2,11 +2,11 @@
 
 ## Current release and backlog
 
-- **v9.6.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v9.7.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
-- Phonetic Component Lab, Kanji Contrast Lab, and Text-to-Study Journey are
-  ✓ Done. Family Mix Challenge is next.
+- Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
+  Mix Challenge are ✓ Done.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -159,6 +159,18 @@
   the only persistent action and must reuse `kotoba-lab:known-kanji`; finishing
   returns to the existing Read view of the unchanged source text.
 
+## Family Mix Challenge conventions
+
+- Mix mode is optional and available for exact-stroke, on’yomi, kun’yomi,
+  radical, and direct-component families. Keep phonetic signals and contrast
+  sets in their dedicated practice modes.
+- Require two to five selected families. Exclude a kanji when it belongs to
+  more than one selected family so every question has exactly one valid answer.
+- Build at most 20 questions in balanced round-robin family order before any
+  shuffle. Preserve the filtered family snapshots and their current card sort.
+- Mix selection, score, order, and progress are ephemeral. Shuffle & restart
+  clears answers and progress; known state and Radical Tree use existing paths.
+
 ## Persistent state
 
 There are exactly four localStorage keys. The Radical Tree adds none:
@@ -182,6 +194,7 @@ family-study start/reveal/move/shuffle/known/tree/close behavior,
 phonetic-signal thresholds/evidence/prediction scoring,
 contrast-set bounds/distinct clues/answer scoring,
 text-journey ranking/coverage/context/session navigation,
+family-mix selection/ambiguity exclusion/interleaving/scoring/restart,
 explode/drill/back, `Esc` focus restoration,
 known-state propagation, atomic/missing entries, reduced motion, and clean
 offline-first-load failure. The only module script in `index.html` remains

@@ -3,13 +3,17 @@ import assert from 'node:assert/strict';
 import { buildKanjiCatalog, buildKanjiStructureIndex } from './kanji-browser.js';
 import {
   answerContrastCard,
+  answerFamilyMix,
   answerPhoneticCard,
   buildContrastSets,
+  buildFamilyMix,
   buildPhoneticSignals,
   contrastQuestion,
   contrastScore,
   createContrastSession,
+  createFamilyMixSession,
   createPhoneticSession,
+  familyMixScore,
   phoneticCardMatches,
   phoneticScore,
 } from './kanji-labs.js';
@@ -100,4 +104,34 @@ test('contrast answers reject outsiders and score chosen kanji', () => {
   session = answerContrastCard(session, set.rows[0].char);
   assert.deepEqual(contrastScore(session), { answered: 2, correct: 1 });
   assert.equal(session.studied.size, 2);
+});
+
+test('family mix balances selected families and excludes ambiguous members', () => {
+  const families = [
+    { key: 'water', label: '水 radical', rows: [rows[0], rows[1], rows[2]] },
+    { key: 'blue', label: '青 component', rows: [rows[0], rows[3], rows[4]] },
+  ];
+  const mix = buildFamilyMix(families, ['water', 'blue']);
+  assert.deepEqual(mix.rows.map((row) => [row.char, row.mixFamilyKey]), [
+    [rows[1].char, 'water'], [rows[3].char, 'blue'], [rows[2].char, 'water'], [rows[4].char, 'blue'],
+  ]);
+  assert.equal(mix.rows.some((row) => row.char === rows[0].char), false);
+});
+
+test('family mix requires two to five valid families with usable distinctions', () => {
+  const families = [{ key: 'a', rows: [rows[0]] }, { key: 'b', rows: [rows[0]] }];
+  assert.equal(buildFamilyMix(families, ['a']), null);
+  assert.equal(buildFamilyMix(families, ['a', 'missing']), null);
+  assert.equal(buildFamilyMix(families, ['a', 'b']), null);
+});
+
+test('family mix answers score family identification', () => {
+  const families = [
+    { key: 'a', label: 'A', rows: [rows[0]] }, { key: 'b', label: 'B', rows: [rows[1]] },
+  ];
+  let session = createFamilyMixSession(buildFamilyMix(families, ['a', 'b']));
+  session = answerFamilyMix(session, 'a');
+  session = { ...session, index: 1, revealed: false };
+  session = answerFamilyMix(session, 'a');
+  assert.deepEqual(familyMixScore(session), { answered: 2, correct: 1 });
 });
