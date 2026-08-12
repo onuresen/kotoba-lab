@@ -2,10 +2,10 @@
 
 ## Current release and backlog
 
-- **v9.4.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v9.5.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
-- Phonetic Component Lab is ✓ Done. Kanji Contrast Lab is next.
+- Phonetic Component Lab and Kanji Contrast Lab are ✓ Done.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -33,8 +33,8 @@
   sections, and stroke/reading/radical/component families; no DOM or storage.
 - `js/kanji-study.js` — pure ephemeral family-session state, reveal progress,
   bounded navigation, and shuffle/restart behavior; no DOM or storage.
-- `js/kanji-labs.js` — pure phonetic-signal analysis and prediction scoring;
-  the future Contrast Lab should reuse this lab boundary; no DOM or storage.
+- `js/kanji-labs.js` — pure phonetic-signal analysis, contrast-set generation,
+  question selection, and session scoring; no DOM or storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
 - `data/kanji-families.json` — committed compact radical/direct-component
@@ -129,6 +129,20 @@
   known-kanji state, filters, sorting, and Radical Tree doorway. Do not add a
   score or progress storage key.
 
+## Kanji Contrast Lab conventions
+
+- Contrast sets contain three to five filtered kanji that share one direct
+  visual component and have distinct dictionary meanings. Preserve the active
+  card sort when choosing the bounded set.
+- Meaning questions are always available. Use an on’yomi question only when
+  that normalized reading uniquely identifies the current answer inside its
+  set; otherwise fall back to meaning instead of presenting an ambiguous clue.
+- Keep the answer glyph hidden until a real choice is made. After reveal, show
+  meaning, both dictionary reading fields, known-state control, and the same
+  Radical Tree doorway used elsewhere.
+- Contrast sessions and scores are ephemeral, filter-aware, and use no new
+  storage key. Shuffle & restart clears both progress and answers.
+
 ## Persistent state
 
 There are exactly four localStorage keys. The Radical Tree adds none:
@@ -150,6 +164,7 @@ must cover Read, Review, My Words, and Kanji-library doorways,
 search/filter/group/family switching/paging (including lazy structural-family loading),
 family-study start/reveal/move/shuffle/known/tree/close behavior,
 phonetic-signal thresholds/evidence/prediction scoring,
+contrast-set bounds/distinct clues/answer scoring,
 explode/drill/back, `Esc` focus restoration,
 known-state propagation, atomic/missing entries, reduced motion, and clean
 offline-first-load failure. The only module script in `index.html` remains

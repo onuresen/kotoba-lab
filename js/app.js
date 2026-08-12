@@ -31,8 +31,13 @@ import {
   studyProgress,
 } from './kanji-study.js';
 import {
+  answerContrastCard,
   answerPhoneticCard,
+  buildContrastSets,
   buildPhoneticSignals,
+  contrastQuestion,
+  contrastScore,
+  createContrastSession,
   createPhoneticSession,
   phoneticCardMatches,
   phoneticScore,
@@ -406,30 +411,42 @@ function renderKanjiStudy(focusAction = '') {
   const knownCount = kanjiStudySession.rows.filter((row) => knownKanji.has(row.char)).length;
   const level = levelName(item.jlpt);
   const phonetic = kanjiStudySession.kind === 'phonetic';
+  const contrast = kanjiStudySession.kind === 'contrast';
   const phoneticAnswer = phonetic ? kanjiStudySession.answers.get(item.char) : null;
-  const score = phonetic ? phoneticScore(kanjiStudySession) : null;
+  const contrastPrompt = contrast ? contrastQuestion(kanjiStudySession) : null;
+  const contrastAnswer = contrast ? kanjiStudySession.answers.get(item.char) : null;
+  const score = phonetic ? phoneticScore(kanjiStudySession) : contrast ? contrastScore(kanjiStudySession) : null;
   workspace.innerHTML = `
     <div class="kanji-study-head">
-      <div><span class="eyebrow">Family study</span><h3>${esc(kanjiStudySession.label)}</h3></div>
+      <div><span class="eyebrow">${contrast ? 'Contrast Lab' : phonetic ? 'Phonetic Component Lab' : 'Family study'}</span><h3>${esc(kanjiStudySession.label)}</h3></div>
       <button type="button" class="btn btn-ghost" data-kanji-study-action="close">Close study</button>
     </div>
     <div class="kanji-study-status">
       <span>Card ${progress.current.toLocaleString()} of ${progress.total.toLocaleString()}</span>
-      <span>${phonetic ? `${score.correct.toLocaleString()} of ${score.answered.toLocaleString()} predictions correct · ` : `${progress.studied.toLocaleString()} studied · `}${knownCount.toLocaleString()} known</span>
+      <span>${phonetic || contrast ? `${score.correct.toLocaleString()} of ${score.answered.toLocaleString()} ${phonetic ? 'predictions' : 'distinctions'} correct · ` : `${progress.studied.toLocaleString()} studied · `}${knownCount.toLocaleString()} known</span>
     </div>
     <div class="kanji-study-progress" role="progressbar" aria-label="Family study progress" aria-valuemin="0" aria-valuemax="${progress.total}" aria-valuenow="${progress.studied}"><span style="width:${progress.pct}%"></span></div>
     <div class="kanji-study-stage">
       <div class="kanji-study-prompt">
-        <span class="badge" data-status="reference">${esc(phonetic ? `${kanjiStudySession.component} component` : kanjiStudySession.label)}</span>
-        <span class="kanji-study-glyph jlpt-${levelSlug(item.jlpt)}">${esc(item.char)}</span>
-        <p>${phonetic
+        <span class="badge" data-status="reference">${esc(phonetic || contrast ? `${kanjiStudySession.component} component` : kanjiStudySession.label)}</span>
+        <span class="kanji-study-glyph jlpt-${levelSlug(item.jlpt)}">${esc(contrast ? kanjiStudySession.component : item.char)}</span>
+        <p>${contrast
+          ? esc(contrastPrompt.prompt)
+          : phonetic
           ? `Prediction: does this kanji use the signal reading ${esc(kanjiStudySession.reading)}?`
           : progress.complete ? 'Family pass complete. Review freely or shuffle and restart.' : 'Recall this kanji’s meaning and readings, then reveal the answer.'}</p>
+        ${contrast && !kanjiStudySession.revealed ? `<div class="kanji-contrast-choices" role="group" aria-label="Kanji choices">
+          ${kanjiStudySession.rows.map((row) => `<button type="button" class="btn kanji-contrast-choice" data-kanji-study-choice="${esc(row.char)}">${esc(row.char)}</button>`).join('')}
+        </div>` : ''}
       </div>
       <div class="kanji-study-answer" ${kanjiStudySession.revealed ? '' : 'hidden'}>
         ${phonetic ? `<div class="kanji-signal-verdict" data-correct="${phoneticAnswer?.correct}">
           <span class="label">Pattern result</span><strong>${phoneticCardMatches(kanjiStudySession) ? `Yes — includes ${esc(kanjiStudySession.reading)}` : `Exception — different listed reading`}</strong>
           <p>${phoneticAnswer?.correct ? 'Your prediction was correct.' : `Your prediction was ${phoneticAnswer ? 'incorrect' : 'not recorded'}.`}</p>
+        </div>` : ''}
+        ${contrast ? `<div class="kanji-signal-verdict" data-correct="${contrastAnswer?.correct}">
+          <span class="label">Distinction result</span><strong>${contrastAnswer?.correct ? `Correct — ${esc(item.char)}` : `Not quite — the answer is ${esc(item.char)}`}</strong>
+          <p>${contrastPrompt.type === 'on-reading' ? `Listed on’yomi: ${esc(contrastPrompt.clue)}` : `Meaning clue: ${esc(contrastPrompt.clue)}`}</p>
         </div>` : ''}
         <div><span class="label">Meaning</span><strong>${esc(item.meaning || 'Meaning unavailable')}</strong></div>
         <div class="kanji-study-readings">
@@ -444,14 +461,18 @@ function renderKanjiStudy(focusAction = '') {
       ${phonetic && !kanjiStudySession.revealed
         ? `<button type="button" class="btn btn-primary" data-kanji-study-action="predict-match">Uses ${esc(kanjiStudySession.reading)}</button>
           <button type="button" class="btn btn-ghost" data-kanji-study-action="predict-exception">Different reading</button>`
+        : contrast
+          ? ''
         : `<button type="button" class="btn btn-primary" data-kanji-study-action="reveal" ${kanjiStudySession.revealed ? 'disabled' : ''}>${kanjiStudySession.revealed ? 'Revealed' : 'Reveal details'}</button>`}
       <button type="button" class="btn btn-ghost" data-kanji-study-action="next" ${kanjiStudySession.index === progress.total - 1 ? 'disabled' : ''}>Next →</button>
-      <button type="button" class="btn btn-ghost" data-kanji-study-action="known">${known ? '✓ Known' : 'Mark known'}</button>
-      <button type="button" class="btn btn-ghost" data-kanji-tree="${esc(item.char)}">Open Radical Tree</button>
+      ${!contrast || kanjiStudySession.revealed ? `<button type="button" class="btn btn-ghost" data-kanji-study-action="known">${known ? '✓ Known' : 'Mark known'}</button>
+      <button type="button" class="btn btn-ghost" data-kanji-tree="${esc(item.char)}">Open Radical Tree</button>` : ''}
       <button type="button" class="btn btn-ghost" data-kanji-study-action="shuffle">Shuffle & restart</button>
     </div>
-    <p class="hint kanji-study-keys">${phonetic ? `Signal confidence: ${kanjiStudySession.confidence}% in this filtered family · Pattern evidence, not an etymology claim.` : 'Keyboard: ←/→ move · Space reveals.'}</p>`;
-  if (focusAction) workspace.querySelector(`[data-kanji-study-action="${focusAction}"]`)?.focus();
+    <p class="hint kanji-study-keys">${contrast ? 'Meaning and uniquely identifying on’yomi clues alternate when the set supports them.' : phonetic ? `Signal confidence: ${kanjiStudySession.confidence}% in this filtered family · Pattern evidence, not an etymology claim.` : 'Keyboard: ←/→ move · Space reveals.'}</p>`;
+  if (focusAction) (focusAction === 'contrast-choice'
+    ? workspace.querySelector('[data-kanji-study-choice]')
+    : workspace.querySelector(`[data-kanji-study-action="${focusAction}"]`))?.focus();
 }
 
 function stopKanjiStudy() {
@@ -459,18 +480,29 @@ function stopKanjiStudy() {
 }
 
 function primaryStudyAction() {
-  return kanjiStudySession?.kind === 'phonetic' ? 'predict-match' : 'reveal';
+  return kanjiStudySession?.kind === 'phonetic'
+    ? 'predict-match'
+    : kanjiStudySession?.kind === 'contrast' ? 'contrast-choice' : 'reveal';
 }
 
 function startKanjiStudy() {
-  kanjiStudySession = $('#kanji-group').value === 'phonetic'
+  const mode = $('#kanji-group').value;
+  kanjiStudySession = mode === 'phonetic'
     ? createPhoneticSession(kanjiBrowseActiveFamily)
-    : createKanjiStudySession(kanjiBrowseActiveFamily, $('#kanji-group').value);
+    : mode === 'contrast'
+      ? createContrastSession(kanjiBrowseActiveFamily)
+      : createKanjiStudySession(kanjiBrowseActiveFamily, mode);
   if (!kanjiStudySession) return;
   renderKanjiStudy(primaryStudyAction());
 }
 
 function onKanjiStudyAction(event) {
+  const choice = event.target.closest('[data-kanji-study-choice]');
+  if (choice && kanjiStudySession?.kind === 'contrast') {
+    kanjiStudySession = answerContrastCard(kanjiStudySession, choice.dataset.kanjiStudyChoice);
+    renderKanjiStudy(kanjiStudySession.index < kanjiStudySession.rows.length - 1 ? 'next' : 'shuffle');
+    return;
+  }
   const button = event.target.closest('[data-kanji-study-action]');
   if (!button || !kanjiStudySession) return;
   const action = button.dataset.kanjiStudyAction;
@@ -520,8 +552,12 @@ function onKanjiStudyKey(event) {
     renderKanjiStudy(primaryStudyAction());
   } else if (event.code === 'Space' && !event.target.closest('button')) {
     event.preventDefault();
-    kanjiStudySession = revealStudyCard(kanjiStudySession);
-    renderKanjiStudy('next');
+    if (kanjiStudySession.kind === 'contrast') {
+      $('#kanji-study-workspace').querySelector('[data-kanji-study-choice]')?.focus();
+    } else {
+      kanjiStudySession = revealStudyCard(kanjiStudySession);
+      renderKanjiStudy('next');
+    }
   }
 }
 
@@ -564,10 +600,12 @@ function renderKanjiBrowser() {
   familySelect.disabled = false;
 
   if (familyMode) {
-    familyLabel.textContent = groupMode === 'phonetic' ? 'Signal' : 'Family';
+    familyLabel.textContent = groupMode === 'phonetic' ? 'Signal' : groupMode === 'contrast' ? 'Contrast set' : 'Family';
     families = groupMode === 'phonetic'
       ? buildPhoneticSignals(rows, kanjiStructureIndex)
-      : buildKanjiFamilies(rows, groupMode, kanjiStructureIndex);
+      : groupMode === 'contrast'
+        ? buildContrastSets(rows, kanjiStructureIndex)
+        : buildKanjiFamilies(rows, groupMode, kanjiStructureIndex);
     if (!families.some((family) => family.key === kanjiBrowseFamily)) {
       kanjiBrowseFamily = families[0]?.key || '';
     }
@@ -577,7 +615,7 @@ function renderKanjiBrowser() {
     allGroups = activeFamily ? [activeFamily] : [];
     familyTools.hidden = false;
     familySelect.innerHTML = families.length
-      ? families.map((family) => `<option value="${esc(family.key)}">${esc(family.label)} — ${family.rows.length.toLocaleString()} kanji${groupMode === 'phonetic' ? ` · ${family.confidence}%` : ''}</option>`).join('')
+      ? families.map((family) => `<option value="${esc(family.key)}">${esc(family.label)} — ${groupMode === 'contrast' ? family.rows.map((row) => row.char).join(' ') : `${family.rows.length.toLocaleString()} kanji${groupMode === 'phonetic' ? ` · ${family.confidence}%` : ''}`}</option>`).join('')
       : '<option value="">No shared families</option>';
     familySelect.value = kanjiBrowseFamily;
     $('#kanji-family-summary').textContent = families.length
@@ -589,6 +627,8 @@ function renderKanjiBrowser() {
             ? `${families.length.toLocaleString()} shared direct-component families match the current filters. A kanji may belong to several families.`
             : groupMode === 'phonetic'
               ? `${families.length.toLocaleString()} component reading signals have enough evidence. Confidence measures listed on’yomi consistency, not etymology.`
+              : groupMode === 'contrast'
+                ? `${families.length.toLocaleString()} compact contrast sets share a direct component. Each set uses distinct meaning clues.`
         : `${families.length.toLocaleString()} shared-reading families match the current filters. A kanji may belong to more than one family.`
       : 'No family has enough matching kanji. Broaden the filters to continue.';
   } else {
@@ -607,8 +647,8 @@ function renderKanjiBrowser() {
 
   $('#kanji-result-count').textContent = familyMode
     ? activeFamily
-      ? `Showing ${visibleCount.toLocaleString()} of ${resultRows.length.toLocaleString()} kanji in ${activeFamily.label} · ${families.length.toLocaleString()} ${groupMode === 'phonetic' ? 'signals' : 'families'}`
-      : `No ${groupMode === 'phonetic' ? 'signals' : 'families'} match · ${rows.length.toLocaleString()} filtered kanji`
+      ? `Showing ${visibleCount.toLocaleString()} of ${resultRows.length.toLocaleString()} kanji in ${activeFamily.label} · ${families.length.toLocaleString()} ${groupMode === 'phonetic' ? 'signals' : groupMode === 'contrast' ? 'contrast sets' : 'families'}`
+      : `No ${groupMode === 'phonetic' ? 'signals' : groupMode === 'contrast' ? 'contrast sets' : 'families'} match · ${rows.length.toLocaleString()} filtered kanji`
     : rows.length
       ? `Showing ${visibleCount.toLocaleString()} of ${rows.length.toLocaleString()} matches · ${kanjiCatalog.length.toLocaleString()} total`
     : `No matches · ${kanjiCatalog.length.toLocaleString()} total`;
@@ -620,7 +660,9 @@ function renderKanjiBrowser() {
     : `<div class="card empty-state"><span class="e-icon">字</span><div class="e-title">${familyMode ? 'No kanji family matches these filters' : 'No kanji match these filters'}</div><div class="e-sub">Try another reading, meaning, level, or stroke range.</div></div>`;
   $('#kanji-more').hidden = visibleCount >= resultRows.length;
   $('#kanji-study-start').disabled = !kanjiBrowseActiveFamily;
-  $('#kanji-study-start').textContent = groupMode === 'phonetic' ? 'Practice predictions' : 'Study family';
+  $('#kanji-study-start').textContent = groupMode === 'phonetic'
+    ? 'Practice predictions'
+    : groupMode === 'contrast' ? 'Start contrast' : 'Study family';
 
   document.querySelectorAll('.kanji-level').forEach((button) => {
     const value = button.dataset.kanjiLevel;

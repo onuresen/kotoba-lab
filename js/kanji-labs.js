@@ -97,3 +97,103 @@ export function phoneticScore(session) {
     correct: answers.filter((answer) => answer.correct).length,
   };
 }
+
+function distinctRows(rows) {
+  const seen = new Set();
+  return (Array.isArray(rows) ? rows : []).filter((row) =>
+    row?.char && row.meaning && !seen.has(row.char) && seen.add(row.char));
+}
+
+export function buildContrastSets(rows, structureIndex, options = {}) {
+  const minSize = Number.isInteger(options.minSize) ? options.minSize : 3;
+  const maxSize = Number.isInteger(options.maxSize) ? options.maxSize : 5;
+  const byComponent = new Map();
+
+  for (const row of distinctRows(rows)) {
+    const components = new Set(structureIndex?.byKanji?.get(row.char)?.components || []);
+    for (const component of components) {
+      if (component === row.char) continue;
+      if (!byComponent.has(component)) byComponent.set(component, []);
+      byComponent.get(component).push(row);
+    }
+  }
+
+  return [...byComponent.entries()].map(([component, members]) => {
+    const meaningSeen = new Set();
+    const contrastRows = members.filter((row) => {
+      const meaningKey = row.meaning.trim().toLocaleLowerCase('en');
+      return meaningKey && !meaningSeen.has(meaningKey) && meaningSeen.add(meaningKey);
+    }).slice(0, Math.max(minSize, maxSize));
+    if (contrastRows.length < minSize) return null;
+    return {
+      key: component,
+      component,
+      label: `${component} contrast`,
+      rows: contrastRows,
+      gradedCount: contrastRows.filter((row) => row.jlpt != null).length,
+    };
+  }).filter(Boolean).sort((a, b) =>
+    b.gradedCount - a.gradedCount
+      || b.rows.length - a.rows.length
+      || a.component.localeCompare(b.component, 'ja'));
+}
+
+export function createContrastSession(contrastSet) {
+  if (!contrastSet?.key || contrastSet?.rows?.length < 3) return null;
+  return {
+    kind: 'contrast',
+    key: contrastSet.key,
+    label: contrastSet.label,
+    component: contrastSet.component,
+    rows: [...contrastSet.rows],
+    index: 0,
+    revealed: false,
+    studied: new Set(),
+    answers: new Map(),
+  };
+}
+
+export function contrastQuestion(session) {
+  const target = session?.rows?.[session?.index];
+  if (!target) return null;
+  if (session.index % 2 === 1) {
+    const uniqueReading = target._onReadings?.find((reading) =>
+      session.rows.filter((row) => row._onReadings?.some((item) => item.key === reading.key)).length === 1);
+    if (uniqueReading) {
+      return {
+        type: 'on-reading',
+        clue: uniqueReading.display,
+        prompt: `Which kanji has the listed on’yomi ${uniqueReading.display}?`,
+        target,
+      };
+    }
+  }
+  return {
+    type: 'meaning',
+    clue: target.meaning,
+    prompt: `Which kanji best matches “${target.meaning}”?`,
+    target,
+  };
+}
+
+export function answerContrastCard(session, chosenChar) {
+  const question = contrastQuestion(session);
+  if (!question || !session.rows.some((row) => row.char === chosenChar)) return session;
+  const answers = new Map(session.answers);
+  answers.set(question.target.char, {
+    chosen: chosenChar,
+    correct: chosenChar === question.target.char,
+    type: question.type,
+  });
+  const studied = new Set(session.studied);
+  studied.add(question.target.char);
+  return { ...session, revealed: true, answers, studied };
+}
+
+export function contrastScore(session) {
+  const answers = [...(session?.answers?.values() || [])];
+  return {
+    answered: answers.length,
+    correct: answers.filter((answer) => answer.correct).length,
+  };
+}

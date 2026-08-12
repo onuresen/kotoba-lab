@@ -2,8 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildKanjiCatalog, buildKanjiStructureIndex } from './kanji-browser.js';
 import {
+  answerContrastCard,
   answerPhoneticCard,
+  buildContrastSets,
   buildPhoneticSignals,
+  contrastQuestion,
+  contrastScore,
+  createContrastSession,
   createPhoneticSession,
   phoneticCardMatches,
   phoneticScore,
@@ -65,5 +70,34 @@ test('prediction answers score matches and exceptions', () => {
   assert.equal(phoneticCardMatches(session), false);
   session = answerPhoneticCard(session, true);
   assert.deepEqual(phoneticScore(session), { answered: 2, correct: 1 });
+  assert.equal(session.studied.size, 2);
+});
+
+test('contrast sets collect small, distinct families around a direct component', () => {
+  const sets = buildContrastSets(rows, structure, { maxSize: 4 });
+  const blue = sets.find((set) => set.component === '青');
+  assert.equal(blue.label, '青 contrast');
+  assert.equal(blue.rows.length, 4);
+  assert.deepEqual(blue.rows.map((row) => row.char), ['情', '晴', '清', '猜']);
+});
+
+test('contrast questions alternate to a unique on-reading when one is useful', () => {
+  const set = buildContrastSets(rows, structure, { maxSize: 4 }).find((item) => item.component === '青');
+  let session = createContrastSession({ ...set, rows: [set.rows[0], rows.find((row) => row.char === '猜'), set.rows[2]] });
+  assert.equal(contrastQuestion(session).type, 'meaning');
+  session = { ...session, index: 1 };
+  assert.deepEqual(contrastQuestion(session), {
+    type: 'on-reading', clue: 'サイ', prompt: 'Which kanji has the listed on’yomi サイ?', target: rows.find((row) => row.char === '猜'),
+  });
+});
+
+test('contrast answers reject outsiders and score chosen kanji', () => {
+  const set = buildContrastSets(rows, structure, { maxSize: 4 }).find((item) => item.component === '青');
+  let session = createContrastSession(set);
+  assert.equal(answerContrastCard(session, '外'), session);
+  session = answerContrastCard(session, set.rows[0].char);
+  session = { ...session, index: 1, revealed: false };
+  session = answerContrastCard(session, set.rows[0].char);
+  assert.deepEqual(contrastScore(session), { answered: 2, correct: 1 });
   assert.equal(session.studied.size, 2);
 });

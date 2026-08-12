@@ -68,11 +68,11 @@ export function buildKanjiCatalog(kanjiMap) {
 
 export function isFamilyMode(mode) {
   return mode === 'stroke-exact' || mode === 'on-reading' || mode === 'kun-reading'
-    || mode === 'radical' || mode === 'component' || mode === 'phonetic';
+    || mode === 'radical' || mode === 'component' || mode === 'phonetic' || mode === 'contrast';
 }
 
 export function isStructureFamilyMode(mode) {
-  return mode === 'radical' || mode === 'component' || mode === 'phonetic';
+  return mode === 'radical' || mode === 'component' || mode === 'phonetic' || mode === 'contrast';
 }
 
 export function buildKanjiStructureIndex(data) {

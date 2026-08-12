@@ -28,6 +28,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Phonetic Component Lab:** measure dominant on’yomi signals inside direct
   component families, show the supporting evidence and exceptions, and
   practice match-versus-exception predictions without claiming etymology.
+- **Kanji Contrast Lab:** study compact sets that share a direct component,
+  answer meaning and uniquely identifying on’yomi questions, compare the
+  revealed readings, and open any answer in the Radical Tree.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
   and drill into its decomposition using committed KanjiVG data.
 - **Review:** study saved words with an SM-2-inspired schedule, interval

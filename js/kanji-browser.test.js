@@ -109,11 +109,13 @@ test('only the explicit family modes activate the family picker', () => {
   assert.equal(isFamilyMode('radical'), true);
   assert.equal(isFamilyMode('component'), true);
   assert.equal(isFamilyMode('phonetic'), true);
+  assert.equal(isFamilyMode('contrast'), true);
   assert.equal(isFamilyMode('strokes'), false);
   assert.equal(isFamilyMode('jlpt'), false);
   assert.equal(isStructureFamilyMode('radical'), true);
   assert.equal(isStructureFamilyMode('component'), true);
   assert.equal(isStructureFamilyMode('phonetic'), true);
+  assert.equal(isStructureFamilyMode('contrast'), true);
   assert.equal(isStructureFamilyMode('on-reading'), false);
 });
 
