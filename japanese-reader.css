@@ -351,6 +351,10 @@ kbd {
 .kanji-study-answer { gap: 18px; }
 .kanji-study-answer[hidden] { display: flex; visibility: hidden; }
 .kanji-study-answer strong { display: block; margin-top: 5px; font-family: var(--font-display); font-size: 24px; }
+.kanji-signal-verdict { padding: 13px 15px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-md); }
+.kanji-signal-verdict[data-correct="true"] { border-color: var(--accent2-text); }
+.kanji-signal-verdict[data-correct="false"] { border-color: var(--accent); }
+.kanji-signal-verdict p { margin: 5px 0 0; color: var(--text2); }
 .kanji-study-readings { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .kanji-study-readings p { margin: 0; }
 .kanji-study-readings .label { display: block; margin-bottom: 4px; }

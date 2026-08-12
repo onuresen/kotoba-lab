@@ -2,11 +2,10 @@
 
 ## Current release and backlog
 
-- **v9.3.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v9.4.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
-- The kanji grouping/study roadmap is complete. Keep direct Aozora URL fetching
-  deferred unless the static cross-origin architecture changes.
+- Phonetic Component Lab is ✓ Done. Kanji Contrast Lab is next.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -34,6 +33,8 @@
   sections, and stroke/reading/radical/component families; no DOM or storage.
 - `js/kanji-study.js` — pure ephemeral family-session state, reveal progress,
   bounded navigation, and shuffle/restart behavior; no DOM or storage.
+- `js/kanji-labs.js` — pure phonetic-signal analysis and prediction scoring;
+  the future Contrast Lab should reuse this lab boundary; no DOM or storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
 - `data/kanji-families.json` — committed compact radical/direct-component
@@ -113,6 +114,21 @@
 - Shuffle & restart randomizes the full session snapshot and clears reveal
   progress without changing known-kanji state.
 
+## Phonetic Component Lab conventions
+
+- A signal is a measured correlation between one direct visual component and
+  the listed on’yomi of filtered family members. Never label it an etymology,
+  historical derivation, or formal phonetic-role classification.
+- Require at least three family members with on’yomi, at least two matches for
+  the dominant normalized reading, and at least 50% consistency. Show evidence
+  as matches/readable members and keep exceptions in the practice session.
+- Count each normalized reading at most once per kanji. Multi-reading kanji may
+  support several candidate readings, but only the deterministic dominant
+  signal is presented for a component.
+- Phonetic sessions are ephemeral and reuse the existing family-study surface,
+  known-kanji state, filters, sorting, and Radical Tree doorway. Do not add a
+  score or progress storage key.
+
 ## Persistent state
 
 There are exactly four localStorage keys. The Radical Tree adds none:
@@ -133,6 +149,7 @@ npm run kanjivg:check
 must cover Read, Review, My Words, and Kanji-library doorways,
 search/filter/group/family switching/paging (including lazy structural-family loading),
 family-study start/reveal/move/shuffle/known/tree/close behavior,
+phonetic-signal thresholds/evidence/prediction scoring,
 explode/drill/back, `Esc` focus restoration,
 known-state propagation, atomic/missing entries, reduced motion, and clean
 offline-first-load failure. The only module script in `index.html` remains

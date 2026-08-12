@@ -25,6 +25,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Family study:** turn any selected kanji family into a focused reveal
   session with progress, previous/next and keyboard navigation, shuffle and
   restart, known-state controls, and direct Radical Tree access.
+- **Phonetic Component Lab:** measure dominant on’yomi signals inside direct
+  component families, show the supporting evidence and exceptions, and
+  practice match-versus-exception predictions without claiming etymology.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
   and drill into its decomposition using committed KanjiVG data.
 - **Review:** study saved words with an SM-2-inspired schedule, interval

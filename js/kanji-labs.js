@@ -1,0 +1,99 @@
+function dominantReading(rows) {
+  const counts = new Map();
+  const displays = new Map();
+  for (const row of rows) {
+    for (const reading of row._onReadings || []) {
+      counts.set(reading.key, (counts.get(reading.key) || 0) + 1);
+      displays.set(reading.key, reading.display);
+    }
+  }
+  const ranked = [...counts.entries()].sort((a, b) =>
+    b[1] - a[1] || a[0].localeCompare(b[0], 'ja'));
+  if (!ranked.length) return null;
+  const [key, count] = ranked[0];
+  return { key, display: displays.get(key) || key, count };
+}
+
+export function buildPhoneticSignals(rows, structureIndex, options = {}) {
+  const minReadable = Number.isInteger(options.minReadable) ? options.minReadable : 3;
+  const minMatches = Number.isInteger(options.minMatches) ? options.minMatches : 2;
+  const minConfidence = Number.isInteger(options.minConfidence) ? options.minConfidence : 50;
+  const byComponent = new Map();
+
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!row?._onReadings?.length) continue;
+    const components = structureIndex?.byKanji?.get(row.char)?.components || [];
+    for (const component of components) {
+      if (!byComponent.has(component)) byComponent.set(component, []);
+      byComponent.get(component).push(row);
+    }
+  }
+
+  return [...byComponent.entries()].map(([component, readableRows]) => {
+    const dominant = dominantReading(readableRows);
+    if (!dominant || readableRows.length < minReadable || dominant.count < minMatches) return null;
+    const matches = [];
+    const exceptions = [];
+    for (const row of readableRows) {
+      (row._onReadings.some((reading) => reading.key === dominant.key) ? matches : exceptions).push(row);
+    }
+    const confidence = Math.round((matches.length / readableRows.length) * 100);
+    if (confidence < minConfidence) return null;
+    return {
+      key: component,
+      component,
+      label: `${component} → ${dominant.display}`,
+      readingKey: dominant.key,
+      reading: dominant.display,
+      confidence,
+      matches,
+      exceptions,
+      rows: readableRows,
+    };
+  }).filter(Boolean).sort((a, b) =>
+    b.confidence - a.confidence
+      || b.matches.length - a.matches.length
+      || b.rows.length - a.rows.length
+      || a.component.localeCompare(b.component, 'ja'));
+}
+
+export function createPhoneticSession(signal) {
+  if (!signal?.key || !signal?.rows?.length || !signal.readingKey) return null;
+  return {
+    kind: 'phonetic',
+    key: signal.key,
+    label: signal.label,
+    component: signal.component,
+    readingKey: signal.readingKey,
+    reading: signal.reading,
+    confidence: signal.confidence,
+    rows: [...signal.rows],
+    index: 0,
+    revealed: false,
+    studied: new Set(),
+    answers: new Map(),
+  };
+}
+
+export function phoneticCardMatches(session, row = session?.rows?.[session?.index]) {
+  return !!row?._onReadings?.some((reading) => reading.key === session?.readingKey);
+}
+
+export function answerPhoneticCard(session, predictsMatch) {
+  const row = session?.rows?.[session?.index];
+  if (!row) return session;
+  const actual = phoneticCardMatches(session, row);
+  const answers = new Map(session.answers);
+  answers.set(row.char, { guess: !!predictsMatch, actual, correct: !!predictsMatch === actual });
+  const studied = new Set(session.studied);
+  studied.add(row.char);
+  return { ...session, revealed: true, answers, studied };
+}
+
+export function phoneticScore(session) {
+  const answers = [...(session?.answers?.values() || [])];
+  return {
+    answered: answers.length,
+    correct: answers.filter((answer) => answer.correct).length,
+  };
+}

@@ -45,7 +45,14 @@ export function shuffleStudySession(session, random = Math.random) {
     const j = Math.min(i, Math.max(0, Math.floor((Number.isFinite(value) ? value : 0) * (i + 1))));
     [rows[i], rows[j]] = [rows[j], rows[i]];
   }
-  return { ...session, rows, index: 0, revealed: false, studied: new Set() };
+  return {
+    ...session,
+    rows,
+    index: 0,
+    revealed: false,
+    studied: new Set(),
+    ...(session.answers instanceof Map ? { answers: new Map() } : {}),
+  };
 }
 
 export function studyProgress(session) {

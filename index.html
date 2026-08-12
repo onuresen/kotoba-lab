@@ -223,13 +223,14 @@
             <option value="kun-reading">Shared kun’yomi families</option>
             <option value="radical">Radical families</option>
             <option value="component">Shared component families</option>
+            <option value="phonetic">Phonetic reading signals</option>
           </select>
         </label>
         <button type="button" id="kanji-reset" class="btn btn-ghost">Reset filters</button>
       </div>
 
       <div id="kanji-family-tools" class="kanji-family-tools" hidden>
-        <label class="label">Family
+        <label class="label"><span id="kanji-family-label">Family</span>
           <select id="kanji-family" class="select"></select>
         </label>
         <p id="kanji-family-summary" class="hint"></p>
