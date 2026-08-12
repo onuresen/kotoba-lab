@@ -1,5 +1,5 @@
 {
-  "format": 1,
+  "format": 2,
   "source": {
     "release": "r20250816",
     "url": "https://github.com/KanjiVG/kanjivg/releases/download/r20250816/kanjivg-20250816-main.zip",
@@ -9,5 +9,10 @@
     "path": "data/kanjivg.json",
     "bytes": 5842350,
     "sha256": "5936251d60c3b6377593a9e4d5abefaf86e2727dd592c1a136ee8ccb9fce0101"
+  },
+  "familyArtifact": {
+    "path": "data/kanji-families.json",
+    "bytes": 192623,
+    "sha256": "0527ca5c4e810341a34333979829aedfd71b5764efa1c1887e394f3532318425"
   }
 }

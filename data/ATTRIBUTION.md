@@ -26,16 +26,17 @@ As CC BY-SA 4.0 material, this derived data (and any further redistribution of
 
 ## KanjiVG
 
-`kanjivg.json` is extracted from **KanjiVG** by Ulrich Apel, release
-**r20250816**, and is licensed separately under
+`kanjivg.json` and `kanji-families.json` are extracted from **KanjiVG** by
+Ulrich Apel, release **r20250816**, and are licensed separately under
 [Creative Commons Attribution-ShareAlike 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
 The source project and its full license are available from the
 [KanjiVG repository](https://github.com/KanjiVG/kanjivg).
 
-Kotoba Lab extracts the ordered SVG stroke paths and the nested
-`kvg:element` component hierarchy. Coordinates are rounded to one decimal place
-and the result is packed into a compact JSON representation. This derived
-artifact therefore remains under CC BY-SA 3.0; the rest of the dictionary data
+Kotoba Lab extracts the ordered SVG stroke paths, nested `kvg:element`
+component hierarchy, and `kvg:radical` markers. Coordinates are rounded to one
+decimal place. The family index stores canonical radicals and the direct
+labelled components shown by the first decomposition step. Both compact derived
+artifacts therefore remain under CC BY-SA 3.0; the rest of the dictionary data
 described above remains under CC BY-SA 4.0.
 
 ## What was changed

@@ -16,9 +16,11 @@ import { createKanjiTree } from './kanjitree.js';
 import {
   buildKanjiCatalog,
   buildKanjiFamilies,
+  buildKanjiStructureIndex,
   filterKanji,
   groupKanji,
   isFamilyMode,
+  isStructureFamilyMode,
 } from './kanji-browser.js';
 import {
   newCard, cardOf, isNew, schedule, preview, formatWait,
@@ -37,6 +39,9 @@ let current = null; // { tokens, kStats, wStats }
 let kanjiTree = null;
 let kanjiVGPromise = null;
 let kanjiCatalog = [];
+let kanjiStructureIndex = null;
+let kanjiStructurePromise = null;
+let kanjiStructureError = '';
 let kanjiBrowseLimit = 60;
 let kanjiBrowseFamily = '';
 const kanjiBrowseLevels = new Set();
@@ -133,6 +138,30 @@ function loadKanjiVG() {
       });
   }
   return kanjiVGPromise;
+}
+
+// Radical/component browsing needs only a compact membership index. Keep the
+// much larger stroke-path artifact lazy until a Radical Tree is actually opened.
+function loadKanjiStructureIndex() {
+  if (kanjiStructureIndex) return Promise.resolve(kanjiStructureIndex);
+  if (!kanjiStructurePromise) {
+    kanjiStructurePromise = fetch('data/kanji-families.json')
+      .then((response) => {
+        if (!response.ok) throw new Error(`Could not load kanji family data (HTTP ${response.status}).`);
+        return response.json();
+      })
+      .then((data) => {
+        kanjiStructureIndex = buildKanjiStructureIndex(data);
+        kanjiStructureError = '';
+        return kanjiStructureIndex;
+      })
+      .catch((error) => {
+        kanjiStructurePromise = null;
+        kanjiStructureError = error.message;
+        throw error;
+      });
+  }
+  return kanjiStructurePromise;
 }
 
 // ---- main pipeline ----------------------------------------------------------
@@ -356,6 +385,7 @@ function renderKanjiBrowser() {
   });
   const groupMode = $('#kanji-group').value;
   const familyMode = isFamilyMode(groupMode);
+  const structureMode = isStructureFamilyMode(groupMode);
   const familyTools = $('#kanji-family-tools');
   const familySelect = $('#kanji-family');
   let families = [];
@@ -363,8 +393,22 @@ function renderKanjiBrowser() {
   let resultRows = rows;
   let allGroups;
 
+  if (structureMode && !kanjiStructureIndex) {
+    familyTools.hidden = false;
+    familySelect.disabled = true;
+    familySelect.innerHTML = `<option>${kanjiStructureError ? 'Family data unavailable' : 'Loading families…'}</option>`;
+    $('#kanji-family-summary').textContent = kanjiStructureError
+      ? 'Could not load the offline family index. Choose this view again to retry.'
+      : 'Loading the compact offline radical and component index…';
+    $('#kanji-result-count').textContent = kanjiStructureError ? 'Family data unavailable' : 'Loading kanji families…';
+    $('#kanji-results').innerHTML = `<div class="card empty-state"><span class="e-icon">部</span><div class="e-title">${kanjiStructureError ? 'Could not load kanji families' : 'Preparing structural families'}</div><div class="e-sub">${esc(kanjiStructureError || 'This small index loads only when a structural view is selected.')}</div></div>`;
+    $('#kanji-more').hidden = true;
+    return;
+  }
+  familySelect.disabled = false;
+
   if (familyMode) {
-    families = buildKanjiFamilies(rows, groupMode);
+    families = buildKanjiFamilies(rows, groupMode, kanjiStructureIndex);
     if (!families.some((family) => family.key === kanjiBrowseFamily)) {
       kanjiBrowseFamily = families[0]?.key || '';
     }
@@ -379,6 +423,10 @@ function renderKanjiBrowser() {
     $('#kanji-family-summary').textContent = families.length
       ? groupMode === 'stroke-exact'
         ? `${families.length.toLocaleString()} exact stroke-count families match the current filters.`
+        : groupMode === 'radical'
+          ? `${families.length.toLocaleString()} radical families match the current filters. Variant shapes are grouped under their canonical radical.`
+          : groupMode === 'component'
+            ? `${families.length.toLocaleString()} shared direct-component families match the current filters. A kanji may belong to several families.`
         : `${families.length.toLocaleString()} shared-reading families match the current filters. A kanji may belong to more than one family.`
       : 'No family has enough matching kanji. Broaden the filters to continue.';
   } else {
@@ -769,6 +817,17 @@ function wireUi() {
     kanjiBrowseFamily = '';
     kanjiBrowseLimit = 60;
     renderKanjiBrowser();
+    if (isStructureFamilyMode($('#kanji-group').value) && !kanjiStructureIndex) {
+      kanjiStructureError = '';
+      loadKanjiStructureIndex()
+        .then(() => {
+          if (isStructureFamilyMode($('#kanji-group').value)) renderKanjiBrowser();
+        })
+        .catch((error) => {
+          console.error(error);
+          if (isStructureFamilyMode($('#kanji-group').value)) renderKanjiBrowser();
+        });
+    }
   });
   $('#kanji-family').addEventListener('change', (event) => {
     kanjiBrowseFamily = event.target.value;

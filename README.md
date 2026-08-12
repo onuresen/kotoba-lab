@@ -21,7 +21,7 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning;
   combine JLPT, stroke-count, and known-state filters; then browse ordinary
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
-  an on’yomi or kun’yomi.
+  an on’yomi, kun’yomi, canonical radical, or direct visual component.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
   and drill into its decomposition using committed KanjiVG data.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
@@ -66,7 +66,7 @@ The Node test suites cover tokenization, analysis, text context, flashcard
 export, storage, backup merging, spaced repetition, Aozora cleanup, KanjiVG
 decoding, and kanji-library filtering and grouping.
 
-To rebuild or validate the committed KanjiVG artifact:
+To rebuild or validate the committed KanjiVG artifacts:
 
 ```bash
 npm run kanjivg:build
@@ -74,7 +74,8 @@ npm run kanjivg:check
 ```
 
 These commands use a pinned KanjiVG release. Regular `npm test` verifies the
-committed artifact checksum without requiring a network connection.
+committed stroke-tree and family-index checksums without requiring a network
+connection.
 
 Pushes to `main` are tested and then published to GitHub Pages by
 `.github/workflows/pages.yml`. Pull requests run the same tests without
@@ -109,7 +110,8 @@ The language data has separate licenses:
 
 - `data/kanjidic.json` and `data/jlpt-vocab.json` are derived from
   Kanjium/EDRDG material and remain under CC BY-SA 4.0.
-- `data/kanjivg.json` is derived from KanjiVG and remains under CC BY-SA 3.0.
+- `data/kanjivg.json` and `data/kanji-families.json` are derived from KanjiVG
+  and remain under CC BY-SA 3.0.
 - `vendor/kuromoji/` contains Apache-2.0-licensed third-party software and its
   dictionary.
 

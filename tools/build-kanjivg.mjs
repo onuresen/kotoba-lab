@@ -16,6 +16,7 @@ export const ARCHIVE_SHA256 = '69a2944ec1183086fdee5ba9c1f48bc306b867480a95b2f33
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DATA_PATH = path.join(ROOT, 'data', 'kanjivg.json');
+const FAMILY_PATH = path.join(ROOT, 'data', 'kanji-families.json');
 const MANIFEST_PATH = path.join(ROOT, 'data', 'kanjivg.manifest.json');
 
 function sha256(bytes) {
@@ -129,6 +130,7 @@ function parseSvg(svg) {
         element: attribute(tag, 'kvg:element'),
         position: attribute(tag, 'kvg:position'),
         original: attribute(tag, 'kvg:original'),
+        radical: attribute(tag, 'kvg:radical'),
         start: paths.length,
         count: 0,
         children: [],
@@ -176,6 +178,7 @@ function buildData(archive, kanjiMap) {
   const elements = makeInterner();
   const positions = makeInterner();
   const output = {};
+  const familyOutput = {};
   const missing = [];
 
   const elementChildren = (node) => node.children.flatMap((child) => child.element
@@ -191,6 +194,8 @@ function buildData(archive, kanjiMap) {
     if (original >= 0) encoded.push(original);
     return encoded;
   };
+  const descendants = (node) => node.children.flatMap((child) => [child, ...descendants(child)]);
+  const allNodes = (node) => [node, ...descendants(node)];
 
   for (const char of Object.keys(kanjiMap)) {
     const hex = char.codePointAt(0).toString(16).padStart(5, '0');
@@ -199,23 +204,45 @@ function buildData(archive, kanjiMap) {
     const parsed = parseSvg(svg);
     if (!parsed.root || !parsed.paths.length) { missing.push(char); continue; }
     output[char] = [parsed.paths, encodeNode(parsed.root)];
+    const radicals = [...new Set(allNodes(parsed.root)
+      .filter((node) => node.radical && node.element)
+      .map((node) => elements.get(node.original || node.element)))];
+    const components = [...new Set(elementChildren(parsed.root)
+      .filter((node) => node.element)
+      .map((node) => elements.get(node.element)))];
+    familyOutput[char] = [radicals, components];
   }
 
+  const source = 'KanjiVG by Ulrich Apel (CC BY-SA 3.0)';
+  const commonMeta = {
+    source,
+    release: RELEASE,
+    archiveSha256: ARCHIVE_SHA256,
+    requested: Object.keys(kanjiMap).length,
+    covered: Object.keys(output).length,
+    missing: missing.length,
+  };
   return {
-    _meta: {
-      format: 1,
-      source: 'KanjiVG by Ulrich Apel (CC BY-SA 3.0)',
-      release: RELEASE,
-      archiveSha256: ARCHIVE_SHA256,
-      requested: Object.keys(kanjiMap).length,
-      covered: Object.keys(output).length,
-      missing: missing.length,
-      coordinatePrecision: 1,
-      node: '[elementIndex, strokeStart, strokeCount, children?, positionIndex?, originalElementIndex?]',
+    decomposition: {
+      _meta: {
+        format: 1,
+        ...commonMeta,
+        coordinatePrecision: 1,
+        node: '[elementIndex, strokeStart, strokeCount, children?, positionIndex?, originalElementIndex?]',
+      },
+      elements: elements.values,
+      positions: positions.values,
+      kanji: output,
     },
-    elements: elements.values,
-    positions: positions.values,
-    kanji: output,
+    families: {
+      _meta: {
+        format: 1,
+        ...commonMeta,
+        entry: '[canonicalRadicalElementIndexes, componentElementIndexes]',
+      },
+      elements: elements.values,
+      kanji: familyOutput,
+    },
   };
 }
 
@@ -223,26 +250,33 @@ async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const archive = await loadArchive(opts.source);
   const dictionary = JSON.parse(await readFile(path.join(ROOT, 'data', 'kanjidic.json'), 'utf8'));
-  const artifact = Buffer.from(`${JSON.stringify(buildData(archive, dictionary.kanji))}\n`);
+  const built = buildData(archive, dictionary.kanji);
+  const artifact = Buffer.from(`${JSON.stringify(built.decomposition)}\n`);
+  const familyArtifact = Buffer.from(`${JSON.stringify(built.families)}\n`);
   const manifest = Buffer.from(`${JSON.stringify({
-    format: 1,
+    format: 2,
     source: { release: RELEASE, url: ARCHIVE_URL, sha256: ARCHIVE_SHA256 },
     artifact: { path: 'data/kanjivg.json', bytes: artifact.length, sha256: sha256(artifact) },
+    familyArtifact: { path: 'data/kanji-families.json', bytes: familyArtifact.length, sha256: sha256(familyArtifact) },
   }, null, 2)}\n`);
 
   if (opts.check) {
-    const [currentArtifact, currentManifest] = await Promise.all([
-      readFile(DATA_PATH), readFile(MANIFEST_PATH),
+    const [currentArtifact, currentFamilyArtifact, currentManifest] = await Promise.all([
+      readFile(DATA_PATH), readFile(FAMILY_PATH), readFile(MANIFEST_PATH),
     ]);
-    if (!currentArtifact.equals(artifact) || !currentManifest.equals(manifest)) {
-      throw new Error('Generated KanjiVG data has drifted. Run npm run kanjivg:build and commit both data files.');
+    if (!currentArtifact.equals(artifact) || !currentFamilyArtifact.equals(familyArtifact) || !currentManifest.equals(manifest)) {
+      throw new Error('Generated KanjiVG data has drifted. Run npm run kanjivg:build and commit the data files.');
     }
-    console.log(`KanjiVG data is current (${artifact.length.toLocaleString()} bytes).`);
+    console.log(`KanjiVG data is current (${artifact.length.toLocaleString()} stroke bytes; ${familyArtifact.length.toLocaleString()} family bytes).`);
     return;
   }
 
-  await Promise.all([writeFile(DATA_PATH, artifact), writeFile(MANIFEST_PATH, manifest)]);
-  console.log(`Wrote ${path.relative(ROOT, DATA_PATH)} (${artifact.length.toLocaleString()} bytes).`);
+  await Promise.all([
+    writeFile(DATA_PATH, artifact),
+    writeFile(FAMILY_PATH, familyArtifact),
+    writeFile(MANIFEST_PATH, manifest),
+  ]);
+  console.log(`Wrote ${path.relative(ROOT, DATA_PATH)} (${artifact.length.toLocaleString()} bytes) and ${path.relative(ROOT, FAMILY_PATH)} (${familyArtifact.length.toLocaleString()} bytes).`);
 }
 
 main().catch((error) => {

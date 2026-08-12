@@ -67,10 +67,32 @@ export function buildKanjiCatalog(kanjiMap) {
 }
 
 export function isFamilyMode(mode) {
-  return mode === 'stroke-exact' || mode === 'on-reading' || mode === 'kun-reading';
+  return mode === 'stroke-exact' || mode === 'on-reading' || mode === 'kun-reading'
+    || mode === 'radical' || mode === 'component';
 }
 
-export function buildKanjiFamilies(rows, mode) {
+export function isStructureFamilyMode(mode) {
+  return mode === 'radical' || mode === 'component';
+}
+
+export function buildKanjiStructureIndex(data) {
+  const elements = Array.isArray(data?.elements) ? data.elements : [];
+  const entries = data?.kanji && typeof data.kanji === 'object' ? data.kanji : {};
+  const byKanji = new Map();
+  for (const [char, entry] of Object.entries(entries)) {
+    if (!Array.isArray(entry)) continue;
+    const decode = (indexes) => [...new Set((Array.isArray(indexes) ? indexes : [])
+      .map((index) => elements[index])
+      .filter(Boolean))];
+    byKanji.set(char, {
+      radicals: decode(entry[0]),
+      components: decode(entry[1]),
+    });
+  }
+  return { byKanji, size: byKanji.size };
+}
+
+export function buildKanjiFamilies(rows, mode, structureIndex = null) {
   if (!isFamilyMode(mode)) return [];
   const families = new Map();
   const add = (key, label, item) => {
@@ -81,6 +103,14 @@ export function buildKanjiFamilies(rows, mode) {
   for (const item of rows) {
     if (mode === 'stroke-exact') {
       if (item.strokes > 0) add(String(item.strokes), `${item.strokes} ${item.strokes === 1 ? 'stroke' : 'strokes'}`, item);
+      continue;
+    }
+    if (isStructureFamilyMode(mode)) {
+      const kind = mode === 'radical' ? 'radicals' : 'components';
+      const suffix = mode === 'radical' ? 'radical' : 'component';
+      for (const element of structureIndex?.byKanji?.get(item.char)?.[kind] || []) {
+        add(element, `${element} ${suffix}`, item);
+      }
       continue;
     }
     const readings = mode === 'on-reading' ? item._onReadings : item._kunReadings;

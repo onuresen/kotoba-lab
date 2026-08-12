@@ -2,10 +2,10 @@
 
 ## Current release and backlog
 
-- **v9.1.0 current.** Radical Tree component coloring, the standalone Kanji
-  library, and Group A stroke/reading families are ✓ Done.
-- Group B component/radical reverse browsing is next; Group C study workspaces
-  remain deferred until Group B is complete.
+- **v9.2.0 current.** Radical Tree component coloring, the standalone Kanji
+  library, Group A stroke/reading families, and Group B radical/component
+  reverse browsing are ✓ Done.
+- Group C study workspaces is next.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -30,9 +30,11 @@
 - `js/kanjitree.js` — full-screen SVG overlay, animation, drill-down, focus,
   reduced motion, and known-kanji control.
 - `js/kanji-browser.js` — pure dictionary catalog search, filtering, sorting,
-  sections, and exact-stroke/shared-reading families; no DOM or storage.
+  sections, and stroke/reading/radical/component families; no DOM or storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
+- `data/kanji-families.json` — committed compact radical/direct-component
+  reverse index; lazy-loaded only for structural family views.
 - `data/kanjivg.manifest.json` — pinned input and artifact checksums used by CI.
 - `js/app.js` — retryable lazy loader plus delegated doorway integration.
 - `japanese-reader.css` — app-specific styles, including the tree overlay.
@@ -80,6 +82,15 @@
   cards.
 - Shared-reading families require at least two matching kanji and sort by
   family size, then Japanese label. Exact-stroke families sort numerically.
+- Radical families use KanjiVG's `kvg:radical` marker and normalize variant
+  shapes through `kvg:original` (for example, ⺡ under 水). Component families
+  use the direct labelled children shown by the first Radical Tree separation;
+  keep visual variants distinct. Both require at least two matching kanji and
+  preserve the current card sort inside each family.
+- Load `data/kanji-families.json` only when a radical/component view is chosen.
+  Do not load the 5.84 MB stroke-path artifact until a Radical Tree doorway is
+  opened. Both generated artifacts come from the same pinned KanjiVG release
+  and are covered by the manifest/check command.
 - The selected family is ephemeral UI state. Do not add a localStorage key for
   browsing preferences.
 
@@ -101,7 +112,8 @@ npm run kanjivg:check
 
 `npm test` must keep the explicit `node --test "js/*.test.js"` glob. Browser QA
 must cover Read, Review, My Words, and Kanji-library doorways,
-search/filter/group/family switching/paging, explode/drill/back, `Esc` focus restoration,
+search/filter/group/family switching/paging (including lazy structural-family loading),
+explode/drill/back, `Esc` focus restoration,
 known-state propagation, atomic/missing entries, reduced motion, and clean
 offline-first-load failure. The only module script in `index.html` remains
 `js/app.js`; its imports define load order.

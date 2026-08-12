@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import {
   buildKanjiCatalog,
   buildKanjiFamilies,
+  buildKanjiStructureIndex,
   filterKanji,
   groupKanji,
   isFamilyMode,
+  isStructureFamilyMode,
 } from './kanji-browser.js';
 
 const catalog = buildKanjiCatalog({
@@ -104,6 +106,47 @@ test('only the explicit family modes activate the family picker', () => {
   assert.equal(isFamilyMode('stroke-exact'), true);
   assert.equal(isFamilyMode('on-reading'), true);
   assert.equal(isFamilyMode('kun-reading'), true);
+  assert.equal(isFamilyMode('radical'), true);
+  assert.equal(isFamilyMode('component'), true);
   assert.equal(isFamilyMode('strokes'), false);
   assert.equal(isFamilyMode('jlpt'), false);
+  assert.equal(isStructureFamilyMode('radical'), true);
+  assert.equal(isStructureFamilyMode('component'), true);
+  assert.equal(isStructureFamilyMode('on-reading'), false);
+});
+
+test('structure index decodes canonical radicals and visual components', () => {
+  const index = buildKanjiStructureIndex({
+    elements: ['水', '⺡', '也', '言', '吾'],
+    kanji: {
+      池: [[0], [1, 2, 1]],
+      語: [[3], [3, 4]],
+      壊: null,
+    },
+  });
+  assert.equal(index.size, 2);
+  assert.deepEqual(index.byKanji.get('池'), { radicals: ['水'], components: ['⺡', '也'] });
+  assert.deepEqual(index.byKanji.get('語'), { radicals: ['言'], components: ['言', '吾'] });
+});
+
+test('radical and component families reverse-index filtered kanji', () => {
+  const rows = buildKanjiCatalog({
+    池: { strokes: 6, meaning: 'pond' },
+    海: { strokes: 9, meaning: 'sea' },
+    語: { strokes: 14, meaning: 'language' },
+  });
+  const index = buildKanjiStructureIndex({
+    elements: ['水', '⺡', '言', '毎', '吾'],
+    kanji: {
+      池: [[0], [1]],
+      海: [[0], [1, 3]],
+      語: [[2], [2, 4]],
+    },
+  });
+  assert.deepEqual(buildKanjiFamilies(rows, 'radical', index).map((family) => [family.label, family.rows.map((item) => item.char)]), [
+    ['水 radical', ['池', '海']],
+  ]);
+  assert.deepEqual(buildKanjiFamilies(rows, 'component', index).map((family) => [family.label, family.rows.map((item) => item.char)]), [
+    ['⺡ component', ['池', '海']],
+  ]);
 });

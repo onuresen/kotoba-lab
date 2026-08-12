@@ -60,14 +60,18 @@ test('cyclic in-memory input is guarded', () => {
 });
 
 test('the committed artifact matches its pinned-input manifest', async () => {
-  const [artifact, manifestText] = await Promise.all([
+  const [artifact, familyArtifact, manifestText] = await Promise.all([
     readFile(new URL('../data/kanjivg.json', import.meta.url)),
+    readFile(new URL('../data/kanji-families.json', import.meta.url)),
     readFile(new URL('../data/kanjivg.manifest.json', import.meta.url), 'utf8'),
   ]);
   const manifest = JSON.parse(manifestText);
   const digest = createHash('sha256').update(artifact).digest('hex');
+  const familyDigest = createHash('sha256').update(familyArtifact).digest('hex');
   assert.equal(artifact.length, manifest.artifact.bytes);
   assert.equal(digest, manifest.artifact.sha256);
+  assert.equal(familyArtifact.length, manifest.familyArtifact.bytes);
+  assert.equal(familyDigest, manifest.familyArtifact.sha256);
 
   const data = JSON.parse(artifact);
   assert.equal(data._meta.release, manifest.source.release);
@@ -79,4 +83,10 @@ test('the committed artifact matches its pinned-input manifest', async () => {
   assert.deepEqual(api.decompose('語').children.map((node) => node.element), ['言', '吾']);
   assert.equal(api.decompose('一').atomic, true);
   assert.equal(api.decompose('池').children[0].original, '水');
+
+  const families = JSON.parse(familyArtifact);
+  assert.equal(families._meta.covered, data._meta.covered);
+  const water = families.elements.indexOf('水');
+  const pond = families.kanji.池;
+  assert.ok(pond[0].includes(water));
 });
