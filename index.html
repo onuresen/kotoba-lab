@@ -166,7 +166,7 @@
         <div>
           <span class="label">Kanji library</span>
           <h2>Browse all 6,813 kanji</h2>
-          <p class="hint">Search the dictionary directly or explore stroke, reading, radical, and component families, then open any result in the shared Radical Tree.</p>
+          <p class="hint">Search the dictionary or explore stroke, reading, radical, and component families, then study a family or open any result in the Radical Tree.</p>
         </div>
         <label class="kanji-search">
           <span class="label">Search</span>
@@ -233,10 +233,13 @@
           <select id="kanji-family" class="select"></select>
         </label>
         <p id="kanji-family-summary" class="hint"></p>
+        <button type="button" id="kanji-study-start" class="btn btn-primary">Study family</button>
       </div>
     </div>
 
-    <div class="kanji-results-head">
+    <section id="kanji-study-workspace" class="card kanji-study-workspace" hidden aria-live="polite"></section>
+
+    <div id="kanji-results-head" class="kanji-results-head">
       <span id="kanji-result-count" class="hint"></span>
       <span class="hint">Select a card to draw and decompose it.</span>
     </div>

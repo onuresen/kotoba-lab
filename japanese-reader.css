@@ -324,13 +324,38 @@ kbd {
 }
 .kanji-filter-row .label { display: flex; flex-direction: column; gap: 5px; }
 .kanji-family-tools {
-  display: grid; grid-template-columns: minmax(220px, .55fr) minmax(0, 1fr);
+  display: grid; grid-template-columns: minmax(220px, .55fr) minmax(0, 1fr) auto;
   gap: 16px; align-items: end; padding: 13px 14px;
   background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-md);
 }
 .kanji-family-tools[hidden] { display: none; }
 .kanji-family-tools .label { display: flex; flex-direction: column; gap: 5px; }
 .kanji-family-tools .hint { margin: 0 0 7px; }
+.kanji-study-workspace { display: flex; flex-direction: column; gap: 16px; }
+.kanji-study-workspace[hidden] { display: none; }
+.kanji-study-head, .kanji-study-status, .kanji-study-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+}
+.kanji-study-head h3 { margin: 2px 0 0; font-family: var(--font-display); font-size: 22px; }
+.kanji-study-status { color: var(--text2); font-family: var(--font-mono); font-size: 11px; }
+.kanji-study-progress { height: 6px; overflow: hidden; background: var(--surface2); border-radius: 999px; }
+.kanji-study-progress span { display: block; height: 100%; background: var(--accent); transition: width .18s var(--ease); }
+.kanji-study-stage {
+  display: grid; grid-template-columns: minmax(190px, .7fr) minmax(260px, 1.3fr);
+  min-height: 270px; overflow: hidden; border: 1px solid var(--border); border-radius: var(--r-lg);
+}
+.kanji-study-prompt, .kanji-study-answer { display: flex; flex-direction: column; justify-content: center; padding: 28px; }
+.kanji-study-prompt { align-items: center; gap: 14px; text-align: center; background: var(--surface2); }
+.kanji-study-prompt p { max-width: 280px; margin: 0; color: var(--text2); }
+.kanji-study-glyph { font-family: var(--font-display); font-size: 96px; line-height: 1; color: var(--jl); }
+.kanji-study-answer { gap: 18px; }
+.kanji-study-answer[hidden] { display: flex; visibility: hidden; }
+.kanji-study-answer strong { display: block; margin-top: 5px; font-family: var(--font-display); font-size: 24px; }
+.kanji-study-readings { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.kanji-study-readings p { margin: 0; }
+.kanji-study-readings .label { display: block; margin-bottom: 4px; }
+.kanji-study-actions { justify-content: center; }
+.kanji-study-keys { margin: -6px 0 0; text-align: center; }
 .kanji-results-head { display: flex; justify-content: space-between; gap: 12px; padding: 0 2px; }
 .kanji-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
 .kanji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
@@ -354,6 +379,9 @@ kbd {
   .kanji-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kanji-filter-row > .btn { grid-column: 1 / -1; }
   .kanji-family-tools { grid-template-columns: 1fr; gap: 7px; }
+  .kanji-family-tools > .btn { width: 100%; }
+  .kanji-study-stage { grid-template-columns: 1fr; }
+  .kanji-study-prompt, .kanji-study-answer { min-height: 230px; padding: 22px; }
   .kanji-results-head { flex-direction: column; gap: 2px; }
 }
 @media (max-width: 480px) {

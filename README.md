@@ -22,6 +22,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   combine JLPT, stroke-count, and known-state filters; then browse ordinary
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
   an on’yomi, kun’yomi, canonical radical, or direct visual component.
+- **Family study:** turn any selected kanji family into a focused reveal
+  session with progress, previous/next and keyboard navigation, shuffle and
+  restart, known-state controls, and direct Radical Tree access.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
   and drill into its decomposition using committed KanjiVG data.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
@@ -64,7 +67,7 @@ npm test
 
 The Node test suites cover tokenization, analysis, text context, flashcard
 export, storage, backup merging, spaced repetition, Aozora cleanup, KanjiVG
-decoding, and kanji-library filtering and grouping.
+decoding, and kanji-library filtering, grouping, and family-study sessions.
 
 To rebuild or validate the committed KanjiVG artifacts:
 

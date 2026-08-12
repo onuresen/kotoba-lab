@@ -2,10 +2,11 @@
 
 ## Current release and backlog
 
-- **v9.2.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v9.3.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
-  reverse browsing are ✓ Done.
-- Group C study workspaces is next.
+  reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
+- The kanji grouping/study roadmap is complete. Keep direct Aozora URL fetching
+  deferred unless the static cross-origin architecture changes.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -31,6 +32,8 @@
   reduced motion, and known-kanji control.
 - `js/kanji-browser.js` — pure dictionary catalog search, filtering, sorting,
   sections, and stroke/reading/radical/component families; no DOM or storage.
+- `js/kanji-study.js` — pure ephemeral family-session state, reveal progress,
+  bounded navigation, and shuffle/restart behavior; no DOM or storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
 - `data/kanji-families.json` — committed compact radical/direct-component
@@ -94,6 +97,22 @@
 - The selected family is ephemeral UI state. Do not add a localStorage key for
   browsing preferences.
 
+## Kanji family study conventions
+
+- A study session snapshots the selected family after the current search,
+  JLPT, stroke, known-state, and sort filters have been applied. It does not
+  silently expand to the unfiltered family.
+- Reveal progress, order, and the current card are session-only. Closing,
+  changing a family/filter, or reloading ends that progress; do not add a
+  storage key for it.
+- Known-state changes reuse `kotoba-lab:known-kanji` and must refresh the Read,
+  My Words, Kanji browser, Review, and study-workspace views together.
+- Keep study controls keyboard reachable. Left/right navigation resets the
+  answer and returns focus to Reveal; Space activates Reveal through the
+  focused button. Radical Tree close returns focus to its study doorway.
+- Shuffle & restart randomizes the full session snapshot and clears reveal
+  progress without changing known-kanji state.
+
 ## Persistent state
 
 There are exactly four localStorage keys. The Radical Tree adds none:
@@ -113,6 +132,7 @@ npm run kanjivg:check
 `npm test` must keep the explicit `node --test "js/*.test.js"` glob. Browser QA
 must cover Read, Review, My Words, and Kanji-library doorways,
 search/filter/group/family switching/paging (including lazy structural-family loading),
+family-study start/reveal/move/shuffle/known/tree/close behavior,
 explode/drill/back, `Esc` focus restoration,
 known-state propagation, atomic/missing entries, reduced motion, and clean
 offline-first-load failure. The only module script in `index.html` remains

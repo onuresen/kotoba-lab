@@ -23,6 +23,14 @@ import {
   isStructureFamilyMode,
 } from './kanji-browser.js';
 import {
+  createKanjiStudySession,
+  currentStudyCard,
+  moveStudyCard,
+  revealStudyCard,
+  shuffleStudySession,
+  studyProgress,
+} from './kanji-study.js';
+import {
   newCard, cardOf, isNew, schedule, preview, formatWait,
   buildQueue, queueStats, GRADES, GRADE_LABELS,
 } from './srs.js';
@@ -44,6 +52,8 @@ let kanjiStructurePromise = null;
 let kanjiStructureError = '';
 let kanjiBrowseLimit = 60;
 let kanjiBrowseFamily = '';
+let kanjiBrowseActiveFamily = null;
+let kanjiStudySession = null;
 const kanjiBrowseLevels = new Set();
 
 // persisted, personal — survive across sessions in this browser only
@@ -373,6 +383,118 @@ function kanjiCard(item) {
   </button>`;
 }
 
+function renderKanjiStudy(focusAction = '') {
+  const workspace = $('#kanji-study-workspace');
+  if (!workspace) return;
+  const studying = !!kanjiStudySession;
+  workspace.hidden = !studying;
+  $('#kanji-results-head').hidden = studying;
+  $('#kanji-results').hidden = studying;
+  if (!studying) return;
+  $('#kanji-more').hidden = true;
+
+  const item = currentStudyCard(kanjiStudySession);
+  const progress = studyProgress(kanjiStudySession);
+  const known = knownKanji.has(item.char);
+  const knownCount = kanjiStudySession.rows.filter((row) => knownKanji.has(row.char)).length;
+  const level = levelName(item.jlpt);
+  workspace.innerHTML = `
+    <div class="kanji-study-head">
+      <div><span class="eyebrow">Family study</span><h3>${esc(kanjiStudySession.label)}</h3></div>
+      <button type="button" class="btn btn-ghost" data-kanji-study-action="close">Close study</button>
+    </div>
+    <div class="kanji-study-status">
+      <span>Card ${progress.current.toLocaleString()} of ${progress.total.toLocaleString()}</span>
+      <span>${progress.studied.toLocaleString()} studied · ${knownCount.toLocaleString()} known</span>
+    </div>
+    <div class="kanji-study-progress" role="progressbar" aria-label="Family study progress" aria-valuemin="0" aria-valuemax="${progress.total}" aria-valuenow="${progress.studied}"><span style="width:${progress.pct}%"></span></div>
+    <div class="kanji-study-stage">
+      <div class="kanji-study-prompt">
+        <span class="badge" data-status="reference">${esc(kanjiStudySession.label)}</span>
+        <span class="kanji-study-glyph jlpt-${levelSlug(item.jlpt)}">${esc(item.char)}</span>
+        <p>${progress.complete ? 'Family pass complete. Review freely or shuffle and restart.' : 'Recall this kanji’s meaning and readings, then reveal the answer.'}</p>
+      </div>
+      <div class="kanji-study-answer" ${kanjiStudySession.revealed ? '' : 'hidden'}>
+        <div><span class="label">Meaning</span><strong>${esc(item.meaning || 'Meaning unavailable')}</strong></div>
+        <div class="kanji-study-readings">
+          <p><span class="label">On’yomi</span>${esc(item.on || '—')}</p>
+          <p><span class="label">Kun’yomi</span>${esc(item.kun || '—')}</p>
+        </div>
+        <p class="hint">${item.strokes} strokes · ${esc(level)}</p>
+      </div>
+    </div>
+    <div class="kanji-study-actions">
+      <button type="button" class="btn btn-ghost" data-kanji-study-action="previous" ${kanjiStudySession.index === 0 ? 'disabled' : ''}>← Previous</button>
+      <button type="button" class="btn btn-primary" data-kanji-study-action="reveal" ${kanjiStudySession.revealed ? 'disabled' : ''}>${kanjiStudySession.revealed ? 'Revealed' : 'Reveal details'}</button>
+      <button type="button" class="btn btn-ghost" data-kanji-study-action="next" ${kanjiStudySession.index === progress.total - 1 ? 'disabled' : ''}>Next →</button>
+      <button type="button" class="btn btn-ghost" data-kanji-study-action="known">${known ? '✓ Known' : 'Mark known'}</button>
+      <button type="button" class="btn btn-ghost" data-kanji-tree="${esc(item.char)}">Open Radical Tree</button>
+      <button type="button" class="btn btn-ghost" data-kanji-study-action="shuffle">Shuffle & restart</button>
+    </div>
+    <p class="hint kanji-study-keys">Keyboard: ←/→ move · Space reveals.</p>`;
+  if (focusAction) workspace.querySelector(`[data-kanji-study-action="${focusAction}"]`)?.focus();
+}
+
+function stopKanjiStudy() {
+  kanjiStudySession = null;
+}
+
+function startKanjiStudy() {
+  kanjiStudySession = createKanjiStudySession(kanjiBrowseActiveFamily, $('#kanji-group').value);
+  if (!kanjiStudySession) return;
+  renderKanjiStudy('reveal');
+}
+
+function onKanjiStudyAction(event) {
+  const button = event.target.closest('[data-kanji-study-action]');
+  if (!button || !kanjiStudySession) return;
+  const action = button.dataset.kanjiStudyAction;
+  if (action === 'close') {
+    stopKanjiStudy();
+    renderKanjiBrowser();
+    $('#kanji-study-start').focus();
+    return;
+  }
+  if (action === 'previous' || action === 'next') {
+    kanjiStudySession = moveStudyCard(kanjiStudySession, action === 'previous' ? -1 : 1);
+    renderKanjiStudy('reveal');
+    return;
+  }
+  if (action === 'reveal') {
+    kanjiStudySession = revealStudyCard(kanjiStudySession);
+    renderKanjiStudy(kanjiStudySession.index < kanjiStudySession.rows.length - 1 ? 'next' : 'shuffle');
+    return;
+  }
+  if (action === 'shuffle') {
+    kanjiStudySession = shuffleStudySession(kanjiStudySession);
+    renderKanjiStudy('reveal');
+    toast('Family shuffled. Study progress restarted.', 'success');
+    return;
+  }
+  if (action === 'known') {
+    const item = currentStudyCard(kanjiStudySession);
+    const known = knownKanji.toggle(item.char);
+    toast(known ? 'Marked known.' : 'Unmarked.', 'success');
+    refreshKnownEverywhere();
+    renderKanjiStudy('known');
+  }
+}
+
+function onKanjiStudyKey(event) {
+  if (!kanjiStudySession || $('#kanji-study-workspace').hidden) return;
+  if (event.target.closest('input, textarea, select')) return;
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    const action = event.key === 'ArrowLeft' ? 'previous' : 'next';
+    kanjiStudySession = moveStudyCard(kanjiStudySession, action === 'previous' ? -1 : 1);
+    renderKanjiStudy('reveal');
+  } else if (event.code === 'Space' && !event.target.closest('button')) {
+    event.preventDefault();
+    kanjiStudySession = revealStudyCard(kanjiStudySession);
+    renderKanjiStudy('next');
+  }
+}
+
 function renderKanjiBrowser() {
   if (!kanjiCatalog.length || !$('#kanji-results')) return;
   const rows = filterKanji(kanjiCatalog, {
@@ -394,6 +516,7 @@ function renderKanjiBrowser() {
   let allGroups;
 
   if (structureMode && !kanjiStructureIndex) {
+    kanjiBrowseActiveFamily = null;
     familyTools.hidden = false;
     familySelect.disabled = true;
     familySelect.innerHTML = `<option>${kanjiStructureError ? 'Family data unavailable' : 'Loading families…'}</option>`;
@@ -403,6 +526,8 @@ function renderKanjiBrowser() {
     $('#kanji-result-count').textContent = kanjiStructureError ? 'Family data unavailable' : 'Loading kanji families…';
     $('#kanji-results').innerHTML = `<div class="card empty-state"><span class="e-icon">部</span><div class="e-title">${kanjiStructureError ? 'Could not load kanji families' : 'Preparing structural families'}</div><div class="e-sub">${esc(kanjiStructureError || 'This small index loads only when a structural view is selected.')}</div></div>`;
     $('#kanji-more').hidden = true;
+    $('#kanji-study-start').disabled = true;
+    renderKanjiStudy();
     return;
   }
   familySelect.disabled = false;
@@ -413,6 +538,7 @@ function renderKanjiBrowser() {
       kanjiBrowseFamily = families[0]?.key || '';
     }
     activeFamily = families.find((family) => family.key === kanjiBrowseFamily) || null;
+    kanjiBrowseActiveFamily = activeFamily;
     resultRows = activeFamily?.rows || [];
     allGroups = activeFamily ? [activeFamily] : [];
     familyTools.hidden = false;
@@ -430,6 +556,7 @@ function renderKanjiBrowser() {
         : `${families.length.toLocaleString()} shared-reading families match the current filters. A kanji may belong to more than one family.`
       : 'No family has enough matching kanji. Broaden the filters to continue.';
   } else {
+    kanjiBrowseActiveFamily = null;
     familyTools.hidden = true;
     familySelect.innerHTML = '';
     $('#kanji-family-summary').textContent = '';
@@ -456,6 +583,7 @@ function renderKanjiBrowser() {
       </section>`).join('')
     : `<div class="card empty-state"><span class="e-icon">字</span><div class="e-title">${familyMode ? 'No kanji family matches these filters' : 'No kanji match these filters'}</div><div class="e-sub">Try another reading, meaning, level, or stroke range.</div></div>`;
   $('#kanji-more').hidden = visibleCount >= resultRows.length;
+  $('#kanji-study-start').disabled = !kanjiBrowseActiveFamily;
 
   document.querySelectorAll('.kanji-level').forEach((button) => {
     const value = button.dataset.kanjiLevel;
@@ -463,9 +591,11 @@ function renderKanjiBrowser() {
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-pressed', String(active));
   });
+  renderKanjiStudy();
 }
 
 function resetKanjiBrowser() {
+  stopKanjiStudy();
   $('#kanji-search').value = '';
   $('#kanji-strokes').value = 'all';
   $('#kanji-known').value = 'all';
@@ -796,12 +926,14 @@ function wireUi() {
   $('#precise').addEventListener('change', onPreciseToggle);
   $('#import-file').addEventListener('change', onImportFile);
   $('#kanji-search').addEventListener('input', () => {
+    stopKanjiStudy();
     clearTimeout(kanjiDebounce);
     kanjiDebounce = setTimeout(() => { kanjiBrowseLimit = 60; renderKanjiBrowser(); }, 120);
   });
   $('#kanji-panel').addEventListener('click', (event) => {
     const level = event.target.closest('.kanji-level');
     if (level) {
+      stopKanjiStudy();
       const value = level.dataset.kanjiLevel;
       if (value === 'all') kanjiBrowseLevels.clear();
       else if (kanjiBrowseLevels.has(value)) kanjiBrowseLevels.delete(value);
@@ -811,9 +943,10 @@ function wireUi() {
     }
   });
   ['#kanji-strokes', '#kanji-known', '#kanji-sort'].forEach((selector) => {
-    $(selector).addEventListener('change', () => { kanjiBrowseLimit = 60; renderKanjiBrowser(); });
+    $(selector).addEventListener('change', () => { stopKanjiStudy(); kanjiBrowseLimit = 60; renderKanjiBrowser(); });
   });
   $('#kanji-group').addEventListener('change', () => {
+    stopKanjiStudy();
     kanjiBrowseFamily = '';
     kanjiBrowseLimit = 60;
     renderKanjiBrowser();
@@ -830,12 +963,15 @@ function wireUi() {
     }
   });
   $('#kanji-family').addEventListener('change', (event) => {
+    stopKanjiStudy();
     kanjiBrowseFamily = event.target.value;
     kanjiBrowseLimit = 60;
     renderKanjiBrowser();
   });
   $('#kanji-more').addEventListener('click', () => { kanjiBrowseLimit += 60; renderKanjiBrowser(); });
   $('#kanji-reset').addEventListener('click', resetKanjiBrowser);
+  $('#kanji-study-start').addEventListener('click', startKanjiStudy);
+  $('#kanji-study-workspace').addEventListener('click', onKanjiStudyAction);
   $('#info').addEventListener('click', onInfoAction);
   $('#mywords-panel').addEventListener('click', onMyWordsClick);
   $('#mw-copy').addEventListener('click', () => exportDeck(false));
@@ -858,6 +994,7 @@ function wireUi() {
   $('#srs-new-limit').addEventListener('change', refreshReview);
   $('#srs-direction').addEventListener('change', renderStage);
   document.addEventListener('keydown', onReviewKey);
+  document.addEventListener('keydown', onKanjiStudyKey);
   // One delegated path covers dynamic Read, Review, and My Words markup.
   document.addEventListener('click', (event) => {
     const doorway = event.target.closest?.('[data-kanji-tree]');
