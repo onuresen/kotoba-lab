@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createKanjiVG } from './kanjivg.js';
+import { compactPath } from '../tools/build-kanjivg.mjs';
 
 const fixture = {
   elements: ['語', '言', '吾', '一', '⺡', '水'],
@@ -13,6 +14,17 @@ const fixture = {
     池: [['water'], [4, 0, 1, [], 0, 5]],
   },
 };
+
+test('path compaction preserves negative-zero number separators', () => {
+  assert.equal(
+    compactPath('M40.01,11.89c0.24,1.61-0.01,2.86-0.84,4.46'),
+    'M40,11.9c0.2,1.6-0,2.9-0.8,4.5',
+  );
+  assert.equal(
+    compactPath('M69.62,42.18c0.5,1.7,0.63,3.57-0.01,5.93'),
+    'M69.6,42.2c0.5,1.7,0.6,3.6-0,5.9',
+  );
+});
 
 test('decomposition preserves component shape and position', () => {
   const tree = createKanjiVG(fixture).decompose('語');

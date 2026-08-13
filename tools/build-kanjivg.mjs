@@ -98,11 +98,15 @@ function attribute(tag, name) {
   return match ? xmlDecode(match[1]) : null;
 }
 
-function compactPath(d) {
+export function compactPath(d) {
   return d
     .replace(/-?\d+(?:\.\d+)?/g, (raw) => {
       const rounded = Math.round(Number(raw) * 10) / 10;
-      return Object.is(rounded, -0) ? '0' : String(rounded);
+      // A leading minus can also separate adjacent SVG numbers. Preserve it
+      // when a tiny negative rounds to zero: `3.57-0.01` must not become the
+      // single number `3.60`, which corrupts the entire Bézier command.
+      if (Object.is(rounded, -0)) return '-0';
+      return String(rounded);
     })
     .replace(/,\s+/g, ',')
     .replace(/\s+/g, ' ')
@@ -279,7 +283,9 @@ async function main() {
   console.log(`Wrote ${path.relative(ROOT, DATA_PATH)} (${artifact.length.toLocaleString()} bytes) and ${path.relative(ROOT, FAMILY_PATH)} (${familyArtifact.length.toLocaleString()} bytes).`);
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (path.resolve(process.argv[1] || '') === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}

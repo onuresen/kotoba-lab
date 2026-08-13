@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.0.1 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.1.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -20,6 +20,9 @@
 - The startup warning flash is ✓ Fixed: it stays hidden during normal HTTP
   loading, appears immediately for `file://`, and falls back after four seconds
   only when the module graph genuinely never starts.
+- KanjiVG path compaction is ✓ Fixed: tiny negative coordinates that round to
+  zero retain `-0` so their minus sign continues to separate adjacent SVG
+  numbers. The corrected artifact repairs 9,051 paths across 4,484 kanji.
 
 ## Public repository conventions
 
@@ -82,6 +85,9 @@
 - Component colors are positional and non-semantic. Keep the assembled kanji
   monochrome; color direct children only in the separated state, and match each
   component button without relying on color as its label.
+- `compactPath()` must preserve negative zero. In SVG path syntax a minus sign
+  can separate adjacent coordinates, so converting `3.57-0.01` to `3.60`
+  silently merges two Bézier parameters and distorts the stroke.
 
 ## Mobile interface conventions
 
