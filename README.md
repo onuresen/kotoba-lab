@@ -18,8 +18,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   character mix, personal coverage, and Anki-compatible TSV export.
 - **Read:** furigana, JLPT-colored kanji, dictionary details, saved words, and
   known-word or known-kanji tracking.
-- **Phone-friendly reading:** compact branding, a safe-area-aware bottom tab
-  bar, swipeable samples, touch-sized controls, and tap-to-open word details.
+- **Phone-friendly study:** compact branding, a safe-area-aware bottom tab bar,
+  swipeable samples and JLPT filters, tap-to-open word details, compact Kanji
+  cards, and mobile family-study workspaces.
 - **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning;
   combine JLPT, stroke-count, and known-state filters; then browse ordinary
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share

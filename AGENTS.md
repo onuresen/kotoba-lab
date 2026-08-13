@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v9.8.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v9.9.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -11,7 +11,8 @@
   `星が消える前に`; keep public samples original or clearly licensed.
 - Mobile Group A is ✓ Done: compact sticky branding, a safe-area-aware bottom
   tab bar, touch-sized input/sample controls, and a Read details bottom sheet.
-- Mobile Group B (Kanji browsing and family study) is the next approved slice.
+- Mobile Group B is ✓ Done: always-visible search/JLPT controls, collapsible
+  advanced filters, compact result cards, and phone-sized family-study layouts.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -86,6 +87,12 @@
 - Read details use the inline sticky sidebar on desktop and an anchored bottom
   sheet above the tab bar on phones. The close button, scrim, and Escape must
   all dismiss it; do not add navigation or persistence for sheet state.
+- Keep Kanji search and the horizontally swipeable JLPT levels visible on
+  phones. Stroke, learning-state, sort, and view controls belong in the
+  ephemeral advanced-filter disclosure; its badge reflects active filters.
+- Starting any family, phonetic, contrast, or mix session on a phone scrolls
+  the study workspace beneath the sticky header. Hidden answers must not take
+  vertical space, and study controls remain at least 44px high.
 
 ## Kanji library conventions
 

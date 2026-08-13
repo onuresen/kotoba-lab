@@ -197,7 +197,10 @@
         </div>
       </div>
 
-      <div class="kanji-filter-row">
+      <button type="button" id="kanji-filter-toggle" class="btn btn-ghost kanji-filter-toggle" aria-expanded="false" aria-controls="kanji-advanced-filters">
+        <span>More filters</span><span id="kanji-filter-count" class="kanji-filter-count" hidden></span>
+      </button>
+      <div id="kanji-advanced-filters" class="kanji-filter-row">
         <label class="label">Strokes
           <select id="kanji-strokes" class="select">
             <option value="all">Any count</option>

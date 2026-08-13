@@ -510,6 +510,12 @@ function openFamilyMixSetup() {
   if (kanjiBrowseFamilies.length < 2) return;
   kanjiStudySession = { kind: 'mix-setup', families: kanjiBrowseFamilies };
   renderKanjiStudy();
+  revealKanjiWorkspace();
+}
+
+function revealKanjiWorkspace() {
+  if (!window.matchMedia('(max-width: 780px)').matches) return;
+  requestAnimationFrame(() => $('#kanji-study-workspace').scrollIntoView({ block: 'start', behavior: 'smooth' }));
 }
 
 function renderKanjiStudy(focusAction = '') {
@@ -623,6 +629,7 @@ function startKanjiStudy() {
       : createKanjiStudySession(kanjiBrowseActiveFamily, mode);
   if (!kanjiStudySession) return;
   renderKanjiStudy(primaryStudyAction());
+  revealKanjiWorkspace();
 }
 
 function onKanjiStudyAction(event) {
@@ -654,6 +661,7 @@ function onKanjiStudyAction(event) {
     }
     kanjiStudySession = createFamilyMixSession(mix);
     renderKanjiStudy('mix-choice');
+    revealKanjiWorkspace();
     return;
   }
   if (action === 'close') {
@@ -827,6 +835,14 @@ function renderKanjiBrowser() {
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-pressed', String(active));
   });
+  const advancedCount = [
+    $('#kanji-strokes').value !== 'all',
+    $('#kanji-known').value !== 'all',
+    $('#kanji-sort').value !== 'jlpt',
+    $('#kanji-group').value !== 'none',
+  ].filter(Boolean).length;
+  $('#kanji-filter-count').hidden = advancedCount === 0;
+  $('#kanji-filter-count').textContent = advancedCount;
   renderKanjiStudy();
 }
 
@@ -1195,6 +1211,11 @@ function wireUi() {
       kanjiBrowseLimit = 60;
       renderKanjiBrowser();
     }
+  });
+  $('#kanji-filter-toggle').addEventListener('click', () => {
+    const filters = $('#kanji-advanced-filters');
+    const open = filters.classList.toggle('is-open');
+    $('#kanji-filter-toggle').setAttribute('aria-expanded', String(open));
   });
   ['#kanji-strokes', '#kanji-known', '#kanji-sort'].forEach((selector) => {
     $(selector).addEventListener('change', () => { stopKanjiStudy(); kanjiBrowseLimit = 60; renderKanjiBrowser(); });

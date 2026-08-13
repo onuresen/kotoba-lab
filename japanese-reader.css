@@ -343,6 +343,11 @@ kbd {
 .kanji-levels { display: flex; flex-wrap: wrap; gap: 6px; }
 .kanji-level { padding: 5px 11px; }
 .kanji-level.is-active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.kanji-filter-toggle { display: none; }
+.kanji-filter-count {
+  min-width: 20px; height: 20px; padding-inline: 6px; display: inline-grid; place-items: center;
+  border-radius: var(--r-pill); color: var(--on-accent); background: var(--accent); font-size: 10px;
+}
 .kanji-filter-row {
   display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)) auto;
   gap: 10px; align-items: end;
@@ -419,18 +424,56 @@ kbd {
 .kanji-card-meta { color: var(--text3); font-family: var(--font-mono); font-size: 10px; }
 .kanji-more { align-self: center; min-width: 160px; }
 @media (max-width: 780px) {
-  .kanji-intro { grid-template-columns: 1fr; gap: 14px; }
-  .kanji-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kanji-toolbar { gap: 13px; padding: 15px 14px; }
+  .kanji-intro { grid-template-columns: 1fr; gap: 11px; }
+  .kanji-intro h2 { margin-top: 1px; font-size: 22px; }
+  .kanji-intro p { display: none; }
+  .kanji-search .input, .kanji-filter-row .select { min-height: 44px; }
+  .kanji-filter-block { min-width: 0; gap: 5px; }
+  .kanji-levels {
+    margin-right: -14px; padding: 1px 14px 6px 0; flex-wrap: nowrap; overflow-x: auto;
+    scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .kanji-levels::-webkit-scrollbar { display: none; }
+  .kanji-level { min-height: 44px; padding: 8px 15px; flex: 0 0 auto; scroll-snap-align: start; }
+  .kanji-filter-toggle { min-height: 44px; display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .kanji-filter-toggle::after { content: '＋'; margin-left: auto; padding-left: 8px; font-size: 16px; }
+  .kanji-filter-toggle[aria-expanded="true"]::after { content: '−'; }
+  .kanji-filter-count { margin-left: 8px; }
+  .kanji-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 2px; }
+  .kanji-filter-row:not(.is-open) { display: none; }
   .kanji-filter-row > .btn { grid-column: 1 / -1; }
-  .kanji-family-tools { grid-template-columns: 1fr; gap: 7px; }
-  .kanji-family-tools > .btn { width: 100%; }
+  .kanji-filter-row > .btn { min-height: 44px; }
+  .kanji-family-tools { grid-template-columns: 1fr; gap: 10px; padding: 12px; }
+  .kanji-family-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .kanji-family-actions .btn { min-height: 44px; }
+  .kanji-study-workspace { padding: 15px 12px; gap: 12px; scroll-margin-top: 72px; }
+  .kanji-study-head { align-items: flex-start; }
+  .kanji-study-head h3 { font-size: 19px; }
+  .kanji-study-head .btn { min-height: 44px; }
+  .kanji-study-status { gap: 4px 10px; }
   .kanji-study-stage { grid-template-columns: 1fr; }
-  .kanji-study-prompt, .kanji-study-answer { min-height: 230px; padding: 22px; }
+  .kanji-study-prompt { min-height: 205px; padding: 18px; gap: 10px; }
+  .kanji-study-glyph { font-size: 78px; }
+  .kanji-study-answer { min-height: 0; padding: 20px 18px; gap: 13px; border-top: 1px solid var(--border); }
+  .kanji-study-answer[hidden] { display: none; }
+  .kanji-study-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .kanji-study-actions .btn { min-height: 44px; white-space: normal; }
+  .kanji-study-keys { display: none; }
+  .kanji-mix-picker select { min-height: 210px; }
+  .kanji-mix-choices { grid-template-columns: 1fr; }
   .kanji-results-head { flex-direction: column; gap: 2px; }
+  .kanji-results-head span:last-child { display: none; }
+  .kanji-grid { grid-template-columns: 1fr; gap: 8px; }
+  .kanji-card { grid-template-columns: 52px minmax(0, 1fr) auto; min-height: 92px; padding: 11px; }
+  .kanji-card-glyph { font-size: 42px; }
+  .kanji-card-copy { gap: 2px; }
+  .kanji-card-copy strong { -webkit-line-clamp: 1; }
+  .kanji-more { min-height: 44px; }
 }
 @media (max-width: 480px) {
   .kanji-filter-row { grid-template-columns: 1fr; }
-  .kanji-grid { grid-template-columns: 1fr; }
+  .kanji-family-actions { grid-template-columns: 1fr; }
 }
 
 /* ---- Kanji Radical Tree overlay ------------------------------------------- */
