@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v9.9.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.0.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -13,6 +13,8 @@
   tab bar, touch-sized input/sample controls, and a Read details bottom sheet.
 - Mobile Group B is ✓ Done: always-visible search/JLPT controls, collapsible
   advanced filters, compact result cards, and phone-sized family-study layouts.
+- Mobile Group C is ✓ Done: focused Review cards, saved-deck cards and backup
+  controls, direct My Words entry, and a compact full-screen Radical Tree.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -93,6 +95,14 @@
 - Starting any family, phonetic, contrast, or mix session on a phone scrolls
   the study workspace beneath the sticky header. Hidden answers must not take
   vertical space, and study controls remain at least 44px high.
+- The shared text editor belongs only to Analyze and Read. Kanji, Review, and
+  My Words open directly at their independent workspace content.
+- Review uses a two-column grade grid on phones. My Words turns saved-deck
+  table rows into labelled cards and stacks export/backup actions at the
+  narrowest width; desktop retains the table.
+- The phone Radical Tree keeps the dictionary panel visible below a compact
+  drawing stage, uses horizontal component chips, and preserves 44px controls,
+  drill-down, Back, Close, replay, and focus restoration.
 
 ## Kanji library conventions
 

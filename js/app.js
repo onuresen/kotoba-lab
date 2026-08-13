@@ -1027,11 +1027,11 @@ function renderMyWords() {
   $('#mw-deck-tbody').innerHTML = rows.length
     ? rows.map((r) => `
       <tr>
-        <td class="jp"><span class="jlpt-${levelSlug(r.level)} chip">${esc(r.surface)}</span>${r.reading ? `<span class="rd">${esc(r.reading)}</span>` : ''}</td>
-        <td>${esc(r.gloss || '')}${r.sentence ? `<span class="mw-sentence" lang="ja" title="${esc(r.sentence)}">${esc(r.sentence)}</span>` : ''}</td>
-        <td><span class="badge" data-status="${r.level == null ? 'archive' : 'reference'}">${levelName(r.level)}</span></td>
-        <td>${dueCell(r)}</td>
-        <td><button class="btn btn-ghost deck-rm" data-key="${esc(r.surface)}">Remove</button></td>
+        <td class="jp" data-label="Word"><span class="jlpt-${levelSlug(r.level)} chip">${esc(r.surface)}</span>${r.reading ? `<span class="rd">${esc(r.reading)}</span>` : ''}</td>
+        <td data-label="Meaning">${esc(r.gloss || '')}${r.sentence ? `<span class="mw-sentence" lang="ja" title="${esc(r.sentence)}">${esc(r.sentence)}</span>` : ''}</td>
+        <td data-label="JLPT"><span class="badge" data-status="${r.level == null ? 'archive' : 'reference'}">${levelName(r.level)}</span></td>
+        <td data-label="Next">${dueCell(r)}</td>
+        <td class="mw-card-action"><button class="btn btn-ghost deck-rm" data-key="${esc(r.surface)}">Remove</button></td>
       </tr>`).join('')
     : `<tr><td colspan="5" class="hint">No saved words yet — tap "☆ Save" on a word in the Read tab.</td></tr>`;
 }
@@ -1153,8 +1153,9 @@ function switchTab(name) {
     else t.removeAttribute('aria-current');
   });
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.dataset.panel === name));
-  // Review is a focus mode: the shared Text box feeds Analyze/Read, not it.
-  $('.input-card').hidden = name === 'review' || name === 'kanji';
+  // The shared Text box feeds Analyze and Read only. The other tabs are
+  // independent workspaces and should open at their own content immediately.
+  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'mywords';
   // cards come due while you're on another tab — recheck on arrival
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();

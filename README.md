@@ -20,7 +20,8 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   known-word or known-kanji tracking.
 - **Phone-friendly study:** compact branding, a safe-area-aware bottom tab bar,
   swipeable samples and JLPT filters, tap-to-open word details, compact Kanji
-  cards, and mobile family-study workspaces.
+  and saved-deck cards, focused Review and family-study workspaces, and a
+  compact full-screen Radical Tree.
 - **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning;
   combine JLPT, stroke-count, and known-state filters; then browse ordinary
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
