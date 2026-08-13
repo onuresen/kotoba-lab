@@ -44,11 +44,10 @@
 </header>
 
 <main class="wrap">
-  <!-- Visible by default and hidden by app.js once boot() succeeds. It has to
-       live in the markup: when the page is opened as file://, the browser
-       blocks the ES module outright, so no script of ours ever runs to report
-       it — the page just sits there ignoring every click and paste. -->
-  <div id="boot-warning" class="boot-warning">
+  <!-- Hidden during a normal HTTP startup so a slow dictionary fetch never
+       flashes an error. The tiny classic-script fallback below still runs when
+       file:// blocks the module, and reveals this after a genuine boot stall. -->
+  <div id="boot-warning" class="boot-warning" hidden>
     <strong>This page isn't running — it needs to be served over http.</strong>
     <p>Opened straight from the file system (<code>file://</code>), the browser blocks its
     scripts and dictionary files, so nothing responds: pasting text does nothing, and the
@@ -57,6 +56,13 @@
     small local server and reopens this page properly. From a terminal, <code>npm start</code>
     or <code>node serve.mjs</code> do the same.</p>
   </div>
+  <script>
+    (() => {
+      const warning = document.getElementById('boot-warning');
+      if (location.protocol === 'file:') warning.hidden = false;
+      else window.__kotobaBootFallback = setTimeout(() => { warning.hidden = false; }, 4000);
+    })();
+  </script>
 
   <!-- Shown by app.js when ui-base.css is missing from this folder. Unlike the
        banner above, scripts ARE running in that case — only the CSS is gone. -->

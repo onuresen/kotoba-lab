@@ -53,10 +53,17 @@ import {
   phoneticCardMatches,
   phoneticScore,
 } from './kanji-labs.js';
+
 import {
   newCard, cardOf, isNew, schedule, preview, formatWait,
   buildQueue, queueStats, GRADES, GRADE_LABELS,
 } from './srs.js';
+
+// index.html schedules a delayed fallback for genuine module-load failures.
+// Reaching this line proves the module graph is alive; dictionary failures get
+// their own accurate message inside boot().
+clearTimeout(window.__kotobaBootFallback);
+delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -146,6 +153,7 @@ async function boot() {
       <p><code>data/kanjidic.json</code>, <code>data/jlpt-vocab.json</code> and
       <code>data/samples.json</code> must sit next to this page and be reachable over
       http. Check the browser console for the failing request.</p>`;
+    $('#boot-warning').hidden = false;
     toast('Could not load data files — see the message above.', 'error');
     console.error(err);
     return;

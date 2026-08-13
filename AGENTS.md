@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.0.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.0.1 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -17,6 +17,9 @@
   controls, direct My Words entry, and a compact full-screen Radical Tree.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
+- The startup warning flash is ✓ Fixed: it stays hidden during normal HTTP
+  loading, appears immediately for `file://`, and falls back after four seconds
+  only when the module graph genuinely never starts.
 
 ## Public repository conventions
 
@@ -32,6 +35,9 @@
 - GitHub Pages publishes `main` at `https://onuresen.github.io/kotoba-lab/`
   through `.github/workflows/pages.yml`. Keep deployment test-gated and do not
   grant Pages write or OIDC permissions to the pull-request test job.
+- Keep the inline classic startup fallback immediately beside
+  `#boot-warning`. `js/app.js` must cancel its timer as soon as the module graph
+  starts and explicitly reveal the banner only for a real dictionary failure.
 
 ## File map
 
