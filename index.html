@@ -33,12 +33,12 @@
         <p class="tagline">Japanese reading, kanji exploration, and study.</p>
       </div>
     </div>
-    <nav class="tabs">
-      <button class="tab is-active" data-tab="analyze">Analyze</button>
-      <button class="tab" data-tab="read">Read</button>
-      <button class="tab" data-tab="kanji">Kanji</button>
-      <button class="tab" data-tab="review">Review<span class="tab-badge" id="tab-due" hidden></span></button>
-      <button class="tab" data-tab="mywords">My Words</button>
+    <nav class="tabs" aria-label="Main navigation">
+      <button class="tab is-active" data-tab="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
+      <button class="tab" data-tab="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
+      <button class="tab" data-tab="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
+      <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" id="tab-due" hidden></span></button>
+      <button class="tab" data-tab="mywords"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
     </nav>
   </div>
 </header>
@@ -161,7 +161,11 @@
     </div>
     <div class="grid-read">
       <div class="card reading-card"><div id="reading" class="reading"></div></div>
-      <div class="card info-card"><div id="info"></div></div>
+      <button type="button" id="info-scrim" class="info-scrim" aria-label="Close word details" tabindex="-1"></button>
+      <div class="card info-card" aria-live="polite">
+        <button type="button" id="info-close" class="info-close" aria-label="Close word details">×</button>
+        <div id="info"></div>
+      </div>
     </div>
   </section>
 

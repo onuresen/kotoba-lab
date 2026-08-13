@@ -309,6 +309,11 @@ function saveBtn(saved) {
   return `<button class="btn ${saved ? '' : 'btn-ghost'} act-save" data-saved="${saved}">${saved ? '★ Saved' : '☆ Save'}</button>`;
 }
 
+function setInfoSheet(open) {
+  $('.info-card').classList.toggle('is-open', open);
+  $('#info-scrim').classList.toggle('is-open', open);
+}
+
 function showInfo(sel) {
   lastSel = sel;
   if (sel.type === 'kanji') {
@@ -340,6 +345,7 @@ function showInfo(sel) {
         <div class="chips">${kanjiChars.map((c) => `<span class="k jlpt-${levelSlug(jlpt.kanjiLevel(c))} info-kchar" data-k="${esc(c)}" data-kanji-tree="${esc(c)}" role="button" tabindex="0" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</span>`).join('')}</div>
       </div>` : ''}`;
   }
+  if (window.matchMedia('(max-width: 780px)').matches) setInfoSheet(true);
 }
 
 function onInfoAction(e) {
@@ -1120,16 +1126,26 @@ function showEmpty() {
   $('#kanji-tbody').innerHTML = $('#word-tbody').innerHTML = '';
   $('#reading').innerHTML = `<div class="empty-state"><span class="e-icon">✍</span><div class="e-title">Paste Japanese text to begin</div></div>`;
   $('#info').innerHTML = infoHint();
+  setInfoSheet(false);
   renderTextJourney();
 }
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('is-active', t.dataset.tab === name));
+  document.querySelectorAll('.tab').forEach((t) => {
+    const active = t.dataset.tab === name;
+    t.classList.toggle('is-active', active);
+    if (active) t.setAttribute('aria-current', 'page');
+    else t.removeAttribute('aria-current');
+  });
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.dataset.panel === name));
   // Review is a focus mode: the shared Text box feeds Analyze/Read, not it.
   $('.input-card').hidden = name === 'review' || name === 'kanji';
   // cards come due while you're on another tab — recheck on arrival
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();
+  if (name !== 'read') setInfoSheet(false);
+  if (window.matchMedia('(max-width: 780px)').matches) {
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+  }
 }
 let toastTimer;
 function toast(msg, kind) {
@@ -1153,6 +1169,11 @@ function wireUi() {
   });
   $('#clear').addEventListener('click', () => { $('#input').value = ''; run(); $('#input').focus(); });
   document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+  $('#info-close').addEventListener('click', () => setInfoSheet(false));
+  $('#info-scrim').addEventListener('click', () => setInfoSheet(false));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setInfoSheet(false);
+  });
   $('#furigana').addEventListener('change', (e) => $('#reading').classList.toggle('no-furigana', !e.target.checked));
   $('#flash-copy').addEventListener('click', () => exportFlashcards(false));
   $('#flash-download').addEventListener('click', () => exportFlashcards(true));

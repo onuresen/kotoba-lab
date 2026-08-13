@@ -2,13 +2,16 @@
 
 ## Current release and backlog
 
-- **v9.7.1 current.** Radical Tree component coloring, the standalone Kanji
+- **v9.8.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
   Mix Challenge are ✓ Done.
 - The first/default sample is the original mixed-level anime-style scene
   `星が消える前に`; keep public samples original or clearly licensed.
+- Mobile Group A is ✓ Done: compact sticky branding, a safe-area-aware bottom
+  tab bar, touch-sized input/sample controls, and a Read details bottom sheet.
+- Mobile Group B (Kanji browsing and family study) is the next approved slice.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
@@ -70,6 +73,19 @@
 - Component colors are positional and non-semantic. Keep the assembled kanji
   monochrome; color direct children only in the separated state, and match each
   component button without relying on color as its label.
+
+## Mobile interface conventions
+
+- At 780px and below, keep the five primary tabs in the fixed bottom bar and
+  leave the sticky header for compact branding. Respect safe-area insets and
+  reserve enough main-content padding that the bar never covers actions.
+- Tab changes return phone layouts to the top of the new workspace and keep
+  `aria-current` synchronized with the active panel.
+- Sample passages swipe horizontally on phones. Primary touch controls should
+  be at least 44px high without enlarging desktop controls.
+- Read details use the inline sticky sidebar on desktop and an anchored bottom
+  sheet above the tab bar on phones. The close button, scrim, and Escape must
+  all dismiss it; do not add navigation or persistence for sheet state.
 
 ## Kanji library conventions
 
