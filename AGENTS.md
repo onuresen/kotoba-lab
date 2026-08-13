@@ -2,11 +2,13 @@
 
 ## Current release and backlog
 
-- **v9.7.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v9.7.1 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
   Mix Challenge are ✓ Done.
+- The first/default sample is the original mixed-level anime-style scene
+  `星が消える前に`; keep public samples original or clearly licensed.
 - Direct Aozora URL fetching remains deferred because a static page cannot
   fetch Aozora cross-origin without a proxy.
 
