@@ -79,6 +79,13 @@ does not call an AI service or send pasted text to a backend. The page requests
 web fonts from Google Fonts when online; system-font fallbacks keep the
 application usable when those fonts are unavailable.
 
+## Future idea garden
+
+The project keeps its imaginative long-term directions in
+[IDEA_GARDEN.md](IDEA_GARDEN.md). The first exploration track is Radical
+Alchemy, Kanji Genealogy, Japanese Detective Board, and Kanji Constellation
+Atlas; these are staged experiments, not committed release promises.
+
 ## Run locally
 
 Kotoba Lab uses ES modules and fetches its dictionaries from `data/`, so it must

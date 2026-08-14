@@ -61,6 +61,10 @@
   sessions. Group C is ✓ Done: a previewable/copyable/downloadable Markdown
   report shares aggregate activity, feature rhythm, profile totals, and fixed
   signal labels without exposing the raw journal or study content.
+- `IDEA_GARDEN.md` is the durable creative backlog. The user-selected first
+  exploration track is Radical Alchemy → Kanji Genealogy → Japanese Detective
+  Board → Kanji Constellation Atlas. Treat each as a bounded experiment and do
+  not interpret the sequence as approval to implement the next item.
 
 ## Public repository conventions
 
@@ -120,6 +124,8 @@
   Map overlays and their responsive layouts.
 - `README.md` — concise public overview, local setup, architecture, and license
   boundaries.
+- `IDEA_GARDEN.md` — public creative backlog, selected exploration track, first
+  experiments, and principles that prevent uncontrolled feature growth.
 - `PRIVACY.md` — public description of local storage and network requests.
 - `.github/workflows/pages.yml` — tests pushes and pull requests; deploys the
   static repository root only after tests pass on `main`.
