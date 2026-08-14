@@ -381,7 +381,7 @@
         <span class="hint" id="mw-deck-count"></span>
         <button id="mw-clear-deck" class="btn btn-ghost btn-danger-ghost">Clear</button>
       </div>
-      <p class="hint">Saved with "☆ Save" while reading. <strong>Next</strong> is when each card comes back in the <a href="#" class="go-review">Review</a> tab; clearing the deck clears its review history too.</p>
+      <p class="hint">Saved with "☆ Save" while reading. <strong>Next</strong> is when each card comes back in the <a href="#" class="go-review">Review</a> tab. Review-history totals are managed separately in Profile &amp; Data.</p>
       <div class="table-scroll">
         <table class="freq"><thead><tr><th>Word</th><th>Meaning &amp; sentence</th><th>JLPT</th><th>Next</th><th></th></tr></thead>
         <tbody id="mw-deck-tbody"></tbody></table>
@@ -401,6 +401,19 @@
       </div>
       <p class="hint">Your local study profile includes saved cards and scheduling, known words and kanji, review history, and sentence context saved with cards. It never includes the text currently in the editor.</p>
       <div id="profile-summary" class="profile-summary" aria-label="Local profile summary"></div>
+      <section class="profile-dashboard" aria-labelledby="profile-dashboard-title">
+        <div class="profile-dashboard-head"><div><span class="label">LOCAL DATA DASHBOARD</span><h3 id="profile-dashboard-title">Inspect and manage this browser</h3></div><span id="profile-health" class="badge" data-status="stable">Healthy</span></div>
+        <p id="profile-health-detail" class="hint"></p>
+        <div id="profile-categories" class="profile-categories"></div>
+        <div class="profile-reset-zone">
+          <div><strong>Reset all local study data</strong><p class="hint">Clears cards, known items, schedules, and review history from this browser.</p></div>
+          <button type="button" id="profile-reset-open" class="btn btn-ghost profile-replace">Begin reset</button>
+        </div>
+        <section id="profile-reset-confirm" class="profile-reset-confirm" hidden>
+          <label for="profile-reset-phrase">Type <strong>RESET KOTOBA LAB</strong> to confirm.</label>
+          <div><input id="profile-reset-phrase" class="input" type="text" autocomplete="off" spellcheck="false"><button type="button" id="profile-reset-apply" class="btn btn-primary" disabled>Reset everything</button><button type="button" id="profile-reset-cancel" class="btn btn-ghost">Cancel</button></div>
+        </section>
+      </section>
       <div class="profile-actions">
         <button id="mw-backup-download" class="btn btn-primary">Download profile (.json)</button>
         <label class="file-btn btn">Choose profile to import<input type="file" id="mw-backup-file" accept=".json,application/json" hidden></label>

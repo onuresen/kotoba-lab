@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.7.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.8.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -44,11 +44,14 @@
   The optional bounded two-hop view balances structural and reading branches,
   supports branch expansion, root changes, zoom/reset, Radical Tree doorways,
   and clustered mobile swipe lanes without replacing the one-hop default.
-- Data Management Groups A–B are ✓ Done: Profile & Data exports versioned full
+- Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
   Packs export current-text, selected-family, or Relations kanji without any
-  personal progress and import into an ephemeral family-study session.
+  personal progress and import into an ephemeral family-study session. The
+  local dashboard summarizes card readiness, known collections, review activity,
+  and profile size; categories clear independently and full reset requires the
+  exact typed phrase `RESET KOTOBA LAB`.
 
 ## Public repository conventions
 
@@ -88,6 +91,8 @@
   word/context collection, and ephemeral journey navigation; no DOM/storage.
 - `js/backup.js` — pure versioned profile serialization, inspection, backward-
   compatible parsing, summary metadata, and repeat-safe merge rules.
+- `js/profile-dashboard.js` — pure card/readiness, known/review, and byte-size
+  metrics plus category-level and full-profile reset helpers; no DOM/storage.
 - `js/study-pack.js` — pure portable kanji-pack schema, sanitization, filenames,
   and conversion into an ephemeral family-study snapshot; no DOM/storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
@@ -315,6 +320,9 @@ packs add none:
   text, sentence context, known state, scheduling, or review history.
 - Imported packs are temporary family-study sessions. Do not add a fifth
   storage key for packs, import history, source choice, or progress.
+- Dashboard category clearing changes only that collection. Full reset must
+  show its scope and require the exact typed phrase before writing empty values
+  to all four stores; do not rely on a single browser confirmation dialog.
 - Keep `APP_VERSION` in `js/app.js` synchronized with `package.json` when the
   profile format or public data-management UI ships.
 

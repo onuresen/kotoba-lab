@@ -56,7 +56,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   previews, keyboard grading, a due counter, and streak tracking.
 - **Profile & Data:** export the complete local study profile as versioned JSON,
   inspect an import before it writes anything, then merge safely or explicitly
-  replace local cards, schedules, known items, and review history.
+  replace local cards, schedules, known items, and review history. A local-data
+  dashboard separates new/due/scheduled cards, known collections, review
+  activity, category cleanup, and a typed-confirmation full reset.
 - **Portable Study Packs:** export kanji from the current text, a selected
   family, or a Relations network without personal progress; imported packs open
   directly as temporary Kanji study sessions.
@@ -123,6 +125,7 @@ palettes/                 Kotoba Lab color palette
 js/                      application modules and tests
 js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 js/backup.js             versioned full-profile export, inspection, and merge
+js/profile-dashboard.js  local data metrics and category-reset helpers
 js/study-pack.js         private-data-free portable kanji pack format
 data/                    dictionaries, samples, KanjiVG data, attribution
 tools/                   reproducible data-generation tools

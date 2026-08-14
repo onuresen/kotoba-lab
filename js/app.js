@@ -11,6 +11,7 @@ import { readAozoraFile } from './aozora.js';
 import { createKnownSet, createDeck, createReviewLog } from './storage.js';
 import { serializeBackup, backupFilename, inspectBackup, backupSummary, mergeState, describeMerge } from './backup.js';
 import { serializeStudyPack, parseStudyPack, studyPackFilename, studyPackFamily } from './study-pack.js';
+import { buildProfileMetrics, clearProfileCategory, emptyProfileState } from './profile-dashboard.js';
 import { sentenceAt, contextParts } from './context.js';
 import {
   buildTextJourney,
@@ -71,7 +72,7 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const APP_VERSION = '10.7.0';
+const APP_VERSION = '10.8.0';
 
 let jlpt, samples = [];
 let vocabList = [];
@@ -1297,6 +1298,26 @@ function profileSummaryMarkup(summary) {
   ].map(([label, value]) => `<span><b>${Number(value).toLocaleString()}</b><small>${label}</small></span>`).join('');
 }
 
+function renderProfileDashboard(state) {
+  const metrics = buildProfileMetrics(state);
+  const size = metrics.bytes < 1024 ? `${metrics.bytes} bytes` : `${(metrics.bytes / 1024).toFixed(1)} KB`;
+  const lastReview = metrics.lastReview
+    ? new Date(`${metrics.lastReview}T00:00:00`).toLocaleDateString()
+    : 'No reviews recorded';
+  $('#profile-health-detail').textContent = `${size} of local JSON · ${lastReview}${metrics.lastReview ? ' last reviewed' : ''} · ready to export.`;
+  const categories = [
+    { key: 'deck', glyph: '語', title: 'Saved cards', count: metrics.cards, detail: `${metrics.newCards} new · ${metrics.dueCards} due · ${metrics.scheduledCards} scheduled` },
+    { key: 'knownWords', glyph: '言', title: 'Known words', count: metrics.knownWords, detail: 'Personal reading coverage' },
+    { key: 'knownKanji', glyph: '漢', title: 'Known kanji', count: metrics.knownKanji, detail: 'Kanji coverage and study context' },
+    { key: 'reviewLog', glyph: '復', title: 'Review history', count: metrics.reviewDays, detail: `${metrics.reviewAnswers} answers across ${metrics.reviewDays} days` },
+  ];
+  $('#profile-categories').innerHTML = categories.map((category) => `<article class="profile-category">
+    <span class="profile-category-glyph" aria-hidden="true">${category.glyph}</span>
+    <div><h4>${category.title}</h4><p><b>${category.count.toLocaleString()}</b> · ${category.detail}</p></div>
+    <button type="button" class="btn btn-ghost" data-profile-clear="${category.key}" ${category.count ? '' : 'disabled'}>Clear</button>
+  </article>`).join('');
+}
+
 function renderMyWords() {
   $('#mw-known-count').textContent = `${knownWords.count()} words · ${knownKanji.count()} kanji`;
   $('#mw-known-words').innerHTML = knownWords.all().length
@@ -1311,7 +1332,9 @@ function renderMyWords() {
   const days = Object.keys(reviewLog.all()).length;
   $('#mw-backup-count').textContent =
     `${rows.length} cards · ${knownWords.count() + knownKanji.count()} known · ${days} day${days === 1 ? '' : 's'} of history`;
-  $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(currentState()));
+  const profileState = currentState();
+  $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(profileState));
+  renderProfileDashboard(profileState);
   $('#mw-deck-tbody').innerHTML = rows.length
     ? rows.map((r) => `
       <tr>
@@ -1326,6 +1349,15 @@ function renderMyWords() {
 }
 
 function onMyWordsClick(e) {
+  const categoryClear = e.target.closest('[data-profile-clear]');
+  if (categoryClear) {
+    const category = categoryClear.dataset.profileClear;
+    const names = { deck: 'saved cards and schedules', knownWords: 'known words', knownKanji: 'known kanji', reviewLog: 'review history' };
+    if (!names[category] || !confirm(`Clear ${names[category]} from this browser? Export a profile first if you may need them later.`)) return;
+    writeProfileState(clearProfileCategory(currentState(), category));
+    toast(`Cleared ${names[category]}.`, 'success');
+    return;
+  }
   const goReview = e.target.closest('.go-review');
   if (goReview) { e.preventDefault(); switchTab('review'); return; }
   const knownRemove = e.target.closest('.known-rm');
@@ -1425,6 +1457,23 @@ function applyProfileImport(mode) {
   writeProfileState(next);
   closeProfileImport();
   toast(message, 'success');
+}
+
+function setProfileResetOpen(open) {
+  $('#profile-reset-confirm').hidden = !open;
+  $('#profile-reset-phrase').value = '';
+  $('#profile-reset-apply').disabled = true;
+  if (open) $('#profile-reset-phrase').focus();
+  else $('#profile-reset-open').focus();
+}
+
+function resetProfileEverything() {
+  if ($('#profile-reset-phrase').value !== 'RESET KOTOBA LAB') return;
+  writeProfileState(emptyProfileState());
+  closeProfileImport();
+  closeStudyPack();
+  setProfileResetOpen(false);
+  toast('All local Kotoba Lab study data was reset.', 'success');
 }
 
 // ---- portable study packs --------------------------------------------------
@@ -1713,6 +1762,12 @@ function wireUi() {
   $('#profile-import-cancel').addEventListener('click', closeProfileImport);
   $('#profile-import-merge').addEventListener('click', () => applyProfileImport('merge'));
   $('#profile-import-replace').addEventListener('click', () => applyProfileImport('replace'));
+  $('#profile-reset-open').addEventListener('click', () => setProfileResetOpen(true));
+  $('#profile-reset-cancel').addEventListener('click', () => setProfileResetOpen(false));
+  $('#profile-reset-phrase').addEventListener('input', (event) => {
+    $('#profile-reset-apply').disabled = event.target.value !== 'RESET KOTOBA LAB';
+  });
+  $('#profile-reset-apply').addEventListener('click', resetProfileEverything);
   $('#study-pack-source').addEventListener('change', () => updateStudyPackSource({ replaceTitle: true }));
   $('#study-pack-download').addEventListener('click', downloadStudyPack);
   $('#study-pack-file').addEventListener('change', onStudyPackFile);
