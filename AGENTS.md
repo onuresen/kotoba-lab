@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.3.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.4.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -31,10 +31,11 @@
 - Study feedback Group C is ✓ Done: answer reveals, Review-grade acknowledgement,
   correct/incorrect result treatments, progress/completion moments, known/save
   confirmations, mobile-safe toasts, and richer Radical Tree component focus.
-- Kanji Relationship Map Group A is ✓ Done: the pure relationship engine
-  combines canonical radicals, direct components, normalized readings, and
-  supporting stroke proximity into bounded, explainable neighborhoods. Group B
-  interactive canvas and Group C app-wide/mobile integration remain open.
+- Kanji Relationship Map Groups A–C are ✓ Done: the pure engine combines
+  canonical radicals, direct components, normalized readings, and supporting
+  stroke proximity into bounded neighborhoods; the full-screen map adds
+  evidence connectors, recenter/back navigation, known/text/JLPT context, and
+  app-wide doorways. Phones use swipeable Structure and Readings lanes.
 
 ## Public repository conventions
 
@@ -64,6 +65,8 @@
 - `js/kanji-relationships.js` — pure reusable relationship index, evidence
   ranking, common-reading bounds, and deterministic neighborhood selection;
   no DOM, storage, fetch, or stroke paths.
+- `js/kanji-map.js` — accessible full-screen relationship canvas, evidence
+  detail, navigation history, known-state control, and compact mobile lanes.
 - `js/kanji-study.js` — pure ephemeral family-session state, reveal progress,
   bounded navigation, and shuffle/restart behavior; no DOM or storage.
 - `js/kanji-labs.js` — pure phonetic-signal analysis, contrast-set generation,
@@ -76,7 +79,8 @@
   reverse index; lazy-loaded only for structural family views.
 - `data/kanjivg.manifest.json` — pinned input and artifact checksums used by CI.
 - `js/app.js` — retryable lazy loader plus delegated doorway integration.
-- `japanese-reader.css` — app-specific styles, including the tree overlay.
+- `japanese-reader.css` — app-specific styles, including Tree and Relationship
+  Map overlays and their responsive layouts.
 - `README.md` — concise public overview, local setup, architecture, and license
   boundaries.
 - `PRIVACY.md` — public description of local storage and network requests.

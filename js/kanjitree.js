@@ -79,6 +79,7 @@ export function createKanjiTree({
   isKnown = () => false,
   toggleKnown = null,
   onKnownChange = () => {},
+  onOpenRelationships = null,
   onError = () => {},
 }) {
   if (typeof loadData !== 'function') throw new TypeError('createKanjiTree requires loadData().');
@@ -175,7 +176,7 @@ export function createKanjiTree({
       ${direct && typeof toggleKnown === 'function' ? `<div class="kt-info-actions">
         <button type="button" class="btn btn-ghost kt-known" data-known="${isKnown(node.element)}">
           ${isKnown(node.element) ? '✓ Known' : 'Mark known'}
-        </button>
+        </button>${typeof onOpenRelationships === 'function' ? '<button type="button" class="btn btn-ghost kt-relationships">Relationship Map</button>' : ''}
       </div>` : ''}`;
   }
 
@@ -380,6 +381,13 @@ export function createKanjiTree({
         renderInfo(node);
         onKnownChange(node.element, known);
       }
+      return;
+    }
+    if (event.target.closest('.kt-relationships') && typeof onOpenRelationships === 'function') {
+      const char = currentNode()?.element;
+      const target = returnFocus;
+      close();
+      if (char) onOpenRelationships(char, target);
       return;
     }
     if (event.target.closest('.kt-explode')) { setExploded(!exploded); return; }

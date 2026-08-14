@@ -21,7 +21,7 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Phone-friendly study:** compact branding, a safe-area-aware bottom tab bar,
   swipeable samples and JLPT filters, tap-to-open word details, compact Kanji
   and saved-deck cards, focused Review and family-study workspaces, and a
-  compact full-screen Radical Tree.
+  compact full-screen Radical Tree plus swipeable relationship lanes.
 - **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning;
   combine JLPT, stroke-count, and known-state filters; then browse ordinary
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
@@ -43,6 +43,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   automatically removes ambiguous multi-family answers.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
   and drill into its decomposition using committed KanjiVG data.
+- **Kanji Relationship Map:** explore explainable links through shared radicals,
+  visual components, and dictionary readings; recenter on neighboring kanji,
+  inspect the evidence, and move directly between the map and Radical Tree.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
 - **My Words:** manage the local study deck and move it between browsers with a

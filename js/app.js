@@ -20,6 +20,8 @@ import {
 } from './text-journey.js';
 import { isKanji } from './script.js';
 import { createKanjiTree } from './kanjitree.js';
+import { createKanjiMap } from './kanji-map.js';
+import { buildKanjiRelationshipIndex, buildKanjiRelationships } from './kanji-relationships.js';
 import {
   buildKanjiCatalog,
   buildKanjiFamilies,
@@ -76,6 +78,9 @@ let tokenizer = null;       // the active one
 let current = null; // { tokens, kStats, wStats }
 let kanjiTree = null;
 let kanjiVGPromise = null;
+let kanjiMap = null;
+let kanjiMapPromise = null;
+let kanjiRelationshipIndex = null;
 let kanjiCatalog = [];
 let kanjiStructureIndex = null;
 let kanjiStructurePromise = null;
@@ -144,6 +149,7 @@ async function boot() {
         toast(known ? 'Marked known.' : 'Unmarked.', 'success');
         refreshKnownEverywhere();
       },
+      onOpenRelationships: (ch, trigger) => openKanjiMap(ch, trigger),
       onError: (message) => toast(message, 'error'),
     });
   } catch (err) {
@@ -207,6 +213,47 @@ function loadKanjiStructureIndex() {
       });
   }
   return kanjiStructurePromise;
+}
+
+async function loadKanjiMap() {
+  if (kanjiMap) return kanjiMap;
+  if (!kanjiMapPromise) {
+    kanjiMapPromise = loadKanjiStructureIndex()
+      .then((structureIndex) => {
+        kanjiRelationshipIndex ||= buildKanjiRelationshipIndex(kanjiCatalog, structureIndex);
+        kanjiMap = createKanjiMap({
+          getRelationships: (char) => buildKanjiRelationships(kanjiRelationshipIndex, char),
+          isKnown: (char) => knownKanji.has(char),
+          toggleKnown: (char) => knownKanji.toggle(char),
+          onKnownChange: (_char, known) => {
+            toast(known ? 'Marked known.' : 'Unmarked.', 'success');
+            refreshKnownEverywhere();
+          },
+          inCurrentText: (char) => Boolean(current?.kStats?.rows?.some((row) => row.ch === char)),
+          onOpenTree: (char, trigger) => kanjiTree?.open(char, trigger),
+        });
+        return kanjiMap;
+      })
+      .catch((error) => {
+        kanjiMapPromise = null;
+        throw error;
+      });
+  }
+  return kanjiMapPromise;
+}
+
+async function openKanjiMap(char, trigger = document.activeElement) {
+  if (!char || [...char].length !== 1) return;
+  trigger?.setAttribute?.('aria-busy', 'true');
+  try {
+    const map = await loadKanjiMap();
+    map.open(char, trigger);
+  } catch (error) {
+    console.error(error);
+    toast('Could not load the relationship index — try again.', 'error');
+  } finally {
+    trigger?.removeAttribute?.('aria-busy');
+  }
 }
 
 // ---- main pipeline ----------------------------------------------------------
@@ -337,7 +384,7 @@ function showInfo(sel) {
       </div>` : ''}
       ${info?.strokes ? `<p class="hint">${info.strokes} strokes</p>` : ''}
       ${!info ? `<p class="hint">Not in the kanji dictionary (very rare character).</p>` : ''}
-      <div class="info-actions">${knownBtn(knownKanji.has(sel.ch))}</div>`;
+      <div class="info-actions">${knownBtn(knownKanji.has(sel.ch))}<button type="button" class="btn btn-ghost" data-kanji-map="${esc(sel.ch)}">Relationship Map</button></div>`;
   } else {
     const kanjiChars = [...new Set([...sel.surface].filter(isKanji))];
     $('#info').innerHTML = `
@@ -351,7 +398,7 @@ function showInfo(sel) {
       <div class="info-actions">${knownBtn(knownWords.has(sel.surface))}${saveBtn(deck.has(sel.surface))}</div>
       ${kanjiChars.length ? `<div class="info-kchars">
         <span class="label">Kanji in this word</span>
-        <div class="chips">${kanjiChars.map((c) => `<span class="k jlpt-${levelSlug(jlpt.kanjiLevel(c))} info-kchar" data-k="${esc(c)}" data-kanji-tree="${esc(c)}" role="button" tabindex="0" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</span>`).join('')}</div>
+        <div class="chips">${kanjiChars.map((c) => `<span class="info-kpair jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="k info-kchar" data-k="${esc(c)}" data-kanji-tree="${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</button><button type="button" class="info-kmap" data-kanji-map="${esc(c)}" aria-label="Open relationship map for ${esc(c)}">↗</button></span>`).join('')}</div>
       </div>` : ''}`;
   }
   if (window.matchMedia('(max-width: 780px)').matches) setInfoSheet(true);
@@ -412,6 +459,7 @@ function refreshKnownEverywhere() {
   renderMyWords();
   renderKanjiBrowser();
   refreshReview();
+  kanjiMap?.update();
 }
 
 function journeyWords(item) {
@@ -457,6 +505,7 @@ function renderTextJourney(focusAction = '') {
       <button type="button" class="btn btn-primary" data-journey-action="reveal" ${textJourneySession.revealed ? 'disabled' : ''}>${textJourneySession.revealed ? 'Revealed' : 'Reveal from text'}</button>
       <button type="button" class="btn btn-ghost" data-journey-action="known">${known ? '✓ Known' : 'Mark known'}</button>
       <button type="button" class="btn btn-ghost" data-kanji-tree="${esc(item.char)}">Open Radical Tree</button>
+      <button type="button" class="btn btn-ghost" data-kanji-map="${esc(item.char)}">Relationship Map</button>
       ${final && textJourneySession.revealed
         ? '<button type="button" class="btn btn-primary" data-journey-action="reread">Reread text →</button>'
         : `<button type="button" class="btn btn-ghost" data-journey-action="next" ${final ? 'disabled' : ''}>Next →</button>`}
@@ -493,7 +542,7 @@ function kanjiCard(item) {
   const reading = [item.on && `On ${item.on}`, item.kun && `Kun ${item.kun}`].filter(Boolean).join(' · ');
   const known = knownKanji.has(item.char);
   const aria = `Open ${item.char} — ${item.meaning || 'meaning unavailable'}, ${level}, ${item.strokes} strokes`;
-  return `<button type="button" class="kanji-card jlpt-${levelSlug(item.jlpt)}" data-kanji-tree="${esc(item.char)}" data-known="${known}" aria-label="${esc(aria)}">
+  return `<div class="kanji-card-wrap jlpt-${levelSlug(item.jlpt)}"><button type="button" class="kanji-card" data-kanji-tree="${esc(item.char)}" data-known="${known}" aria-label="${esc(aria)}">
     <span class="kanji-card-glyph">${esc(item.char)}</span>
     <span class="kanji-card-copy">
       <strong>${esc(item.meaning || 'Meaning unavailable')}</strong>
@@ -501,7 +550,7 @@ function kanjiCard(item) {
       <span class="kanji-card-meta">${item.strokes} strokes${known ? ' · ✓ Known' : ''}</span>
     </span>
     <span class="badge" data-status="${item.jlpt == null ? 'archive' : 'reference'}">${level}</span>
-  </button>`;
+  </button><button type="button" class="kanji-card-map" data-kanji-map="${esc(item.char)}" aria-label="Open relationship map for ${esc(item.char)}"><span aria-hidden="true">↗</span> Map</button></div>`;
 }
 
 function renderFamilyMixSetup(workspace) {
@@ -612,7 +661,8 @@ function renderKanjiStudy(focusAction = '') {
         : `<button type="button" class="btn btn-primary" data-kanji-study-action="reveal" ${kanjiStudySession.revealed ? 'disabled' : ''}>${kanjiStudySession.revealed ? 'Revealed' : 'Reveal details'}</button>`}
       <button type="button" class="btn btn-ghost" data-kanji-study-action="next" ${kanjiStudySession.index === progress.total - 1 ? 'disabled' : ''}>Next →</button>
       ${(!contrast && !mix) || kanjiStudySession.revealed ? `<button type="button" class="btn btn-ghost" data-kanji-study-action="known">${known ? '✓ Known' : 'Mark known'}</button>
-      <button type="button" class="btn btn-ghost" data-kanji-tree="${esc(item.char)}">Open Radical Tree</button>` : ''}
+      <button type="button" class="btn btn-ghost" data-kanji-tree="${esc(item.char)}">Open Radical Tree</button>
+      <button type="button" class="btn btn-ghost" data-kanji-map="${esc(item.char)}">Relationship Map</button>` : ''}
       <button type="button" class="btn btn-ghost" data-kanji-study-action="shuffle">Shuffle & restart</button>
     </div>
     <p class="hint kanji-study-keys">${mix ? 'Interleaved, balanced questions · Ambiguous multi-family members are excluded.' : contrast ? 'Meaning and uniquely identifying on’yomi clues alternate when the set supports them.' : phonetic ? `Signal confidence: ${kanjiStudySession.confidence}% in this filtered family · Pattern evidence, not an etymology claim.` : 'Keyboard: ←/→ move · Space reveals.'}</p>`;
@@ -951,8 +1001,8 @@ function renderStage() {
   const kanjiRow = kanjiChars.length ? `
     <div class="srs-kanji">${kanjiChars.map((c) => {
       const info = jlpt.kanjiInfo(c);
-      return `<span class="srs-kchar jlpt-${levelSlug(jlpt.kanjiLevel(c))}" title="${esc(info?.meaning || '')}" data-kanji-tree="${esc(c)}" role="button" tabindex="0" aria-label="Open radical tree for ${esc(c)}">${esc(c)}
-        <i>${esc(info?.meaning ? info.meaning.split(',')[0].trim() : '—')}</i></span>`;
+      return `<span class="srs-kpair jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="srs-kchar" title="${esc(info?.meaning || '')}" data-kanji-tree="${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}
+        <i>${esc(info?.meaning ? info.meaning.split(',')[0].trim() : '—')}</i></button><button type="button" class="srs-kmap" data-kanji-map="${esc(c)}" aria-label="Open relationship map for ${esc(c)}">↗</button></span>`;
     }).join('')}</div>` : '';
 
   stage.innerHTML = `
@@ -1041,7 +1091,7 @@ function renderMyWords() {
     ? knownWords.all().map((w) => `<span class="known-chip"><span class="known-chip-label">${esc(w)}</span><button type="button" class="known-rm" data-kind="word" data-key="${esc(w)}" aria-label="Unmark known word ${esc(w)}">×</button></span>`).join('')
     : `<span class="hint">None marked yet.</span>`;
   $('#mw-known-kanji').innerHTML = knownKanji.all().length
-    ? knownKanji.all().map((c) => `<span class="known-chip jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="known-kanji-open" data-kanji-tree="${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</button><button type="button" class="known-rm" data-kind="kanji" data-key="${esc(c)}" aria-label="Unmark known kanji ${esc(c)}">×</button></span>`).join('')
+    ? knownKanji.all().map((c) => `<span class="known-chip jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="known-kanji-open" data-kanji-tree="${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</button><button type="button" class="known-kanji-map" data-kanji-map="${esc(c)}" aria-label="Open relationship map for ${esc(c)}">↗</button><button type="button" class="known-rm" data-kind="kanji" data-key="${esc(c)}" aria-label="Unmark known kanji ${esc(c)}">×</button></span>`).join('')
     : `<span class="hint">None marked yet.</span>`;
 
   const rows = deck.all();
@@ -1300,6 +1350,11 @@ function wireUi() {
   document.addEventListener('keydown', onKanjiStudyKey);
   // One delegated path covers dynamic Read, Review, and My Words markup.
   document.addEventListener('click', (event) => {
+    const mapDoorway = event.target.closest?.('[data-kanji-map]');
+    if (mapDoorway && !mapDoorway.closest('.krm-overlay')) {
+      openKanjiMap(mapDoorway.dataset.kanjiMap, mapDoorway);
+      return;
+    }
     const doorway = event.target.closest?.('[data-kanji-tree]');
     if (!doorway || doorway.closest('.kt-overlay') || !kanjiTree) return;
     const char = doorway.dataset.kanjiTree;
