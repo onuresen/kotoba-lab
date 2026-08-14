@@ -101,6 +101,7 @@ let queue = [];
 let revealed = false;
 let sessionCount = 0;
 let lastAnswered = null; // keeps the card you just graded from reappearing at once
+let reviewTransitionTimer = null;
 
 // ---- data load --------------------------------------------------------------
 // Without ui-base.css every design token goes undefined and the app renders in
@@ -442,7 +443,7 @@ function renderTextJourney(focusAction = '') {
   const final = textJourneySession.index === textJourneySession.route.length - 1;
   const known = knownKanji.has(item.char);
   root.innerHTML = `<div class="journey-head"><div><span class="eyebrow">Step ${textJourneySession.index + 1} of ${textJourneySession.route.length}</span><h3>${esc(item.char)} · unlocks ${item.occurrences} occurrence${item.occurrences === 1 ? '' : 's'}</h3></div><button type="button" class="btn btn-ghost" data-journey-action="close">Close journey</button></div>
-    <div class="journey-stage">
+    <div class="journey-stage" data-revealed="${textJourneySession.revealed}">
       <div class="journey-glyph jlpt-${levelSlug(item.jlpt)}">${esc(item.char)}</div>
       <p>${textJourneySession.revealed ? esc(item.meaning || 'Meaning unavailable') : 'Recall the meaning, readings, and words from your text.'}</p>
       <div class="journey-detail" ${textJourneySession.revealed ? '' : 'hidden'}>
@@ -553,6 +554,8 @@ function renderKanjiStudy(focusAction = '') {
   const contrastAnswer = contrast ? kanjiStudySession.answers.get(item.char) : null;
   const mixAnswer = mix ? kanjiStudySession.answers.get(item.char) : null;
   const score = phonetic ? phoneticScore(kanjiStudySession) : contrast ? contrastScore(kanjiStudySession) : mix ? familyMixScore(kanjiStudySession) : null;
+  const answerResult = phonetic ? phoneticAnswer?.correct : contrast ? contrastAnswer?.correct : mix ? mixAnswer?.correct : null;
+  const feedbackState = answerResult === true ? 'correct' : answerResult === false ? 'incorrect' : 'neutral';
   workspace.innerHTML = `
     <div class="kanji-study-head">
       <div><span class="eyebrow">${mix ? 'Family Mix Challenge' : contrast ? 'Contrast Lab' : phonetic ? 'Phonetic Component Lab' : 'Family study'}</span><h3>${esc(kanjiStudySession.label)}</h3></div>
@@ -562,8 +565,8 @@ function renderKanjiStudy(focusAction = '') {
       <span>Card ${progress.current.toLocaleString()} of ${progress.total.toLocaleString()}</span>
       <span>${phonetic || contrast || mix ? `${score.correct.toLocaleString()} of ${score.answered.toLocaleString()} ${phonetic ? 'predictions' : mix ? 'families' : 'distinctions'} correct · ` : `${progress.studied.toLocaleString()} studied · `}${knownCount.toLocaleString()} known</span>
     </div>
-    <div class="kanji-study-progress" role="progressbar" aria-label="Family study progress" aria-valuemin="0" aria-valuemax="${progress.total}" aria-valuenow="${progress.studied}"><span style="width:${progress.pct}%"></span></div>
-    <div class="kanji-study-stage">
+    <div class="kanji-study-progress" data-complete="${progress.complete}" role="progressbar" aria-label="Family study progress" aria-valuemin="0" aria-valuemax="${progress.total}" aria-valuenow="${progress.studied}"><span style="width:${progress.pct}%"></span></div>
+    <div class="kanji-study-stage" data-revealed="${kanjiStudySession.revealed}" data-feedback="${feedbackState}">
       <div class="kanji-study-prompt">
         <span class="badge" data-status="reference">${esc(mix ? `${kanjiStudySession.families.length} families interleaved` : phonetic || contrast ? `${kanjiStudySession.component} component` : kanjiStudySession.label)}</span>
         <span class="kanji-study-glyph jlpt-${levelSlug(item.jlpt)}">${esc(contrast ? kanjiStudySession.component : item.char)}</span>
@@ -903,12 +906,16 @@ function emptyState(icon, title, sub) {
 
 function renderStage() {
   const stage = $('#srs-stage');
+  stage.removeAttribute('data-feedback');
+  stage.removeAttribute('aria-busy');
   if (!deck.count()) {
+    stage.dataset.reviewState = 'empty';
     stage.innerHTML = emptyState('☆', 'No cards yet',
       'Save words with "☆ Save" in the Read tab — they arrive here due immediately.');
     return;
   }
   if (!queue.length) {
+    stage.dataset.reviewState = 'complete';
     const s = queueStats(deck.all());
     const when = s.nextDue ? `Next card in ${formatWait(s.nextDue - Date.now())}.` : 'Nothing scheduled.';
     const done = sessionCount ? ` You answered ${sessionCount} card${sessionCount === 1 ? '' : 's'} this session.` : '';
@@ -917,6 +924,7 @@ function renderStage() {
   }
 
   const { entry, card } = queue[0];
+  stage.dataset.reviewState = revealed ? 'revealed' : 'prompt';
   const recall = isRecall(entry);
   const slug = levelSlug(entry.level);
   const word = `<div class="srs-word jlpt-${slug}">${esc(entry.surface)}</div>`;
@@ -982,8 +990,17 @@ function answer(grade) {
   sessionCount += 1;
   lastAnswered = entry.surface;
   revealed = false;
-  refreshReview();
-  renderMyWords();
+  // Scheduling is persisted immediately. The brief visual acknowledgement
+  // delays only the next render, so closing the page cannot lose an answer.
+  const stage = $('#srs-stage');
+  stage.dataset.feedback = grade;
+  stage.setAttribute('aria-busy', 'true');
+  clearTimeout(reviewTransitionTimer);
+  const transitionMs = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240;
+  reviewTransitionTimer = setTimeout(() => {
+    refreshReview();
+    renderMyWords();
+  }, transitionMs);
 }
 
 function onReviewClick(e) {

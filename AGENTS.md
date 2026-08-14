@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.2.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.3.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -27,7 +27,10 @@
   stronger hierarchy, indigo support, and harmonized Kanji/Review/Tree styling.
 - Interaction polish Group B is ✓ Done: tab and panel transitions, tactile
   controls, animated disclosures, staggered Kanji results, and a complete
-  reduced-motion path. Group C study-specific feedback remains open.
+  reduced-motion path.
+- Study feedback Group C is ✓ Done: answer reveals, Review-grade acknowledgement,
+  correct/incorrect result treatments, progress/completion moments, known/save
+  confirmations, mobile-safe toasts, and richer Radical Tree component focus.
 
 ## Public repository conventions
 
@@ -93,6 +96,8 @@
 - Motion confirms navigation and newly rendered content but never carries
   meaning alone. Every new animation or transform needs a matching
   `prefers-reduced-motion` rule.
+- Review scheduling must be persisted before its 240 ms grade acknowledgement;
+  the animation may delay rendering the next card, never saving the answer.
 - Component colors are positional and non-semantic. Keep the assembled kanji
   monochrome; color direct children only in the separated state, and match each
   component button without relying on color as its label.
