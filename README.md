@@ -59,6 +59,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   replace local cards, schedules, known items, and review history. A local-data
   dashboard separates new/due/scheduled cards, known collections, review
   activity, category cleanup, and a typed-confirmation full reset.
+- **Optional local usage journal:** learn which parts of Kotoba Lab you really
+  use through daily session, visible-minute, and coarse-action totals. It is off
+  by default, records no study content, and never sends data anywhere.
 - **Portable Study Packs:** export kanji from the current text, a selected
   family, or a Relations network without personal progress; imported packs open
   directly as temporary Kanji study sessions.
@@ -126,6 +129,7 @@ js/                      application modules and tests
 js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 js/backup.js             versioned full-profile export, inspection, and merge
 js/profile-dashboard.js  local data metrics and category-reset helpers
+js/usage-journal.js      opt-in, payload-free local activity counters
 js/study-pack.js         private-data-free portable kanji pack format
 data/                    dictionaries, samples, KanjiVG data, attribution
 tools/                   reproducible data-generation tools
@@ -133,12 +137,14 @@ vendor/kuromoji/         vendored tokenizer and dictionary
 serve.mjs / serve.cmd    dependency-free local server
 ```
 
-User state is stored under four `localStorage` keys:
+User state is stored under five `localStorage` keys. The usage journal is
+optional, off by default, and deliberately excluded from profile backups:
 
 - `kotoba-lab:deck`
 - `kotoba-lab:known-words`
 - `kotoba-lab:known-kanji`
 - `kotoba-lab:review-log`
+- `kotoba-lab:usage-journal`
 
 ## Data and licensing
 

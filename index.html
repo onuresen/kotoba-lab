@@ -406,13 +406,30 @@
         <p id="profile-health-detail" class="hint"></p>
         <div id="profile-categories" class="profile-categories"></div>
         <div class="profile-reset-zone">
-          <div><strong>Reset all local study data</strong><p class="hint">Clears cards, known items, schedules, and review history from this browser.</p></div>
+          <div><strong>Reset all local Kotoba Lab data</strong><p class="hint">Clears cards, known items, schedules, review history, and the optional usage journal from this browser.</p></div>
           <button type="button" id="profile-reset-open" class="btn btn-ghost profile-replace">Begin reset</button>
         </div>
         <section id="profile-reset-confirm" class="profile-reset-confirm" hidden>
           <label for="profile-reset-phrase">Type <strong>RESET KOTOBA LAB</strong> to confirm.</label>
           <div><input id="profile-reset-phrase" class="input" type="text" autocomplete="off" spellcheck="false"><button type="button" id="profile-reset-apply" class="btn btn-primary" disabled>Reset everything</button><button type="button" id="profile-reset-cancel" class="btn btn-ghost">Cancel</button></div>
         </section>
+      </section>
+      <section class="usage-journal" aria-labelledby="usage-journal-title">
+        <div class="usage-journal-head">
+          <div><span class="label">OPTIONAL · LOCAL ONLY</span><h3 id="usage-journal-title">Usage journal</h3></div>
+          <span id="usage-journal-status" class="badge" data-status="archive">Paused</span>
+        </div>
+        <p class="hint">See how you actually use Kotoba Lab before choosing the next feature. When enabled, it keeps only daily totals for sessions, visible active minutes, and coarse actions such as opening a tab, tree, study session, or review answer.</p>
+        <div id="usage-journal-summary" class="profile-summary" aria-label="Local usage summary"></div>
+        <p id="usage-journal-detail" class="hint"></p>
+        <div class="usage-journal-privacy">
+          <span aria-hidden="true">守</span>
+          <p><strong>No study content is recorded.</strong> Never pasted text, words, kanji, searches, filenames, answers, grades, or timestamps for individual actions. Nothing is transmitted or included in profile backups.</p>
+        </div>
+        <div class="profile-actions">
+          <button type="button" id="usage-journal-toggle" class="btn btn-primary">Enable journal</button>
+          <button type="button" id="usage-journal-clear" class="btn btn-ghost" disabled>Reset journal</button>
+        </div>
       </section>
       <div class="profile-actions">
         <button id="mw-backup-download" class="btn btn-primary">Download profile (.json)</button>

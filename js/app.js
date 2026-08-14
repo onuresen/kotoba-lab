@@ -12,6 +12,7 @@ import { createKnownSet, createDeck, createReviewLog } from './storage.js';
 import { serializeBackup, backupFilename, inspectBackup, backupSummary, mergeState, describeMerge } from './backup.js';
 import { serializeStudyPack, parseStudyPack, studyPackFilename, studyPackFamily } from './study-pack.js';
 import { buildProfileMetrics, clearProfileCategory, emptyProfileState } from './profile-dashboard.js';
+import { createUsageJournal } from './usage-journal.js';
 import { sentenceAt, contextParts } from './context.js';
 import {
   buildTextJourney,
@@ -72,7 +73,11 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const APP_VERSION = '10.8.0';
+const APP_VERSION = '10.9.0';
+const TAB_USAGE_EVENTS = Object.freeze({
+  analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
+  relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
+});
 
 let jlpt, samples = [];
 let vocabList = [];
@@ -110,6 +115,7 @@ const knownWords = createKnownSet('known-words');
 const knownKanji = createKnownSet('known-kanji');
 const deck = createDeck('deck');
 const reviewLog = createReviewLog('review-log');
+const usageJournal = createUsageJournal();
 const isKnown = { word: (s) => knownWords.has(s), kanji: (c) => knownKanji.has(c) };
 
 // review session state — rebuilt from the deck after every answer
@@ -157,6 +163,7 @@ async function boot() {
       isKnown: (ch) => knownKanji.has(ch),
       toggleKnown: (ch) => knownKanji.toggle(ch),
       onKnownChange: (_ch, known) => {
+        usageJournal.record('known.change');
         toast(known ? 'Marked known.' : 'Unmarked.', 'success');
         refreshKnownEverywhere();
       },
@@ -182,7 +189,12 @@ async function boot() {
   renderKanjiBrowser();
   renderMyWords();
   refreshReview();
-  if (samples[0]) { $('#input').value = samples[0].text; run(); }
+  if (samples[0]) { $('#input').value = samples[0].text; run({ recordUsage: false }); }
+  usageJournal.startSession();
+  renderUsageJournal();
+  window.setInterval(() => {
+    if (document.visibilityState === 'visible' && usageJournal.tickActiveMinute()) renderUsageJournal();
+  }, 60_000);
 }
 
 // Lazy and retryable: the 5.84 MB generated asset is fetched only when a
@@ -240,13 +252,20 @@ function relationshipMapOptions(extra = {}) {
     isKnown: (char) => knownKanji.has(char),
     toggleKnown: (char) => knownKanji.toggle(char),
     onKnownChange: (_char, known) => {
+      usageJournal.record('known.change');
       toast(known ? 'Marked known.' : 'Unmarked.', 'success');
       refreshKnownEverywhere();
     },
     inCurrentText: (char) => Boolean(current?.kStats?.rows?.some((row) => row.ch === char)),
-    onOpenTree: (char, trigger) => kanjiTree?.open(char, trigger),
+    onOpenTree: openKanjiTree,
     ...extra,
   };
+}
+
+function openKanjiTree(char, trigger = document.activeElement) {
+  if (!kanjiTree || !char || [...char].length !== 1) return;
+  usageJournal.record('tree.open');
+  kanjiTree.open(char, trigger);
 }
 
 async function loadKanjiMap() {
@@ -271,6 +290,7 @@ async function openKanjiMap(char, trigger = document.activeElement) {
   try {
     const map = await loadKanjiMap();
     map.open(char, trigger);
+    usageJournal.record('relations.open');
   } catch (error) {
     console.error(error);
     toast('Could not load the relationship index — try again.', 'error');
@@ -399,7 +419,7 @@ async function setRelationsView(view, { focus = true } = {}) {
       mount: networkHost,
       getRelationships: (char) => buildKanjiRelationships(kanjiRelationshipIndex, char, relationsQueryOptions()),
       isKnown: (char) => knownKanji.has(char),
-      onOpenTree: (char, trigger) => kanjiTree?.open(char, trigger),
+      onOpenTree: openKanjiTree,
       onNewRoot: (char) => {
         relationsSeed = char;
         map.open(char, null);
@@ -433,6 +453,7 @@ async function selectRelationsSeed(char, trigger = document.activeElement) {
   try {
     const map = await loadRelationsWorkspace();
     if (!map.open(char, trigger)) return;
+    usageJournal.record('relations.open');
     relationsNetwork?.open(char);
     relationsSeed = char;
     $('#relations-search').value = char;
@@ -453,10 +474,11 @@ async function selectRelationsSeed(char, trigger = document.activeElement) {
 }
 
 // ---- main pipeline ----------------------------------------------------------
-function run() {
+function run({ recordUsage = true } = {}) {
   const text = $('#input').value;
   $('#charcount').textContent = `${[...text].length} chars`;
   if (!text.trim()) { current = null; showEmpty(); return; }
+  if (recordUsage) usageJournal.record('analyze.run');
 
   const tokens = tokenizer.tokenize(text);
   const kStats = kanjiStats(text, jlpt);
@@ -624,6 +646,7 @@ function onInfoAction(e) {
     const isK = lastSel.type === 'kanji' ? knownKanji : knownWords;
     const key = lastSel.type === 'kanji' ? lastSel.ch : lastSel.surface;
     const now = isK.toggle(key);
+    usageJournal.record('known.change');
     toast(now ? 'Marked known.' : 'Unmarked.', 'success');
   } else if (saveEl && lastSel.type === 'word') {
     // The sentence is only recoverable here, while the text that produced this
@@ -728,6 +751,7 @@ function onTextJourneyAction(event) {
   else if (action === 'known') {
     const item = currentJourneyStep(textJourneySession);
     const known = knownKanji.toggle(item.char);
+    usageJournal.record('known.change');
     toast(known ? 'Marked known.' : 'Unmarked.', 'success');
     refreshKnownEverywhere();
     renderTextJourney('known');
@@ -893,6 +917,7 @@ function startKanjiStudy() {
       ? createContrastSession(kanjiBrowseActiveFamily)
       : createKanjiStudySession(kanjiBrowseActiveFamily, mode);
   if (!kanjiStudySession) return;
+  usageJournal.record('study.family');
   renderKanjiStudy(primaryStudyAction());
   revealKanjiWorkspace();
 }
@@ -959,6 +984,7 @@ function onKanjiStudyAction(event) {
   if (action === 'known') {
     const item = currentStudyCard(kanjiStudySession);
     const known = knownKanji.toggle(item.char);
+    usageJournal.record('known.change');
     toast(known ? 'Marked known.' : 'Unmarked.', 'success');
     refreshKnownEverywhere();
     renderKanjiStudy('known');
@@ -1241,6 +1267,7 @@ function answer(grade) {
   const { entry, card } = queue[0];
   deck.update(entry.surface, { srs: schedule(card, grade) });
   reviewLog.record(1);
+  usageJournal.record('review.answer');
   sessionCount += 1;
   lastAnswered = entry.surface;
   revealed = false;
@@ -1318,6 +1345,26 @@ function renderProfileDashboard(state) {
   </article>`).join('');
 }
 
+function renderUsageJournal() {
+  const root = $('#usage-journal-summary');
+  if (!root) return;
+  const summary = usageJournal.summary();
+  $('#usage-journal-status').textContent = summary.enabled ? 'Recording locally' : 'Paused';
+  $('#usage-journal-status').dataset.status = summary.enabled ? 'stable' : 'archive';
+  $('#usage-journal-toggle').textContent = summary.enabled ? 'Pause journal' : 'Enable journal';
+  $('#usage-journal-toggle').classList.toggle('btn-primary', !summary.enabled);
+  $('#usage-journal-clear').disabled = summary.days === 0;
+  root.innerHTML = [
+    ['Sessions today', summary.today.sessions],
+    ['Active minutes today', summary.today.activeMinutes],
+    ['Actions today', summary.today.eventCount],
+    ['Days kept', summary.days],
+  ].map(([label, value]) => `<span><b>${value.toLocaleString()}</b><small>${label}</small></span>`).join('');
+  $('#usage-journal-detail').textContent = summary.days
+    ? `${summary.sessions.toLocaleString()} session${summary.sessions === 1 ? '' : 's'} · ${summary.activeMinutes.toLocaleString()} active minute${summary.activeMinutes === 1 ? '' : 's'} · ${summary.eventCount.toLocaleString()} coarse action${summary.eventCount === 1 ? '' : 's'} across the last ${summary.days} logged day${summary.days === 1 ? '' : 's'}.`
+    : 'No activity has been recorded.';
+}
+
 function renderMyWords() {
   $('#mw-known-count').textContent = `${knownWords.count()} words · ${knownKanji.count()} kanji`;
   $('#mw-known-words').innerHTML = knownWords.all().length
@@ -1335,6 +1382,7 @@ function renderMyWords() {
   const profileState = currentState();
   $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(profileState));
   renderProfileDashboard(profileState);
+  renderUsageJournal();
   $('#mw-deck-tbody').innerHTML = rows.length
     ? rows.map((r) => `
       <tr>
@@ -1364,6 +1412,7 @@ function onMyWordsClick(e) {
   if (knownRemove) {
     const set = knownRemove.dataset.kind === 'word' ? knownWords : knownKanji;
     set.toggle(knownRemove.dataset.key);
+    usageJournal.record('known.change');
     refreshKnownEverywhere();
     return;
   }
@@ -1404,6 +1453,7 @@ function downloadBackup() {
     return;
   }
   download(backupFilename(), serializeBackup(state, Date.now(), { appVersion: APP_VERSION }), 'application/json');
+  usageJournal.record('profile.export');
   toast(`Profile exported with ${state.deck.length} saved card${state.deck.length === 1 ? '' : 's'}.`, 'success');
 }
 
@@ -1470,10 +1520,12 @@ function setProfileResetOpen(open) {
 function resetProfileEverything() {
   if ($('#profile-reset-phrase').value !== 'RESET KOTOBA LAB') return;
   writeProfileState(emptyProfileState());
+  usageJournal.clear({ disable: true });
+  renderUsageJournal();
   closeProfileImport();
   closeStudyPack();
   setProfileResetOpen(false);
-  toast('All local Kotoba Lab study data was reset.', 'success');
+  toast('All local Kotoba Lab data was reset.', 'success');
 }
 
 // ---- portable study packs --------------------------------------------------
@@ -1531,6 +1583,7 @@ function downloadStudyPack() {
   const title = $('#study-pack-title').value.trim() || source.title;
   const content = serializeStudyPack({ title, source: source.source, items: source.items }, Date.now(), { appVersion: APP_VERSION });
   download(studyPackFilename(title), content, 'application/json');
+  usageJournal.record('pack.export');
   toast(`Exported ${source.items.length} kanji as a study pack.`, 'success');
 }
 
@@ -1569,6 +1622,7 @@ function startStudyPack() {
   switchTab('kanji');
   kanjiBrowseActiveFamily = family;
   kanjiStudySession = createKanjiStudySession(family, 'study-pack');
+  usageJournal.record('study.pack');
   closeStudyPack();
   renderKanjiStudy('reveal');
   revealKanjiWorkspace();
@@ -1619,6 +1673,7 @@ function switchTab(name) {
     else t.removeAttribute('aria-current');
   });
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.dataset.panel === name));
+  usageJournal.record(TAB_USAGE_EVENTS[name]);
   // The shared Text box feeds Analyze and Read only. The other tabs are
   // independent workspaces and should open at their own content immediately.
   $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords';
@@ -1768,6 +1823,17 @@ function wireUi() {
     $('#profile-reset-apply').disabled = event.target.value !== 'RESET KOTOBA LAB';
   });
   $('#profile-reset-apply').addEventListener('click', resetProfileEverything);
+  $('#usage-journal-toggle').addEventListener('click', () => {
+    const enabled = usageJournal.setEnabled(!usageJournal.isEnabled());
+    renderUsageJournal();
+    toast(enabled ? 'Local usage journal enabled.' : 'Usage journal paused.', 'success');
+  });
+  $('#usage-journal-clear').addEventListener('click', () => {
+    if (!confirm('Reset the local usage journal? This clears its daily totals but leaves your study profile untouched.')) return;
+    usageJournal.clear();
+    renderUsageJournal();
+    toast('Usage journal reset.', 'success');
+  });
   $('#study-pack-source').addEventListener('change', () => updateStudyPackSource({ replaceTitle: true }));
   $('#study-pack-download').addEventListener('click', downloadStudyPack);
   $('#study-pack-file').addEventListener('change', onStudyPackFile);
@@ -1801,7 +1867,7 @@ function wireUi() {
     if (!doorway || doorway.closest('.kt-overlay') || !kanjiTree) return;
     const char = doorway.dataset.kanjiTree;
     if (!char || [...char].length !== 1) return;
-    kanjiTree.open(char, doorway);
+    openKanjiTree(char, doorway);
   });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;

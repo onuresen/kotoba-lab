@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.8.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.9.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -52,6 +52,11 @@
   local dashboard summarizes card readiness, known collections, review activity,
   and profile size; categories clear independently and full reset requires the
   exact typed phrase `RESET KOTOBA LAB`.
+- Local Usage Journal Group A is ✓ Done: the opt-in, browser-only journal keeps
+  90 days of daily session, visible-active-minute, and fixed coarse-action
+  counts. Profile & Data exposes today/overall summaries plus pause and reset;
+  no content payload can enter the journal. Friction signals and a separate
+  shareable report remain future Groups B and C.
 
 ## Public repository conventions
 
@@ -93,6 +98,8 @@
   compatible parsing, summary metadata, and repeat-safe merge rules.
 - `js/profile-dashboard.js` — pure card/readiness, known/review, and byte-size
   metrics plus category-level and full-profile reset helpers; no DOM/storage.
+- `js/usage-journal.js` — opt-in, allowlisted daily usage counters with no
+  payload API, 90-day retention, pause/reset controls, and summary helpers.
 - `js/study-pack.js` — pure portable kanji-pack schema, sanitization, filenames,
   and conversion into an ephemeral family-study snapshot; no DOM/storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
@@ -299,30 +306,38 @@
 
 ## Persistent state
 
-There are exactly four localStorage keys. Radical Tree, profiles, and study
-packs add none:
+There are exactly five localStorage keys. Radical Tree, profiles, and study
+packs add none; the fifth belongs only to the optional local usage journal:
 
 - `kotoba-lab:deck`
 - `kotoba-lab:known-words`
 - `kotoba-lab:known-kanji`
 - `kotoba-lab:review-log`
+- `kotoba-lab:usage-journal`
+
+The journal is off by default. It may store only allowlisted event counts,
+daily sessions, and visible active minutes for the last 90 days. Never add an
+event payload, dynamic event name, pasted text, word, kanji, search, filename,
+answer, grade, or individual-action timestamp. Keep it outside profile backups
+and study packs so sharing a profile never shares behavioral data.
 
 ## Profile and study-pack conventions
 
 - Full profiles use the existing `kotoba-lab-backup` format marker. Version 2
   adds app version and derived counts; version 1 remains readable.
-- Choosing a profile file must only inspect it. Write the four stores only after
+- Choosing a profile file must only inspect it. Write the four profile stores only after
   the user chooses safe merge or confirms full replacement.
 - Safe merge remains the recommended default: add missing cards/items, keep the
   more recently reviewed schedule, and take the maximum review count per day.
 - Study packs use the separate `kotoba-lab-study-pack` marker and contain only
   kanji, meaning, readings, JLPT, and stroke metadata. Never include pasted
   text, sentence context, known state, scheduling, or review history.
-- Imported packs are temporary family-study sessions. Do not add a fifth
+- Imported packs are temporary family-study sessions. Do not add another
   storage key for packs, import history, source choice, or progress.
 - Dashboard category clearing changes only that collection. Full reset must
   show its scope and require the exact typed phrase before writing empty values
-  to all four stores; do not rely on a single browser confirmation dialog.
+  to all four profile stores and clearing/disabling the usage journal; do not
+  rely on a single browser confirmation dialog.
 - Keep `APP_VERSION` in `js/app.js` synchronized with `package.json` when the
   profile format or public data-management UI ships.
 

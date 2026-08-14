@@ -18,6 +18,19 @@ analytics, advertising, application backend, or cloud synchronization.
 - Profile, study-pack, and TSV files are created locally and are only sent
   elsewhere if you choose to share or upload them.
 
+## Optional usage journal
+
+- The local usage journal is off by default and can be enabled, paused, or
+  reset from **Profile & Data**.
+- When enabled, it stores daily totals for sessions, visible active minutes,
+  and a fixed list of coarse actions such as opening a tab, Radical Tree,
+  Relations view, study session, export, or answering a review card.
+- It never stores pasted text, words, kanji, searches, filenames, answers,
+  grades, or individual-action timestamps. Its oldest daily totals are removed
+  after 90 days.
+- Journal data stays in this browser, is never transmitted, and is deliberately
+  excluded from profile backups and portable study packs.
+
 ## Network requests
 
 The hosted application downloads its HTML, styles, scripts, dictionaries, and
