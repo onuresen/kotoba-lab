@@ -36,6 +36,11 @@
   stroke proximity into bounded neighborhoods; the full-screen map adds
   evidence connectors, recenter/back navigation, known/text/JLPT context, and
   app-wide doorways. Phones use swipeable Structure and Readings lanes.
+- Relations workspace Group A is ✓ Done: the `縁 Relations` tab lazy-loads the
+  compact relationship index, embeds the existing one-hop explorer, and offers
+  dictionary search plus current-text, known-kanji, and discovery starting
+  points. Group B evidence/JLPT/state/size filters and Group C bounded two-hop
+  network exploration remain open.
 
 ## Public repository conventions
 
@@ -65,8 +70,8 @@
 - `js/kanji-relationships.js` — pure reusable relationship index, evidence
   ranking, common-reading bounds, and deterministic neighborhood selection;
   no DOM, storage, fetch, or stroke paths.
-- `js/kanji-map.js` — accessible full-screen relationship canvas, evidence
-  detail, navigation history, known-state control, and compact mobile lanes.
+- `js/kanji-map.js` — reusable embedded/full-screen relationship canvas,
+  evidence detail, navigation history, known-state control, and mobile lanes.
 - `js/kanji-study.js` — pure ephemeral family-session state, reveal progress,
   bounded navigation, and shuffle/restart behavior; no DOM or storage.
 - `js/kanji-labs.js` — pure phonetic-signal analysis, contrast-set generation,

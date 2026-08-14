@@ -37,6 +37,7 @@
       <button class="tab is-active" data-tab="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
       <button class="tab" data-tab="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
       <button class="tab" data-tab="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
+      <button class="tab" data-tab="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
       <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" id="tab-due" hidden></span></button>
       <button class="tab" data-tab="mywords"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
     </nav>
@@ -269,6 +270,31 @@
     </div>
     <div id="kanji-results"></div>
     <button type="button" id="kanji-more" class="btn btn-ghost kanji-more" hidden>Show more</button>
+  </section>
+
+  <!-- RELATIONS -->
+  <section class="panel relations-panel" data-panel="relations" id="relations-panel">
+    <div class="card relations-toolbar">
+      <div class="relations-intro">
+        <div>
+          <span class="label">Kanji connections</span>
+          <h2>Explore the neighborhood around any kanji</h2>
+          <p class="hint">Every line is backed by a shared radical, visual component, or dictionary reading. Choose a starting kanji and follow the evidence.</p>
+        </div>
+        <form id="relations-search-form" class="relations-search" role="search">
+          <label class="label" for="relations-search">Find a starting kanji</label>
+          <div><input id="relations-search" class="input" type="search" autocomplete="off" placeholder="Kanji, meaning, on’yomi, or kun’yomi"><button type="submit" class="btn btn-primary">Explore</button></div>
+        </form>
+      </div>
+      <div id="relations-search-results" class="relations-seed-results" aria-live="polite"></div>
+      <div class="relations-starts">
+        <section><div class="relations-start-head"><h3>From this text</h3><span class="hint">Active reading</span></div><div id="relations-current" class="relations-seeds"></div></section>
+        <section><div class="relations-start-head"><h3>Known kanji</h3><span class="hint">Your collection</span></div><div id="relations-known" class="relations-seeds"></div></section>
+        <section><div class="relations-start-head"><h3>Discover</h3><button type="button" class="btn btn-ghost relations-surprise" data-relations-surprise>Surprise me</button></div><div id="relations-discover" class="relations-seeds"></div></section>
+      </div>
+    </div>
+    <div id="relations-status" class="relations-status hint" role="status" aria-live="polite">Open this tab to load the compact relationship index.</div>
+    <div id="relations-map-host" class="relations-map-host"></div>
   </section>
 
   <!-- REVIEW -->

@@ -533,6 +533,39 @@ kbd {
   .kanji-family-actions { grid-template-columns: 1fr; }
 }
 
+/* ---- Relations workspace ------------------------------------------------- */
+.relations-panel { gap: 14px; }
+.relations-toolbar { display: flex; flex-direction: column; gap: 17px; }
+.relations-intro { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); align-items: end; gap: 24px; }
+.relations-intro h2 { margin: 3px 0 5px; font-family: var(--font-display); font-size: 25px; }
+.relations-search { display: flex; flex-direction: column; gap: 6px; }
+.relations-search > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.relations-search .input { min-width: 0; }
+.relations-starts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.relations-starts > section { min-width: 0; padding: 12px; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--r-md); }
+.relations-start-head { min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.relations-start-head h3 { margin: 0; font-family: var(--font-display); font-size: 15px; }
+.relations-start-head .btn { min-height: 32px; padding: 5px 9px; font-size: 10px; }
+.relations-seeds { display: flex; gap: 7px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; scroll-snap-type: x proximity; }
+.relations-seeds::-webkit-scrollbar { display: none; }
+.relations-seed {
+  appearance: none; width: 82px; min-height: 78px; flex: 0 0 82px; display: grid; grid-template-columns: 1fr auto; align-content: center; gap: 2px 5px;
+  padding: 8px; color: var(--text); font: inherit; text-align: left; cursor: pointer; scroll-snap-align: start;
+  background: linear-gradient(145deg, var(--surface-raised), var(--surface)); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-sm);
+  transition: transform .18s var(--ease), border-color .18s var(--ease), box-shadow .2s var(--ease);
+}
+.relations-seed:hover, .relations-seed:focus-visible { transform: translateY(-2px); border-color: var(--jl); box-shadow: 0 8px 20px color-mix(in srgb, var(--jl) 12%, var(--ink-shadow)); }
+.relations-seed > span { font-family: var(--font-display); font-size: 29px; line-height: 1; color: var(--jl); }
+.relations-seed > small { grid-column: 1 / -1; overflow: hidden; color: var(--text2); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.relations-seed > i { align-self: start; color: var(--text3); font: 600 8px/1 var(--font-mono); font-style: normal; }
+.relations-seed-results { display: flex; flex-direction: column; gap: 7px; }
+.relations-status { min-height: 18px; margin: 0 3px; }
+.relations-map-host { scroll-margin-top: 74px; }
+.krm-embedded { overflow: hidden; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow-md); }
+.krm-embedded .krm-shell { width: 100%; max-height: none; border: 0; border-radius: 0; box-shadow: none; animation: none; }
+.krm-embedded .krm-body { height: min(720px, calc(100vh - 118px)); min-height: 620px; }
+.krm-embedded .krm-head-spacer { width: 92px; }
+
 /* ---- Kanji Radical Tree overlay ------------------------------------------- */
 body.kt-open { overflow: hidden; }
 .kt-overlay {
@@ -794,7 +827,7 @@ body.krm-open { overflow: hidden; }
 
 @media (max-width: 720px) {
   .krm-overlay { padding: 0; }
-  .krm-shell { width: 100%; height: 100dvh; max-height: none; overflow-y: auto; overscroll-behavior: contain; border-radius: 0; }
+  .krm-overlay .krm-shell { width: 100%; height: 100dvh; max-height: none; overflow-y: auto; overscroll-behavior: contain; border-radius: 0; }
   .krm-head { position: sticky; top: 0; z-index: 5; grid-template-columns: auto 1fr auto; min-height: 60px; padding: 8px 10px; }
   .krm-heading .label { display: none; }
   .krm-heading h2 { font-size: 17px; }
@@ -817,6 +850,9 @@ body.krm-open { overflow: hidden; }
   .krm-lane-node { width: 176px; min-height: 92px; flex: 0 0 176px; scroll-snap-align: center; }
   .krm-summary { margin-top: 7px; }
   .krm-detail { min-height: 240px; padding: 20px 16px calc(28px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); border-left: 0; }
+  .krm-embedded { overflow: visible; border-radius: var(--r-lg); }
+  .krm-embedded .krm-shell { height: auto; overflow: visible; }
+  .krm-embedded .krm-body { height: auto; min-height: 0; }
   .kt-overlay { padding: 0; }
   .kt-shell { width: 100%; height: 100dvh; max-height: none; overflow-y: auto; overscroll-behavior: contain; border-radius: 0; }
   .kt-head { grid-template-columns: auto 1fr auto; min-height: 60px; padding: 8px 10px; }
@@ -872,7 +908,7 @@ p.hint { margin: 8px 0 0; }
 
   .tabs {
     position: fixed; z-index: var(--z-sticky); right: 0; bottom: 0; left: 0;
-    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0;
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0;
     padding: 5px max(6px, env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
     overflow: visible; border-top: 1px solid var(--border); border-radius: 0;
     background: color-mix(in srgb, var(--surface) 94%, transparent);
@@ -887,11 +923,22 @@ p.hint { margin: 8px 0 0; }
   .tab::after { top: 0; right: calc(50% - 14px); bottom: auto; left: calc(50% - 14px); height: 3px; transform: scaleX(.4); }
   .tab.is-active::after { transform: scaleX(1); }
   .tab-icon { display: block; font-family: var(--font-display); font-size: 21px; line-height: 1; }
+  .tab[data-tab="relations"] .tab-label { font-size: 9px; }
   .tab.is-active { background: var(--accent-dim); box-shadow: none; }
   .tab-badge { position: absolute; top: 3px; left: calc(50% + 8px); }
   .ui-toast { bottom: calc(78px + env(safe-area-inset-bottom)); width: max-content; justify-content: center; }
 
   main.wrap { padding-top: 12px; padding-bottom: calc(76px + env(safe-area-inset-bottom)); gap: 12px; }
+  .relations-toolbar { padding: 14px; gap: 14px; }
+  .relations-intro { grid-template-columns: 1fr; gap: 13px; }
+  .relations-intro h2 { font-size: 22px; }
+  .relations-search .input, .relations-search .btn { min-height: 44px; }
+  .relations-search > div { grid-template-columns: minmax(0, 1fr) auto; }
+  .relations-starts { grid-template-columns: 1fr; gap: 9px; }
+  .relations-starts > section { padding: 10px; }
+  .relations-start-head { min-height: 36px; }
+  .relations-seed { min-height: 82px; }
+  .relations-status { margin-inline: 2px; }
   .input-card { padding: 14px; }
   .jp-input { min-height: 168px; resize: vertical; }
   .input-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }

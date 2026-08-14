@@ -7,15 +7,22 @@ const esc = (value) => String(value ?? '').replace(/[&<>\"]/g, (char) => ({
 }[char]));
 
 const STRUCTURAL = new Set(['radical', 'component']);
+let mapSequence = 0;
 
 export function relationshipLane(neighbor) {
   return neighbor?.structural ? 'structure' : 'reading';
 }
 
 export function layoutRelationshipNodes(neighbors, { limit = 12 } = {}) {
-  const rows = (Array.isArray(neighbors) ? neighbors : []).slice(0, Math.max(0, limit));
-  const structural = rows.filter((neighbor) => relationshipLane(neighbor) === 'structure');
-  const readings = rows.filter((neighbor) => relationshipLane(neighbor) === 'reading');
+  const source = Array.isArray(neighbors) ? neighbors : [];
+  const boundedLimit = Math.max(0, limit);
+  const allStructural = source.filter((neighbor) => relationshipLane(neighbor) === 'structure');
+  const allReadings = source.filter((neighbor) => relationshipLane(neighbor) === 'reading');
+  const mixed = allStructural.length > 0 && allReadings.length > 0;
+  const perMixedArc = Math.min(4, Math.floor(boundedLimit / 2));
+  const structural = mixed ? allStructural.slice(0, perMixedArc) : allStructural.slice(0, boundedLimit);
+  const readings = mixed ? allReadings.slice(0, perMixedArc) : allReadings.slice(0, boundedLimit);
+  const rows = [...structural, ...readings];
   const place = (group, start, end) => group.map((neighbor, index) => {
     const ratio = group.length === 1 ? 0.5 : index / (group.length - 1);
     const angle = (start + (end - start) * ratio) * Math.PI / 180;
@@ -38,7 +45,7 @@ export function layoutRelationshipNodes(neighbors, { limit = 12 } = {}) {
   // Mixed evidence stays grouped on opposite halves. When one family dominates,
   // use the whole circumference instead of piling every node onto one arc.
   if (!structural.length || !readings.length) return placeCircle(rows);
-  return [...place(structural, 92, 268), ...place(readings, -88, 88)];
+  return [...place(structural, 110, 250), ...place(readings, -70, 70)];
 }
 
 function levelLabel(level) {
@@ -74,13 +81,13 @@ function detailMarkup(center, neighbor) {
     <p class="hint">These links use dictionary and KanjiVG evidence only; they do not claim etymology.</p>`;
 }
 
-function overlayMarkup() {
-  return `<section class="krm-overlay" role="dialog" aria-modal="true" aria-labelledby="krm-title" hidden>
+function mapMarkup({ embedded, titleId }) {
+  return `<section class="${embedded ? 'krm-embedded' : 'krm-overlay'}" ${embedded ? '' : 'role="dialog" aria-modal="true"'} aria-labelledby="${titleId}"${embedded ? '' : ' hidden'}>
     <div class="krm-shell">
       <header class="krm-head">
         <button type="button" class="btn btn-ghost krm-back" aria-label="Go back in relationship history" hidden>← Back</button>
-        <div class="krm-heading"><span class="label">KANJI RELATIONSHIP MAP</span><h2 id="krm-title">Kanji connections</h2></div>
-        <button type="button" class="btn btn-ghost krm-close" aria-label="Close relationship map">Close ×</button>
+        <div class="krm-heading"><span class="label">KANJI RELATIONSHIP MAP</span><h2 class="krm-title" id="${titleId}">Kanji connections</h2></div>
+        ${embedded ? '<span class="krm-head-spacer" aria-hidden="true"></span>' : '<button type="button" class="btn btn-ghost krm-close" aria-label="Close relationship map">Close ×</button>'}
       </header>
       <div class="krm-body">
         <main class="krm-explorer"></main>
@@ -97,14 +104,19 @@ export function createKanjiMap({
   onKnownChange = () => {},
   inCurrentText = () => false,
   onOpenTree = null,
+  onNavigate = () => {},
+  mount = null,
 } = {}) {
   if (typeof document === 'undefined') throw new Error('createKanjiMap requires a document.');
   if (typeof getRelationships !== 'function') throw new Error('createKanjiMap requires getRelationships().');
-  document.body.insertAdjacentHTML('beforeend', overlayMarkup());
-  const overlay = document.body.lastElementChild;
+  const embedded = Boolean(mount);
+  const titleId = `krm-title-${++mapSequence}`;
+  const parent = mount || document.body;
+  parent.insertAdjacentHTML('beforeend', mapMarkup({ embedded, titleId }));
+  const overlay = parent.lastElementChild;
   const explorer = overlay.querySelector('.krm-explorer');
   const detail = overlay.querySelector('.krm-detail');
-  const title = overlay.querySelector('#krm-title');
+  const title = overlay.querySelector('.krm-title');
   const backButton = overlay.querySelector('.krm-back');
   const closeButton = overlay.querySelector('.krm-close');
   const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -113,7 +125,7 @@ export function createKanjiMap({
   let selectedChar = '';
   let returnFocus = null;
 
-  const isOpen = () => !overlay.hidden;
+  const isOpen = () => embedded ? Boolean(currentMap) : !overlay.hidden;
   const currentChar = () => currentMap?.center?.char || '';
 
   function focusables() {
@@ -160,7 +172,7 @@ export function createKanjiMap({
         </article>
       </div>
       <div class="krm-mobile-lanes">${lane('Structure', structure, 'No structural neighbor in this bounded map.')}${lane('Readings', readings, 'No shared reading in this bounded map.')}</div>
-      <p class="krm-summary">${currentMap.neighbors.length} of ${currentMap.totalCandidates} explainable connection${currentMap.totalCandidates === 1 ? '' : 's'} shown${currentMap.truncated ? ' · strongest first' : ''}.</p>`;
+      <p class="krm-summary">${currentMap.neighbors.length} ranked connection${currentMap.neighbors.length === 1 ? '' : 's'} loaded · strongest evidence first${currentMap.truncated ? ` · ${currentMap.totalCandidates} total candidates` : ''}.</p>`;
     detail.innerHTML = detailMarkup(center, selected);
     overlay.dataset.reducedMotion = String(motionQuery.matches);
   }
@@ -172,25 +184,29 @@ export function createKanjiMap({
     selectedChar = currentMap.neighbors[0]?.item.char || '';
     if (push && history.at(-1) !== char) history.push(char);
     render();
-    if (focus) requestAnimationFrame(() => overlay.querySelector('.krm-center .krm-known, .krm-center .krm-tree, .krm-close')?.focus());
+    onNavigate(char);
+    if (focus) requestAnimationFrame(() => overlay.querySelector('.krm-center .krm-known, .krm-center .krm-tree, .krm-close, .krm-back')?.focus());
     return true;
   }
 
   function open(char, trigger = document.activeElement) {
-    returnFocus = trigger;
+    if (!embedded) returnFocus = trigger;
     history = [];
-    overlay.hidden = false;
-    document.body.classList.add('krm-open');
+    if (!embedded) {
+      overlay.hidden = false;
+      document.body.classList.add('krm-open');
+    }
     if (!moveTo(char, { push: true, focus: false })) {
       close();
       return false;
     }
-    closeButton.focus();
+    if (closeButton) closeButton.focus();
     return true;
   }
 
   function close({ restore = true } = {}) {
     if (!isOpen()) return;
+    if (embedded) return;
     overlay.hidden = true;
     document.body.classList.remove('krm-open');
     const target = returnFocus;
@@ -229,7 +245,7 @@ export function createKanjiMap({
     if (node) selectNeighbor(node.dataset.krmChar);
   });
   overlay.addEventListener('click', (event) => {
-    if (event.target === overlay || event.target.closest('.krm-close')) { close(); return; }
+    if ((!embedded && event.target === overlay) || event.target.closest('.krm-close')) { close(); return; }
     if (event.target.closest('.krm-back')) {
       if (history.length > 1) { history.pop(); moveTo(history.at(-1), { push: false }); }
       return;
@@ -243,8 +259,8 @@ export function createKanjiMap({
     }
     if (event.target.closest('.krm-tree') && typeof onOpenTree === 'function') {
       const char = currentChar();
-      const target = returnFocus;
-      close({ restore: false });
+      const target = embedded ? event.target.closest('.krm-tree') : returnFocus;
+      if (!embedded) close({ restore: false });
       onOpenTree(char, target);
       return;
     }
@@ -252,8 +268,8 @@ export function createKanjiMap({
     if (node) moveTo(node.dataset.krmChar);
   });
   overlay.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') { event.preventDefault(); close(); return; }
-    if (event.key === 'Tab') {
+    if (!embedded && event.key === 'Escape') { event.preventDefault(); close(); return; }
+    if (!embedded && event.key === 'Tab') {
       const items = focusables();
       if (!items.length) return;
       const first = items[0];
@@ -264,5 +280,5 @@ export function createKanjiMap({
   });
 
   motionQuery.addEventListener?.('change', () => { overlay.dataset.reducedMotion = String(motionQuery.matches); });
-  return { open, close, update, isOpen, destroy: () => overlay.remove() };
+  return { open, close, update, isOpen, currentChar, destroy: () => overlay.remove() };
 }

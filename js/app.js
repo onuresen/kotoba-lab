@@ -81,6 +81,9 @@ let kanjiVGPromise = null;
 let kanjiMap = null;
 let kanjiMapPromise = null;
 let kanjiRelationshipIndex = null;
+let relationsMap = null;
+let relationsPromise = null;
+let relationsSeed = '';
 let kanjiCatalog = [];
 let kanjiStructureIndex = null;
 let kanjiStructurePromise = null;
@@ -215,23 +218,35 @@ function loadKanjiStructureIndex() {
   return kanjiStructurePromise;
 }
 
+function loadKanjiRelationshipIndex() {
+  if (kanjiRelationshipIndex) return Promise.resolve(kanjiRelationshipIndex);
+  return loadKanjiStructureIndex().then((structureIndex) => {
+    kanjiRelationshipIndex ||= buildKanjiRelationshipIndex(kanjiCatalog, structureIndex);
+    return kanjiRelationshipIndex;
+  });
+}
+
+function relationshipMapOptions(extra = {}) {
+  return {
+    getRelationships: (char) => buildKanjiRelationships(kanjiRelationshipIndex, char),
+    isKnown: (char) => knownKanji.has(char),
+    toggleKnown: (char) => knownKanji.toggle(char),
+    onKnownChange: (_char, known) => {
+      toast(known ? 'Marked known.' : 'Unmarked.', 'success');
+      refreshKnownEverywhere();
+    },
+    inCurrentText: (char) => Boolean(current?.kStats?.rows?.some((row) => row.ch === char)),
+    onOpenTree: (char, trigger) => kanjiTree?.open(char, trigger),
+    ...extra,
+  };
+}
+
 async function loadKanjiMap() {
   if (kanjiMap) return kanjiMap;
   if (!kanjiMapPromise) {
-    kanjiMapPromise = loadKanjiStructureIndex()
-      .then((structureIndex) => {
-        kanjiRelationshipIndex ||= buildKanjiRelationshipIndex(kanjiCatalog, structureIndex);
-        kanjiMap = createKanjiMap({
-          getRelationships: (char) => buildKanjiRelationships(kanjiRelationshipIndex, char),
-          isKnown: (char) => knownKanji.has(char),
-          toggleKnown: (char) => knownKanji.toggle(char),
-          onKnownChange: (_char, known) => {
-            toast(known ? 'Marked known.' : 'Unmarked.', 'success');
-            refreshKnownEverywhere();
-          },
-          inCurrentText: (char) => Boolean(current?.kStats?.rows?.some((row) => row.ch === char)),
-          onOpenTree: (char, trigger) => kanjiTree?.open(char, trigger),
-        });
+    kanjiMapPromise = loadKanjiRelationshipIndex()
+      .then(() => {
+        kanjiMap = createKanjiMap(relationshipMapOptions());
         return kanjiMap;
       })
       .catch((error) => {
@@ -251,6 +266,87 @@ async function openKanjiMap(char, trigger = document.activeElement) {
   } catch (error) {
     console.error(error);
     toast('Could not load the relationship index — try again.', 'error');
+  } finally {
+    trigger?.removeAttribute?.('aria-busy');
+  }
+}
+
+function relationSeedButton(item) {
+  return `<button type="button" class="relations-seed jlpt-${levelSlug(item.jlpt)}" data-relations-seed="${esc(item.char)}" aria-label="Explore relationships for ${esc(item.char)}, ${esc(item.meaning || 'meaning unavailable')}"><span>${esc(item.char)}</span><small>${esc(item.meaning || 'Meaning unavailable')}</small><i>${levelName(item.jlpt)}</i></button>`;
+}
+
+function catalogItems(chars, limit = 8) {
+  const byChar = new Map(kanjiCatalog.map((item) => [item.char, item]));
+  return [...new Set((chars || []).filter(Boolean))].map((char) => byChar.get(char)).filter(Boolean).slice(0, limit);
+}
+
+function renderRelationsSeeds() {
+  if (!$('#relations-current')) return;
+  const currentItems = catalogItems(current?.kStats?.rows?.map((row) => row.ch), 8);
+  const knownItems = catalogItems(knownKanji.all(), 8);
+  const discoverItems = catalogItems(['学', '語', '心', '青', '生', '道', '光', '夢'], 8);
+  const fill = (selector, rows, empty) => {
+    $(selector).innerHTML = rows.length ? rows.map(relationSeedButton).join('') : `<span class="hint">${empty}</span>`;
+  };
+  fill('#relations-current', currentItems, 'Analyze a text to fill this row.');
+  fill('#relations-known', knownItems, 'Mark kanji known to collect them here.');
+  fill('#relations-discover', discoverItems, 'No discovery seeds available.');
+}
+
+function renderRelationsSearch() {
+  const root = $('#relations-search-results');
+  const query = $('#relations-search').value.trim();
+  if (!query) { root.innerHTML = ''; return []; }
+  const rows = filterKanji(kanjiCatalog, { query }).slice(0, 12);
+  root.innerHTML = rows.length
+    ? `<span class="label">Matches</span><div class="relations-seeds">${rows.map(relationSeedButton).join('')}</div>`
+    : '<p class="hint">No dictionary kanji match that search.</p>';
+  return rows;
+}
+
+async function loadRelationsWorkspace() {
+  if (relationsMap) return relationsMap;
+  if (!relationsPromise) {
+    $('#relations-status').textContent = 'Loading the compact relationship index…';
+    relationsPromise = loadKanjiRelationshipIndex()
+      .then(() => {
+        const host = $('#relations-map-host');
+        host.replaceChildren();
+        relationsMap = createKanjiMap(relationshipMapOptions({
+          mount: host,
+          onNavigate: (char) => {
+            relationsSeed = char;
+            $('#relations-status').textContent = `Exploring ${char}. Select a connected kanji to make it the new center.`;
+          },
+        }));
+        const initial = current?.kStats?.rows?.[0]?.ch || knownKanji.all()[0] || '学';
+        relationsMap.open(initial, null);
+        relationsSeed = initial;
+        return relationsMap;
+      })
+      .catch((error) => {
+        relationsPromise = null;
+        $('#relations-status').textContent = 'Could not load the relationship index. Reopen this tab to retry.';
+        throw error;
+      });
+  }
+  return relationsPromise;
+}
+
+async function selectRelationsSeed(char, trigger = document.activeElement) {
+  if (!char || [...char].length !== 1) return;
+  trigger?.setAttribute?.('aria-busy', 'true');
+  try {
+    const map = await loadRelationsWorkspace();
+    if (!map.open(char, trigger)) return;
+    $('#relations-search').value = char;
+    renderRelationsSearch();
+    if (window.matchMedia('(max-width: 780px)').matches) {
+      requestAnimationFrame(() => $('#relations-map-host').scrollIntoView({ block: 'start', behavior: 'smooth' }));
+    }
+  } catch (error) {
+    console.error(error);
+    toast('Could not open the Relations workspace — try again.', 'error');
   } finally {
     trigger?.removeAttribute?.('aria-busy');
   }
@@ -279,6 +375,7 @@ function run() {
 
   renderReading($('#reading'), tokens, jlpt, showInfo, isKnown);
   $('#info').innerHTML = infoHint();
+  if ($('#relations-panel').classList.contains('is-active')) renderRelationsSeeds();
 }
 
 function renderCoverage(kStats, wStats) {
@@ -460,6 +557,8 @@ function refreshKnownEverywhere() {
   renderKanjiBrowser();
   refreshReview();
   kanjiMap?.update();
+  relationsMap?.update();
+  renderRelationsSeeds();
 }
 
 function journeyWords(item) {
@@ -1219,6 +1318,7 @@ function showEmpty() {
   $('#info').innerHTML = infoHint();
   setInfoSheet(false);
   renderTextJourney();
+  renderRelationsSeeds();
 }
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t) => {
@@ -1230,10 +1330,14 @@ function switchTab(name) {
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.dataset.panel === name));
   // The shared Text box feeds Analyze and Read only. The other tabs are
   // independent workspaces and should open at their own content immediately.
-  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'mywords';
+  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords';
   // cards come due while you're on another tab — recheck on arrival
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();
+  if (name === 'relations') {
+    renderRelationsSeeds();
+    loadRelationsWorkspace().catch((error) => console.error(error));
+  }
   if (name !== 'read') setInfoSheet(false);
   if (window.matchMedia('(max-width: 780px)').matches) {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
@@ -1251,6 +1355,7 @@ function toast(msg, kind) {
 function wireUi() {
   let debounce;
   let kanjiDebounce;
+  let relationsDebounce;
   $('#input').addEventListener('input', () => {
     clearTimeout(debounce);
     debounce = setTimeout(run, 250);
@@ -1275,6 +1380,26 @@ function wireUi() {
     stopKanjiStudy();
     clearTimeout(kanjiDebounce);
     kanjiDebounce = setTimeout(() => { kanjiBrowseLimit = 60; renderKanjiBrowser(); }, 120);
+  });
+  $('#relations-search').addEventListener('input', () => {
+    clearTimeout(relationsDebounce);
+    relationsDebounce = setTimeout(renderRelationsSearch, 100);
+  });
+  $('#relations-search-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const rows = renderRelationsSearch();
+    const literal = [...$('#relations-search').value.trim()];
+    const char = literal.length === 1 && isKanji(literal[0]) ? literal[0] : rows[0]?.char;
+    if (char) selectRelationsSeed(char, $('#relations-search-form button[type="submit"]'));
+    else toast('Choose a matching kanji first.', 'error');
+  });
+  $('#relations-panel').addEventListener('click', (event) => {
+    const seed = event.target.closest('[data-relations-seed]');
+    if (seed) { selectRelationsSeed(seed.dataset.relationsSeed, seed); return; }
+    if (event.target.closest('[data-relations-surprise]')) {
+      const item = kanjiCatalog[Math.floor(Math.random() * kanjiCatalog.length)];
+      if (item) selectRelationsSeed(item.char, event.target.closest('[data-relations-surprise]'));
+    }
   });
   $('#kanji-panel').addEventListener('click', (event) => {
     const level = event.target.closest('.kanji-level');

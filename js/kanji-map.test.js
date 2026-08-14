@@ -14,7 +14,7 @@ test('desktop layout is deterministic, bounded, and keeps nodes inside the canva
   const first = layoutRelationshipNodes(rows);
   const second = layoutRelationshipNodes(rows);
   assert.deepEqual(first, second);
-  assert.equal(first.length, 12);
+  assert.equal(first.length, 8);
   assert.ok(first.every(({ x, y }) => x >= 10 && x <= 90 && y >= 10 && y <= 90));
 });
 
@@ -26,6 +26,13 @@ test('structural and reading nodes occupy opposite arcs', () => {
   const readings = placed.filter((row) => row.lane === 'reading');
   assert.ok(structural.every((row) => row.x < 50));
   assert.ok(readings.every((row) => row.x > 50));
+});
+
+test('mixed maps balance crowded evidence families across the two arcs', () => {
+  const rows = [neighbor('構', true), ...Array.from({ length: 20 }, (_, index) => neighbor(String(index)))];
+  const placed = layoutRelationshipNodes(rows);
+  assert.equal(placed.filter((row) => row.lane === 'structure').length, 1);
+  assert.equal(placed.filter((row) => row.lane === 'reading').length, 4);
 });
 
 test('a single dominant relationship family uses the full circumference', () => {
