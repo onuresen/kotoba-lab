@@ -13,6 +13,7 @@ import { serializeBackup, backupFilename, inspectBackup, backupSummary, mergeSta
 import { serializeStudyPack, parseStudyPack, studyPackFilename, studyPackFamily } from './study-pack.js';
 import { buildProfileMetrics, clearProfileCategory, emptyProfileState } from './profile-dashboard.js';
 import { createUsageJournal } from './usage-journal.js';
+import { buildUsageInsights } from './usage-insights.js';
 import { sentenceAt, contextParts } from './context.js';
 import {
   buildTextJourney,
@@ -73,7 +74,7 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const APP_VERSION = '10.9.0';
+const APP_VERSION = '10.10.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -1345,7 +1346,7 @@ function renderProfileDashboard(state) {
   </article>`).join('');
 }
 
-function renderUsageJournal() {
+function renderUsageJournal(profileState = currentState()) {
   const root = $('#usage-journal-summary');
   if (!root) return;
   const summary = usageJournal.summary();
@@ -1363,6 +1364,15 @@ function renderUsageJournal() {
   $('#usage-journal-detail').textContent = summary.days
     ? `${summary.sessions.toLocaleString()} session${summary.sessions === 1 ? '' : 's'} · ${summary.activeMinutes.toLocaleString()} active minute${summary.activeMinutes === 1 ? '' : 's'} · ${summary.eventCount.toLocaleString()} coarse action${summary.eventCount === 1 ? '' : 's'} across the last ${summary.days} logged day${summary.days === 1 ? '' : 's'}.`
     : 'No activity has been recorded.';
+  const insights = buildUsageInsights(summary, buildProfileMetrics(profileState));
+  $('#usage-feature-mix').innerHTML = insights.featureMix.map((feature) => `<div class="usage-feature">
+    <span class="usage-feature-glyph" aria-hidden="true">${feature.glyph}</span>
+    <div><span><strong>${feature.label}</strong><small>${feature.count.toLocaleString()}</small></span><i aria-hidden="true"><b style="--usage-strength:${feature.strength}%"></b></i></div>
+  </div>`).join('');
+  $('#usage-friction-signals').innerHTML = insights.signals.map((signal) => `<article class="usage-signal" data-tone="${signal.tone}">
+    <div><strong>${signal.title}</strong><p>${signal.body}</p></div>
+    ${signal.actionTab ? `<button type="button" class="btn btn-ghost" data-usage-tab="${signal.actionTab}">${signal.actionLabel}</button>` : ''}
+  </article>`).join('');
 }
 
 function renderMyWords() {
@@ -1382,7 +1392,7 @@ function renderMyWords() {
   const profileState = currentState();
   $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(profileState));
   renderProfileDashboard(profileState);
-  renderUsageJournal();
+  renderUsageJournal(profileState);
   $('#mw-deck-tbody').innerHTML = rows.length
     ? rows.map((r) => `
       <tr>
@@ -1397,6 +1407,8 @@ function renderMyWords() {
 }
 
 function onMyWordsClick(e) {
+  const usageAction = e.target.closest('[data-usage-tab]');
+  if (usageAction) { switchTab(usageAction.dataset.usageTab); return; }
   const categoryClear = e.target.closest('[data-profile-clear]');
   if (categoryClear) {
     const category = categoryClear.dataset.profileClear;

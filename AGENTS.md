@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.9.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.10.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -55,8 +55,10 @@
 - Local Usage Journal Group A is ✓ Done: the opt-in, browser-only journal keeps
   90 days of daily session, visible-active-minute, and fixed coarse-action
   counts. Profile & Data exposes today/overall summaries plus pause and reset;
-  no content payload can enter the journal. Friction signals and a separate
-  shareable report remain future Groups B and C.
+  no content payload can enter the journal. Group B is ✓ Done: a pure local
+  insight engine shows feature rhythm and cautious friction prompts for review
+  queues, Analyze-to-Read handoff, exploration-to-practice handoff, and brief
+  sessions. A separate shareable report remains future Group C.
 
 ## Public repository conventions
 
@@ -100,6 +102,8 @@
   metrics plus category-level and full-profile reset helpers; no DOM/storage.
 - `js/usage-journal.js` — opt-in, allowlisted daily usage counters with no
   payload API, 90-day retention, pause/reset controls, and summary helpers.
+- `js/usage-insights.js` — pure feature-mix and threshold-based friction prompts
+  derived from journal totals plus the current due-card count; no DOM/storage.
 - `js/study-pack.js` — pure portable kanji-pack schema, sanitization, filenames,
   and conversion into an ephemeral family-study snapshot; no DOM/storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
@@ -320,6 +324,12 @@ daily sessions, and visible active minutes for the last 90 days. Never add an
 event payload, dynamic event name, pasted text, word, kanji, search, filename,
 answer, grade, or individual-action timestamp. Keep it outside profile backups
 and study packs so sharing a profile never shares behavioral data.
+
+Usage insights must remain cautious aggregate interpretations. Ignore unknown
+events, require a minimum activity sample, cap visible prompts, and always
+offer a neutral no-friction state. The current due-card count may be supplied
+at render time but must not be copied into the journal. Navigation suggestions
+may target only the existing fixed app tabs.
 
 ## Profile and study-pack conventions
 

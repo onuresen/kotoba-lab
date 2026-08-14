@@ -30,6 +30,9 @@ analytics, advertising, application backend, or cloud synchronization.
   after 90 days.
 - Journal data stays in this browser, is never transmitted, and is deliberately
   excluded from profile backups and portable study packs.
+- The friction radar derives suggestions locally from these coarse totals and
+  the current due-card count. It does not add stored fields, retain the due-card
+  count, or inspect study content.
 
 ## Network requests
 

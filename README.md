@@ -61,7 +61,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   activity, category cleanup, and a typed-confirmation full reset.
 - **Optional local usage journal:** learn which parts of Kotoba Lab you really
   use through daily session, visible-minute, and coarse-action totals. It is off
-  by default, records no study content, and never sends data anywhere.
+  by default, records no study content, and never sends data anywhere. A local
+  friction radar turns those totals into a feature mix and cautious suggestions
+  for stalled reading, exploration, or review handoffs.
 - **Portable Study Packs:** export kanji from the current text, a selected
   family, or a Relations network without personal progress; imported packs open
   directly as temporary Kanji study sessions.
@@ -130,6 +132,7 @@ js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 js/backup.js             versioned full-profile export, inspection, and merge
 js/profile-dashboard.js  local data metrics and category-reset helpers
 js/usage-journal.js      opt-in, payload-free local activity counters
+js/usage-insights.js     pure feature mix and cautious friction prompts
 js/study-pack.js         private-data-free portable kanji pack format
 data/                    dictionaries, samples, KanjiVG data, attribution
 tools/                   reproducible data-generation tools
