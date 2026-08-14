@@ -31,6 +31,10 @@
 - Study feedback Group C is ✓ Done: answer reveals, Review-grade acknowledgement,
   correct/incorrect result treatments, progress/completion moments, known/save
   confirmations, mobile-safe toasts, and richer Radical Tree component focus.
+- Kanji Relationship Map Group A is ✓ Done: the pure relationship engine
+  combines canonical radicals, direct components, normalized readings, and
+  supporting stroke proximity into bounded, explainable neighborhoods. Group B
+  interactive canvas and Group C app-wide/mobile integration remain open.
 
 ## Public repository conventions
 
@@ -57,6 +61,9 @@
   reduced motion, and known-kanji control.
 - `js/kanji-browser.js` — pure dictionary catalog search, filtering, sorting,
   sections, and stroke/reading/radical/component families; no DOM or storage.
+- `js/kanji-relationships.js` — pure reusable relationship index, evidence
+  ranking, common-reading bounds, and deterministic neighborhood selection;
+  no DOM, storage, fetch, or stroke paths.
 - `js/kanji-study.js` — pure ephemeral family-session state, reveal progress,
   bounded navigation, and shuffle/restart behavior; no DOM or storage.
 - `js/kanji-labs.js` — pure phonetic-signal analysis, contrast-set generation,
@@ -179,6 +186,21 @@
   focused button. Radical Tree close returns focus to its study doorway.
 - Shuffle & restart randomizes the full session snapshot and clears reveal
   progress without changing known-kanji state.
+
+## Kanji Relationship Map conventions
+
+- Every connection must expose its evidence. Approved primary reasons are a
+  shared canonical radical, direct visual component, normalized on’yomi, or
+  normalized kun’yomi; do not infer etymology or semantic similarity.
+- Stroke proximity is supporting evidence only. It may strengthen an existing
+  relationship but must never create a neighbor by itself.
+- Structural evidence outranks readings. Smaller families receive only a
+  modest rarity bonus, and reading-only neighbors stay bounded so a common
+  reading cannot fill the future canvas.
+- Reuse `data/kanji-families.json` for structure. Building or browsing a
+  relationship neighborhood must not load the 5.84 MB KanjiVG stroke artifact.
+- Relationship indexes and navigation are ephemeral. Do not add a storage key;
+  known state must continue to use `kotoba-lab:known-kanji` when UI arrives.
 
 ## Phonetic Component Lab conventions
 
