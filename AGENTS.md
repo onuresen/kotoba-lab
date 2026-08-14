@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.4.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.5.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -36,11 +36,12 @@
   stroke proximity into bounded neighborhoods; the full-screen map adds
   evidence connectors, recenter/back navigation, known/text/JLPT context, and
   app-wide doorways. Phones use swipeable Structure and Readings lanes.
-- Relations workspace Group A is ✓ Done: the `縁 Relations` tab lazy-loads the
+- Relations workspace Groups A–B are ✓ Done: the `縁 Relations` tab lazy-loads the
   compact relationship index, embeds the existing one-hop explorer, and offers
   dictionary search plus current-text, known-kanji, and discovery starting
-  points. Group B evidence/JLPT/state/size filters and Group C bounded two-hop
-  network exploration remain open.
+  points. Evidence, JLPT, learning-context, and 12/24/40-result filters apply
+  before ranking; overflow results use a desktop gallery and mobile lanes.
+  Group C bounded two-hop network exploration remains open.
 
 ## Public repository conventions
 
@@ -210,6 +211,15 @@
   relationship neighborhood must not load the 5.84 MB KanjiVG stroke artifact.
 - Relationship indexes and navigation are ephemeral. Do not add a storage key;
   known state must continue to use `kotoba-lab:known-kanji` when UI arrives.
+- Relations filters apply before the neighborhood limit so displayed counts
+  remain honest. Evidence filters may disable all primary reasons; stroke
+  proximity remains supporting-only and cannot survive by itself.
+- Keep the embedded canvas legible: mixed structural/reading maps show at most
+  four nodes per arc. Additional ranked one-hop results belong in the desktop
+  gallery or mobile swipe lanes, not on overlapping canvas coordinates.
+- Relations search, filters, selected root, and history are session-only. Reuse
+  the existing four storage keys and keep structural data lazy until the tab or
+  another relationship doorway is opened.
 
 ## Phonetic Component Lab conventions
 

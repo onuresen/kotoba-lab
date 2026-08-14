@@ -304,6 +304,51 @@ function renderRelationsSearch() {
   return rows;
 }
 
+function relationsQueryOptions() {
+  const kinds = [...document.querySelectorAll('[data-relations-kind]:checked')].map((input) => input.value);
+  const level = $('#relations-level').value;
+  const state = $('#relations-state').value;
+  const limit = Number($('#relations-size').value) || 24;
+  return {
+    kinds,
+    limit,
+    readingOnlyLimit: limit,
+    includeItem: (item) => {
+      const levelKey = item.jlpt == null ? 'ungraded' : String(item.jlpt);
+      if (level !== 'all' && level !== levelKey) return false;
+      if (state === 'known' && !knownKanji.has(item.char)) return false;
+      if (state === 'unknown' && knownKanji.has(item.char)) return false;
+      if (state === 'text' && !current?.kStats?.rows?.some((row) => row.ch === item.char)) return false;
+      return true;
+    },
+  };
+}
+
+function renderRelationsFilterSummary(map, view = {}) {
+  const kinds = relationsQueryOptions().kinds;
+  if (!kinds.length) {
+    $('#relations-filter-summary').textContent = 'Choose at least one evidence type to reveal connections.';
+    return;
+  }
+  if (!map.neighbors.length) {
+    $('#relations-filter-summary').textContent = 'No connections match these filters. Broaden the evidence, level, or learning context.';
+    return;
+  }
+  const mobile = window.matchMedia('(max-width: 720px)').matches;
+  const presentation = mobile
+    ? 'swipe the Structure and Readings lanes below'
+    : `${view.canvasCount || 0} on the canvas${view.extraCount ? ` · ${view.extraCount} in the ranked gallery` : ''}`;
+  $('#relations-filter-summary').textContent = `${map.neighbors.length} matching connection${map.neighbors.length === 1 ? '' : 's'} loaded · ${presentation}${map.truncated ? ` · ${map.totalCandidates} candidates before the size limit` : ''}.`;
+}
+
+function resetRelationsFilters() {
+  document.querySelectorAll('[data-relations-kind]').forEach((input) => { input.checked = true; });
+  $('#relations-level').value = 'all';
+  $('#relations-state').value = 'all';
+  $('#relations-size').value = '24';
+  relationsMap?.update();
+}
+
 async function loadRelationsWorkspace() {
   if (relationsMap) return relationsMap;
   if (!relationsPromise) {
@@ -314,10 +359,12 @@ async function loadRelationsWorkspace() {
         host.replaceChildren();
         relationsMap = createKanjiMap(relationshipMapOptions({
           mount: host,
+          getRelationships: (char) => buildKanjiRelationships(kanjiRelationshipIndex, char, relationsQueryOptions()),
           onNavigate: (char) => {
             relationsSeed = char;
             $('#relations-status').textContent = `Exploring ${char}. Select a connected kanji to make it the new center.`;
           },
+          onRender: renderRelationsFilterSummary,
         }));
         const initial = current?.kStats?.rows?.[0]?.ch || knownKanji.all()[0] || '学';
         relationsMap.open(initial, null);
@@ -375,7 +422,10 @@ function run() {
 
   renderReading($('#reading'), tokens, jlpt, showInfo, isKnown);
   $('#info').innerHTML = infoHint();
-  if ($('#relations-panel').classList.contains('is-active')) renderRelationsSeeds();
+  if ($('#relations-panel').classList.contains('is-active')) {
+    renderRelationsSeeds();
+    relationsMap?.update();
+  }
 }
 
 function renderCoverage(kStats, wStats) {
@@ -1319,6 +1369,7 @@ function showEmpty() {
   setInfoSheet(false);
   renderTextJourney();
   renderRelationsSeeds();
+  relationsMap?.update();
 }
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t) => {
@@ -1401,6 +1452,8 @@ function wireUi() {
       if (item) selectRelationsSeed(item.char, event.target.closest('[data-relations-surprise]'));
     }
   });
+  $('#relations-filters').addEventListener('change', () => relationsMap?.update());
+  $('#relations-reset').addEventListener('click', resetRelationsFilters);
   $('#kanji-panel').addEventListener('click', (event) => {
     const level = event.target.closest('.kanji-level');
     if (level) {

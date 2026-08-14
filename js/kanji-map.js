@@ -105,6 +105,7 @@ export function createKanjiMap({
   inCurrentText = () => false,
   onOpenTree = null,
   onNavigate = () => {},
+  onRender = () => {},
   mount = null,
 } = {}) {
   if (typeof document === 'undefined') throw new Error('createKanjiMap requires a document.');
@@ -155,6 +156,8 @@ export function createKanjiMap({
     const nodes = layout.map(({ neighbor, x, y }) => `<div class="krm-node-position" style="--krm-x:${x}%;--krm-y:${y}%">${nodeMarkup(neighbor)}</div>`).join('');
     const structure = currentMap.neighbors.filter((neighbor) => relationshipLane(neighbor) === 'structure');
     const readings = currentMap.neighbors.filter((neighbor) => relationshipLane(neighbor) === 'reading');
+    const canvasChars = new Set(layout.map(({ neighbor }) => neighbor.item.char));
+    const extra = currentMap.neighbors.filter((neighbor) => !canvasChars.has(neighbor.item.char));
     const lane = (label, rows, empty) => `<section class="krm-lane"><div class="krm-lane-head"><h3>${label}</h3><span>${rows.length}</span></div><div class="krm-lane-track">${rows.length ? rows.map((neighbor) => nodeMarkup(neighbor, { lane: true })).join('') : `<p class="hint">${empty}</p>`}</div></section>`;
 
     explorer.innerHTML = `<div class="krm-legend" aria-label="Relationship legend"><span data-kind="radical">Radical</span><span data-kind="component">Component</span><span data-kind="reading">Reading</span></div>
@@ -172,9 +175,11 @@ export function createKanjiMap({
         </article>
       </div>
       <div class="krm-mobile-lanes">${lane('Structure', structure, 'No structural neighbor in this bounded map.')}${lane('Readings', readings, 'No shared reading in this bounded map.')}</div>
+      <section class="krm-extra" ${extra.length ? '' : 'hidden'}><div class="krm-extra-head"><h3>More ranked connections</h3><span>${extra.length}</span></div><div class="krm-extra-grid">${extra.map((neighbor) => nodeMarkup(neighbor, { lane: true })).join('')}</div></section>
       <p class="krm-summary">${currentMap.neighbors.length} ranked connection${currentMap.neighbors.length === 1 ? '' : 's'} loaded · strongest evidence first${currentMap.truncated ? ` · ${currentMap.totalCandidates} total candidates` : ''}.</p>`;
     detail.innerHTML = detailMarkup(center, selected);
     overlay.dataset.reducedMotion = String(motionQuery.matches);
+    onRender(currentMap, { canvasCount: layout.length, extraCount: extra.length });
   }
 
   function moveTo(char, { push = true, focus = true } = {}) {

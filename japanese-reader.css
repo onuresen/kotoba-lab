@@ -559,6 +559,18 @@ kbd {
 .relations-seed > small { grid-column: 1 / -1; overflow: hidden; color: var(--text2); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .relations-seed > i { align-self: start; color: var(--text3); font: 600 8px/1 var(--font-mono); font-style: normal; }
 .relations-seed-results { display: flex; flex-direction: column; gap: 7px; }
+.relations-filters { display: grid; grid-template-columns: minmax(330px, 1.3fr) repeat(3, minmax(135px, .55fr)) auto; align-items: end; gap: 10px; padding-top: 15px; border-top: 1px solid var(--border); }
+.relations-filters fieldset { min-width: 0; display: flex; flex-wrap: wrap; gap: 7px; margin: 0; padding: 0; border: 0; }
+.relations-filters legend { width: 100%; margin-bottom: 1px; padding: 0; }
+.relations-filters > .label { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.relations-filters .select { width: 100%; }
+.relations-kind { position: relative; display: inline-flex; cursor: pointer; }
+.relations-kind input { position: absolute; opacity: 0; pointer-events: none; }
+.relations-kind span { min-height: 36px; display: inline-flex; align-items: center; padding: 7px 11px; color: var(--text2); font-size: 11px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill); transition: color .18s var(--ease), background .18s var(--ease), border-color .18s var(--ease), transform .18s var(--ease); }
+.relations-kind input:checked + span { color: var(--accent); background: var(--accent-dim); border-color: var(--accent-glow); }
+.relations-kind input:focus-visible + span { box-shadow: 0 0 0 3px var(--accent-glow); }
+.relations-kind:hover span { transform: translateY(-1px); border-color: var(--accent); }
+.relations-filter-summary { min-height: 16px; margin: -8px 0 0; }
 .relations-status { min-height: 18px; margin: 0 3px; }
 .relations-map-host { scroll-margin-top: 74px; }
 .krm-embedded { overflow: hidden; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow-md); }
@@ -745,6 +757,13 @@ body.krm-open { overflow: hidden; }
 .krm-detail-empty { min-height: 260px; display: grid; place-content: center; text-align: center; color: var(--text3); }
 .krm-detail-empty span { font-size: 38px; }
 .krm-mobile-lanes { display: none; }
+.krm-extra { margin: 8px 0 12px; }
+.krm-extra[hidden] { display: none; }
+.krm-extra-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.krm-extra-head h3 { margin: 0; font-family: var(--font-display); font-size: 15px; }
+.krm-extra-head span { color: var(--text3); font: 600 10px/1 var(--font-mono); }
+.krm-extra-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 8px; }
+.krm-extra-grid .krm-node { width: 100%; min-height: 80px; }
 
 /* Compact relationship doorways keep the original Radical Tree click target. */
 .info-kpair, .srs-kpair { display: inline-flex; align-items: stretch; overflow: hidden; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface); }
@@ -842,6 +861,7 @@ body.krm-open { overflow: hidden; }
   .krm-center-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
   .krm-center-actions .btn { min-height: 44px; padding-inline: 8px; }
   .krm-mobile-lanes { display: flex; flex-direction: column; gap: 15px; margin-top: 16px; }
+  .krm-extra { display: none; }
   .krm-lane-head { display: flex; align-items: center; justify-content: space-between; padding: 0 2px; }
   .krm-lane-head h3 { margin: 0; font-family: var(--font-display); font-size: 16px; }
   .krm-lane-head span { color: var(--text3); font: 600 10px/1 var(--font-mono); }
@@ -938,6 +958,13 @@ p.hint { margin: 8px 0 0; }
   .relations-starts > section { padding: 10px; }
   .relations-start-head { min-height: 36px; }
   .relations-seed { min-height: 82px; }
+  .relations-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding-top: 13px; }
+  .relations-filters fieldset { grid-column: 1 / -1; }
+  .relations-filters > .label { font-size: 9px; }
+  .relations-filters .select, .relations-filters > .btn { min-height: 44px; }
+  .relations-filters > .btn { align-self: end; }
+  .relations-kind span { min-height: 40px; }
+  .relations-filter-summary { margin-top: -5px; }
   .relations-status { margin-inline: 2px; }
   .input-card { padding: 14px; }
   .jp-input { min-height: 168px; resize: vertical; }

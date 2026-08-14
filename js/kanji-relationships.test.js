@@ -91,3 +91,21 @@ test('limits and missing centers are deterministic and safe', () => {
   assert.equal(first.neighbors.length, 2);
   assert.equal(first.truncated, true);
 });
+
+test('evidence filters remove disabled relationship kinds before ranking', () => {
+  const readingMap = buildKanjiRelationships(fixture(), '清', { kinds: ['on-reading'], limit: 20, readingOnlyLimit: 20 });
+  assert.ok(readingMap.neighbors.length > 0);
+  assert.ok(readingMap.neighbors.every((neighbor) => neighbor.reasons.every((reason) => reason.kind === 'on-reading' || reason.kind === 'stroke')));
+  assert.deepEqual(buildKanjiRelationships(fixture(), '清', { kinds: [] }).neighbors, []);
+});
+
+test('candidate filters apply before limits and keep result counts honest', () => {
+  const map = buildKanjiRelationships(fixture(), '清', {
+    limit: 20,
+    readingOnlyLimit: 20,
+    includeItem: (item) => item.jlpt === 3,
+  });
+  assert.deepEqual(map.neighbors.map((neighbor) => neighbor.item.char), ['情', '晴']);
+  assert.equal(map.totalCandidates, 2);
+  assert.equal(map.truncated, false);
+});

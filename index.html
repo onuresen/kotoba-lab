@@ -292,6 +292,32 @@
         <section><div class="relations-start-head"><h3>Known kanji</h3><span class="hint">Your collection</span></div><div id="relations-known" class="relations-seeds"></div></section>
         <section><div class="relations-start-head"><h3>Discover</h3><button type="button" class="btn btn-ghost relations-surprise" data-relations-surprise>Surprise me</button></div><div id="relations-discover" class="relations-seeds"></div></section>
       </div>
+      <div class="relations-filters" id="relations-filters">
+        <fieldset>
+          <legend class="label">Relationship evidence</legend>
+          <label class="relations-kind"><input type="checkbox" value="radical" data-relations-kind checked><span>Radical</span></label>
+          <label class="relations-kind"><input type="checkbox" value="component" data-relations-kind checked><span>Component</span></label>
+          <label class="relations-kind"><input type="checkbox" value="on-reading" data-relations-kind checked><span>On’yomi</span></label>
+          <label class="relations-kind"><input type="checkbox" value="kun-reading" data-relations-kind checked><span>Kun’yomi</span></label>
+        </fieldset>
+        <label class="label">JLPT
+          <select id="relations-level" class="select">
+            <option value="all">All levels</option><option value="5">N5</option><option value="4">N4</option><option value="3">N3</option><option value="2">N2</option><option value="1">N1</option><option value="ungraded">Ungraded</option>
+          </select>
+        </label>
+        <label class="label">Learning context
+          <select id="relations-state" class="select">
+            <option value="all">Known and unknown</option><option value="unknown">Unknown only</option><option value="known">Known only</option><option value="text">In current text</option>
+          </select>
+        </label>
+        <label class="label">Neighborhood
+          <select id="relations-size" class="select">
+            <option value="12">Focused · 12</option><option value="24" selected>Expanded · 24</option><option value="40">Broad · 40</option>
+          </select>
+        </label>
+        <button type="button" id="relations-reset" class="btn btn-ghost">Reset filters</button>
+      </div>
+      <p id="relations-filter-summary" class="relations-filter-summary hint" aria-live="polite"></p>
     </div>
     <div id="relations-status" class="relations-status hint" role="status" aria-live="polite">Open this tab to load the compact relationship index.</div>
     <div id="relations-map-host" class="relations-map-host"></div>

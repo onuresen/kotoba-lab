@@ -46,6 +46,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Kanji Relationship Map:** explore explainable links through shared radicals,
   visual components, and dictionary readings; recenter on neighboring kanji,
   inspect the evidence, and move directly between the map and Radical Tree.
+- **Relations workspace:** start from dictionary search, the current text,
+  known kanji, or discovery suggestions; then filter connections by evidence,
+  JLPT level, learning context, and neighborhood size without leaving the tab.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
 - **My Words:** manage the local study deck and move it between browsers with a

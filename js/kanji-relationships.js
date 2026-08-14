@@ -100,12 +100,16 @@ export function buildKanjiRelationships(index, centerChar, options = {}) {
 
   const limit = Math.max(1, Number.isInteger(options.limit) ? options.limit : 24);
   const readingOnlyLimit = Math.max(0, Number.isInteger(options.readingOnlyLimit) ? options.readingOnlyLimit : 8);
+  const allowedKinds = new Set(Array.isArray(options.kinds)
+    ? options.kinds.filter((kind) => Object.hasOwn(index.buckets, kind))
+    : Object.keys(index.buckets));
+  const includeItem = typeof options.includeItem === 'function' ? options.includeItem : () => true;
   const candidates = new Map();
 
   const addReason = (char, kind, key) => {
     if (char === centerChar) return;
     const item = index.byChar.get(char);
-    if (!item) return;
+    if (!item || !includeItem(item)) return;
     if (!candidates.has(char)) candidates.set(char, { item, reasons: [] });
     const familySize = index.buckets[kind].get(key)?.length || 0;
     candidates.get(char).reasons.push({
@@ -118,6 +122,7 @@ export function buildKanjiRelationships(index, centerChar, options = {}) {
   };
 
   for (const [kind, keys] of Object.entries(centerAttributes)) {
+    if (!allowedKinds.has(kind)) continue;
     for (const key of keys) {
       for (const char of index.buckets[kind].get(key) || []) addReason(char, kind, key);
     }
