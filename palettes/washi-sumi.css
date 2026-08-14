@@ -18,9 +18,13 @@
   --surface:   #f7f2e8;   /* lighter paper — cards sit above the ground */
   --surface2:  #e5dcc9;
   --surface3:  #dacfb8;
+  --surface-raised: color-mix(in srgb, var(--surface) 92%, var(--on-accent));
+  --surface-sunken: color-mix(in srgb, var(--surface2) 78%, var(--bg));
+  --surface-warm: color-mix(in srgb, var(--surface) 92%, var(--accent2-dim));
 
   --border:    #d8ccb4;
   --border2:   #c4b492;
+  --border-strong: color-mix(in srgb, var(--border2) 78%, var(--text2));
 
   --text:      #2b2620;   /* sumi — warm near-black ink */
   --text2:     #574f42;   /* meaningful secondary */
@@ -33,6 +37,10 @@
   --accent2:       #2e4a6b;   /* ai-indigo — secondary signal, use sparingly */
   --accent2-dim:   rgba(46, 74, 107, 0.10);
   --accent2-text:  #24405e;
+
+  --paper-glow: color-mix(in srgb, var(--on-accent) 42%, transparent);
+  --ink-shadow: color-mix(in srgb, var(--text) 13%, transparent);
+  --ink-shadow-soft: color-mix(in srgb, var(--text) 7%, transparent);
 
   --font-display: 'Zen Old Mincho', 'Fraunces', Georgia, 'Yu Mincho', serif;
   --font-body:    'DM Sans', system-ui, -apple-system, sans-serif;

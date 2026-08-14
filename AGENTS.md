@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.1.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.2.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -23,6 +23,11 @@
 - KanjiVG path compaction is ✓ Fixed: tiny negative coordinates that round to
   zero retain `-0` so their minus sign continues to separate adjacent SVG
   numbers. The corrected artifact repairs 9,051 paths across 4,484 kanji.
+- Visual polish Group A is ✓ Done: layered washi surfaces, clearer elevation,
+  stronger hierarchy, indigo support, and harmonized Kanji/Review/Tree styling.
+- Interaction polish Group B is ✓ Done: tab and panel transitions, tactile
+  controls, animated disclosures, staggered Kanji results, and a complete
+  reduced-motion path. Group C study-specific feedback remains open.
 
 ## Public repository conventions
 
@@ -82,6 +87,12 @@
 - Preserve the pure/DOM split: decomposition belongs in `kanjivg.js`; overlay
   behavior belongs in `kanjitree.js`.
 - Use design tokens in CSS; do not add hardcoded colors.
+- Keep visual depth derived from the palette tokens (`--surface-raised`,
+  `--surface-sunken`, `--surface-warm`, and ink-shadow tokens). Vermilion is
+  the primary action signal; indigo supports structure and depth.
+- Motion confirms navigation and newly rendered content but never carries
+  meaning alone. Every new animation or transform needs a matching
+  `prefers-reduced-motion` rule.
 - Component colors are positional and non-semantic. Keep the assembled kanji
   monochrome; color direct children only in the separated state, and match each
   component button without relying on color as its label.
