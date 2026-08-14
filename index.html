@@ -428,6 +428,16 @@
           <div id="usage-friction-signals" class="usage-friction-signals" aria-live="polite"></div>
           <p class="hint">Suggestions use only the totals above plus your current due-card count. They cannot see what you studied or why you chose an action.</p>
         </section>
+        <section class="usage-report" aria-labelledby="usage-report-title">
+          <div class="usage-report-head"><div><span class="label">GROUP C · SHAREABLE SNAPSHOT</span><h4 id="usage-report-title">Bring the pattern into our next conversation</h4></div><span aria-hidden="true">文</span></div>
+          <p class="hint">Preview, copy, or download a readable Markdown report. It includes the aggregate rhythm and profile totals shown here—not the raw journal or anything you studied.</p>
+          <div class="profile-actions">
+            <button type="button" id="usage-report-toggle" class="btn btn-ghost" aria-expanded="false" aria-controls="usage-report-preview">Preview report</button>
+            <button type="button" id="usage-report-copy" class="btn">Copy Markdown</button>
+            <button type="button" id="usage-report-download" class="btn btn-primary">Download .md</button>
+          </div>
+          <pre id="usage-report-preview" class="usage-report-preview" tabindex="-1" hidden><code id="usage-report-content"></code></pre>
+        </section>
         <div class="usage-journal-privacy">
           <span aria-hidden="true">守</span>
           <p><strong>No study content is recorded.</strong> Never pasted text, words, kanji, searches, filenames, answers, grades, or timestamps for individual actions. Nothing is transmitted or included in profile backups.</p>

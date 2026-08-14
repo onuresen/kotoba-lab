@@ -7,6 +7,7 @@ export const USAGE_EVENTS = Object.freeze([
   'tab.analyze', 'tab.read', 'tab.kanji', 'tab.relations', 'tab.review', 'tab.mywords',
   'analyze.run', 'tree.open', 'relations.open', 'study.family', 'study.pack',
   'review.answer', 'profile.export', 'pack.export', 'known.change',
+  'report.export',
 ]);
 
 const ALLOWED_EVENTS = new Set(USAGE_EVENTS);

@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.10.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.11.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -58,7 +58,9 @@
   no content payload can enter the journal. Group B is ✓ Done: a pure local
   insight engine shows feature rhythm and cautious friction prompts for review
   queues, Analyze-to-Read handoff, exploration-to-practice handoff, and brief
-  sessions. A separate shareable report remains future Group C.
+  sessions. Group C is ✓ Done: a previewable/copyable/downloadable Markdown
+  report shares aggregate activity, feature rhythm, profile totals, and fixed
+  signal labels without exposing the raw journal or study content.
 
 ## Public repository conventions
 
@@ -104,6 +106,8 @@
   payload API, 90-day retention, pause/reset controls, and summary helpers.
 - `js/usage-insights.js` — pure feature-mix and threshold-based friction prompts
   derived from journal totals plus the current due-card count; no DOM/storage.
+- `js/usage-report.js` — pure, deliberately lossy Markdown report and filename;
+  output labels are whitelisted and arbitrary caller prose is never emitted.
 - `js/study-pack.js` — pure portable kanji-pack schema, sanitization, filenames,
   and conversion into an ephemeral family-study snapshot; no DOM/storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
@@ -330,6 +334,13 @@ events, require a minimum activity sample, cap visible prompts, and always
 offer a neutral no-friction state. The current due-card count may be supplied
 at render time but must not be copied into the journal. Navigation suggestions
 may target only the existing fixed app tabs.
+
+Usage reports are a separate sharing surface, not profile backups. They may
+contain only overall activity counts, the six approved feature totals, current
+aggregate profile metrics, and whitelisted signal copy. Never export raw event
+names, daily keys, journal JSON, last-review dates, or caller-provided labels.
+Preview the exact Markdown before sharing. Record `report.export` only after
+the copied/downloaded snapshot is built so it never counts itself.
 
 ## Profile and study-pack conventions
 

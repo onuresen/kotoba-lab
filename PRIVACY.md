@@ -33,6 +33,11 @@ analytics, advertising, application backend, or cloud synchronization.
 - The friction radar derives suggestions locally from these coarse totals and
   the current due-card count. It does not add stored fields, retain the due-card
   count, or inspect study content.
+- The optional Markdown usage report contains overall activity totals, six
+  feature-category counts, aggregate profile counts, and fixed suggestion text.
+  It excludes raw journal data and event names, daily dates, individual-action
+  timing, last-review dates, and study content. The report stays local unless
+  you choose to copy, share, or upload it.
 
 ## Network requests
 

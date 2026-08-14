@@ -63,7 +63,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   use through daily session, visible-minute, and coarse-action totals. It is off
   by default, records no study content, and never sends data anywhere. A local
   friction radar turns those totals into a feature mix and cautious suggestions
-  for stalled reading, exploration, or review handoffs.
+  for stalled reading, exploration, or review handoffs. A separate Markdown
+  report can be previewed, copied, or downloaded when you want to discuss those
+  patterns without sharing the raw journal or study content.
 - **Portable Study Packs:** export kanji from the current text, a selected
   family, or a Relations network without personal progress; imported packs open
   directly as temporary Kanji study sessions.
@@ -133,6 +135,7 @@ js/backup.js             versioned full-profile export, inspection, and merge
 js/profile-dashboard.js  local data metrics and category-reset helpers
 js/usage-journal.js      opt-in, payload-free local activity counters
 js/usage-insights.js     pure feature mix and cautious friction prompts
+js/usage-report.js       privacy-safe aggregate Markdown snapshot
 js/study-pack.js         private-data-free portable kanji pack format
 data/                    dictionaries, samples, KanjiVG data, attribution
 tools/                   reproducible data-generation tools

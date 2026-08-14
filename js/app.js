@@ -14,6 +14,7 @@ import { serializeStudyPack, parseStudyPack, studyPackFilename, studyPackFamily 
 import { buildProfileMetrics, clearProfileCategory, emptyProfileState } from './profile-dashboard.js';
 import { createUsageJournal } from './usage-journal.js';
 import { buildUsageInsights } from './usage-insights.js';
+import { buildUsageReport, usageReportFilename } from './usage-report.js';
 import { sentenceAt, contextParts } from './context.js';
 import {
   buildTextJourney,
@@ -74,7 +75,7 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const APP_VERSION = '10.10.0';
+const APP_VERSION = '10.11.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -109,6 +110,7 @@ let kanjiBrowseFamilies = [];
 let kanjiStudySession = null;
 let textJourney = null;
 let textJourneySession = null;
+let usageReportPreviewOpen = false;
 const kanjiBrowseLevels = new Set();
 
 // persisted, personal — survive across sessions in this browser only
@@ -1364,7 +1366,8 @@ function renderUsageJournal(profileState = currentState()) {
   $('#usage-journal-detail').textContent = summary.days
     ? `${summary.sessions.toLocaleString()} session${summary.sessions === 1 ? '' : 's'} · ${summary.activeMinutes.toLocaleString()} active minute${summary.activeMinutes === 1 ? '' : 's'} · ${summary.eventCount.toLocaleString()} coarse action${summary.eventCount === 1 ? '' : 's'} across the last ${summary.days} logged day${summary.days === 1 ? '' : 's'}.`
     : 'No activity has been recorded.';
-  const insights = buildUsageInsights(summary, buildProfileMetrics(profileState));
+  const profileMetrics = buildProfileMetrics(profileState);
+  const insights = buildUsageInsights(summary, profileMetrics);
   $('#usage-feature-mix').innerHTML = insights.featureMix.map((feature) => `<div class="usage-feature">
     <span class="usage-feature-glyph" aria-hidden="true">${feature.glyph}</span>
     <div><span><strong>${feature.label}</strong><small>${feature.count.toLocaleString()}</small></span><i aria-hidden="true"><b style="--usage-strength:${feature.strength}%"></b></i></div>
@@ -1373,6 +1376,47 @@ function renderUsageJournal(profileState = currentState()) {
     <div><strong>${signal.title}</strong><p>${signal.body}</p></div>
     ${signal.actionTab ? `<button type="button" class="btn btn-ghost" data-usage-tab="${signal.actionTab}">${signal.actionLabel}</button>` : ''}
   </article>`).join('');
+  if (usageReportPreviewOpen) {
+    $('#usage-report-content').textContent = buildUsageReport({ summary, insights, profile: profileMetrics, appVersion: APP_VERSION });
+  }
+}
+
+function currentUsageReport(generatedAt = Date.now()) {
+  const profile = buildProfileMetrics(currentState());
+  const summary = usageJournal.summary();
+  const insights = buildUsageInsights(summary, profile);
+  return buildUsageReport({ summary, insights, profile, generatedAt, appVersion: APP_VERSION });
+}
+
+function setUsageReportPreview(open) {
+  usageReportPreviewOpen = open;
+  $('#usage-report-preview').hidden = !open;
+  $('#usage-report-toggle').textContent = open ? 'Hide preview' : 'Preview report';
+  $('#usage-report-toggle').setAttribute('aria-expanded', String(open));
+  if (open) {
+    $('#usage-report-content').textContent = currentUsageReport();
+    $('#usage-report-preview').focus();
+  }
+}
+
+function recordUsageReportExport(message) {
+  usageJournal.record('report.export');
+  renderUsageJournal();
+  toast(message, 'success');
+}
+
+function copyUsageReport() {
+  const report = currentUsageReport();
+  navigator.clipboard.writeText(report)
+    .then(() => recordUsageReportExport('Copied privacy-safe usage report.'))
+    .catch(() => toast('Clipboard blocked — download the report instead.', 'error'));
+}
+
+function downloadUsageReport() {
+  const generatedAt = Date.now();
+  const report = currentUsageReport(generatedAt);
+  download(usageReportFilename(generatedAt), report, 'text/markdown');
+  recordUsageReportExport('Downloaded privacy-safe usage report.');
 }
 
 function renderMyWords() {
@@ -1846,6 +1890,9 @@ function wireUi() {
     renderUsageJournal();
     toast('Usage journal reset.', 'success');
   });
+  $('#usage-report-toggle').addEventListener('click', () => setUsageReportPreview(!usageReportPreviewOpen));
+  $('#usage-report-copy').addEventListener('click', copyUsageReport);
+  $('#usage-report-download').addEventListener('click', downloadUsageReport);
   $('#study-pack-source').addEventListener('change', () => updateStudyPackSource({ replaceTitle: true }));
   $('#study-pack-download').addEventListener('click', downloadStudyPack);
   $('#study-pack-file').addEventListener('change', onStudyPackFile);

@@ -388,6 +388,13 @@ kbd {
 .usage-signal p { margin: 3px 0 0; color: var(--text3); font-size: 10px; line-height: 1.5; }
 .usage-signal .btn { flex: 0 0 auto; min-height: 34px; padding: 6px 10px; font-size: 10px; }
 .usage-insights > .hint { margin: -3px 0 0; }
+.usage-report { display: flex; flex-direction: column; gap: 10px; padding: 13px; background: color-mix(in srgb, var(--accent2) 5%, var(--surface-raised)); border: 1px dashed var(--border-strong); border-radius: var(--r-md); }
+.usage-report-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.usage-report-head h4 { margin: 2px 0 0; font-family: var(--font-display); font-size: 16px; }
+.usage-report-head > span { width: 38px; height: 38px; display: grid; flex: 0 0 auto; place-items: center; color: var(--accent2-text); font-family: var(--font-display); font-size: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); }
+.usage-report > .hint { margin: 0; }
+.usage-report-preview { max-height: 360px; margin: 0; padding: 14px; overflow: auto; color: var(--text2); font-family: var(--font-mono); font-size: 10px; line-height: 1.6; white-space: pre-wrap; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--r-sm); }
+.usage-report-preview[hidden] { display: none; }
 .usage-journal-privacy { display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 11px; padding: 11px 12px; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--r-sm); }
 .usage-journal-privacy > span { width: 38px; height: 38px; display: grid; place-items: center; color: var(--accent2-text); font-family: var(--font-display); font-size: 20px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--r-sm); }
 .usage-journal-privacy p { margin: 0; color: var(--text3); font-size: 10px; line-height: 1.55; }
@@ -598,6 +605,7 @@ kbd {
   .usage-feature-mix { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .usage-signal { align-items: stretch; flex-direction: column; }
   .usage-signal .btn { min-height: 44px; }
+  .usage-report .profile-actions { grid-template-columns: 1fr; }
   .profile-categories { grid-template-columns: 1fr; }
   .profile-reset-zone { align-items: stretch; flex-direction: column; }
   .profile-reset-zone .btn { min-height: 44px; }
