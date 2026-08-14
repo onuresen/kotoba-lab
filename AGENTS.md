@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.11.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.12.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -44,6 +44,11 @@
   The optional bounded two-hop view balances structural and reading branches,
   supports branch expansion, root changes, zoom/reset, Radical Tree doorways,
   and clustered mobile swipe lanes without replacing the one-hop default.
+- Kanji Constellation Atlas Group A is ✓ Done: an experimental third Relations
+  view projects one selected direct-component family into a deterministic,
+  bounded 24-star sky. Existing known-kanji state illuminates stars, unfamiliar
+  stars stay quiet, and each star returns to its normal one-hop neighborhood.
+  The chosen component and Atlas position are ephemeral and add no storage key.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -263,6 +268,23 @@
 - Keep the one-hop Neighborhood view as the default. Desktop networks may use
   zoom controls; phones replace the graph with Structure and Readings swipe
   lanes rather than shrinking the full canvas.
+
+## Kanji Constellation Atlas conventions
+
+- A constellation center is one direct visual component from the selected root
+  kanji. Lines mean only “contains this direct component”; never present them as
+  etymology, historical descent, or semantic similarity.
+- Keep each sky deterministic and capped at 24 visible kanji. Keep the selected
+  root visible before applying the cap, then use stable JLPT, stroke, and code
+  point order so the same family does not jump between visits.
+- Known-star lighting must read only `kotoba-lab:known-kanji`. Unknown stars are
+  visually quieter, never hidden or described as unlearned facts.
+- Component choice, scroll position, and constellation layout are ephemeral.
+  Add no localStorage key, usage payload, or profile field for the experiment.
+- Keep Constellation inside the Relations workspace and leave Neighborhood as
+  the default. A star doorway returns to the ordinary one-hop Relations view.
+- Phones keep the full bounded sky in a touch-pannable viewport rather than
+  shrinking nodes until labels or targets become illegible.
 
 ## Phonetic Component Lab conventions
 

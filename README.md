@@ -51,7 +51,10 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   JLPT level, learning context, and neighborhood size without leaving the tab.
   Switch from the focused neighborhood to a bounded two-hop network, expand
   individual branches without losing the root, zoom the desktop graph, or use
-  clustered swipe lanes on a phone.
+  clustered swipe lanes on a phone. The experimental Constellation view turns
+  one selected direct component into a bounded 24-star family sky: known kanji
+  glow, unfamiliar stars stay quiet, and every star opens its normal Relations
+  neighborhood.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
 - **Profile & Data:** export the complete local study profile as versioned JSON,
@@ -138,6 +141,7 @@ ui-base.css              shared UI primitives used by this repository
 palettes/                 Kotoba Lab color palette
 js/                      application modules and tests
 js/kanji-network.js      bounded two-hop graph builder, layout, and UI
+js/kanji-atlas.js        bounded component constellation graph, layout, and UI
 js/backup.js             versioned full-profile export, inspection, and merge
 js/profile-dashboard.js  local data metrics and category-reset helpers
 js/usage-journal.js      opt-in, payload-free local activity counters

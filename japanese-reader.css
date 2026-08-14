@@ -660,7 +660,8 @@ kbd {
 .relations-view-switch .btn.is-active { color: var(--accent); background: var(--surface-raised); border-color: var(--accent-glow); box-shadow: var(--shadow-sm); }
 .relations-map-host { scroll-margin-top: 74px; }
 .relations-network-host { scroll-margin-top: 74px; }
-.relations-network-host[hidden], .relations-map-host[hidden] { display: none; }
+.relations-atlas-host { scroll-margin-top: 74px; }
+.relations-network-host[hidden], .relations-map-host[hidden], .relations-atlas-host[hidden] { display: none; }
 .krm-embedded { overflow: hidden; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow-md); }
 .krm-embedded .krm-shell { width: 100%; max-height: none; border: 0; border-radius: 0; box-shadow: none; animation: none; }
 .krm-embedded .krm-body { height: min(720px, calc(100vh - 118px)); min-height: 620px; }
@@ -713,6 +714,41 @@ kbd {
 .kn-detail-reason { margin: 18px 0; padding: 11px; color: var(--text2); font-size: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); }
 .kn-detail-actions { display: flex; flex-direction: column; gap: 8px; }
 .kn-mobile { display: none; }
+
+/* ---- Kanji Constellation Atlas ------------------------------------------ */
+.ka-shell { overflow: hidden; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow-md); }
+.ka-toolbar { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px 16px; background: color-mix(in srgb, var(--surface) 92%, transparent); border-bottom: 1px solid var(--border); }
+.ka-toolbar h2 { margin: 2px 0 0; font-family: var(--font-display); font-size: 21px; }
+.ka-picker { min-width: 180px; display: flex; flex-direction: column; gap: 5px; }
+.ka-overview { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; padding: 10px 16px; background: var(--surface-sunken); border-bottom: 1px solid var(--border); }
+.ka-overview span { padding: 5px 9px; color: var(--text2); font-size: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill); }
+.ka-overview b { color: var(--accent2-text); font-family: var(--font-mono); }
+.ka-viewport { min-width: 0; overflow-x: auto; overflow-y: hidden; background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent2) 8%, var(--surface-raised)) 0, var(--surface-warm) 44%, var(--surface-sunken) 100%); scrollbar-width: thin; }
+.ka-stage { position: relative; width: 980px; height: 640px; margin: 0 auto; isolation: isolate; }
+.ka-stage::before, .ka-stage::after { content: ''; position: absolute; inset: 8% 14%; z-index: -1; pointer-events: none; border: 1px solid color-mix(in srgb, var(--accent2) 10%, transparent); border-radius: 50%; transform: rotate(-8deg); }
+.ka-stage::after { inset: 20% 28%; transform: rotate(13deg); }
+.ka-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ka-lines line { stroke: color-mix(in srgb, var(--accent2) 48%, var(--border-strong)); stroke-width: .22; vector-effect: non-scaling-stroke; opacity: .45; }
+.ka-lines line[data-known="true"] { stroke: var(--accent2); stroke-width: .34; opacity: .76; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--accent2) 46%, transparent)); }
+.ka-center { position: absolute; left: 50%; top: 50%; z-index: 3; width: 126px; aspect-ratio: 1; display: grid; place-items: center; align-content: center; gap: 5px; transform: translate(-50%, -50%); color: var(--surface-raised); background: radial-gradient(circle at 38% 32%, color-mix(in srgb, var(--accent) 78%, var(--on-accent)), var(--accent)); border: 4px solid color-mix(in srgb, var(--accent) 30%, var(--surface-raised)); border-radius: 50%; box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 8%, transparent), 0 0 42px color-mix(in srgb, var(--accent) 28%, transparent), var(--shadow-md); }
+.ka-center span { font-family: var(--font-display); font-size: 51px; line-height: 1; }
+.ka-center small { font: 600 8px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.ka-star-position { position: absolute; left: var(--ka-x); top: var(--ka-y); z-index: 2; transform: translate(-50%, -50%); }
+.ka-star { appearance: none; position: relative; width: 112px; min-height: 68px; display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 7px; padding: 8px; color: var(--text); font: inherit; text-align: left; cursor: pointer; background: color-mix(in srgb, var(--surface-raised) 86%, transparent); border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); border-radius: var(--r-md); box-shadow: 0 5px 15px var(--ink-shadow-soft); opacity: .7; filter: saturate(.76); transition: opacity .2s var(--ease), filter .2s var(--ease), transform .2s var(--ease), border-color .2s var(--ease), box-shadow .22s var(--ease); }
+.ka-star::before { content: ''; position: absolute; inset: -12px; z-index: -1; background: radial-gradient(circle, color-mix(in srgb, var(--text3) 12%, transparent), transparent 66%); opacity: .4; pointer-events: none; }
+.ka-star:hover, .ka-star:focus-visible { opacity: 1; filter: none; transform: translateY(-3px) scale(1.035); border-color: var(--accent); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 16%, var(--ink-shadow)); }
+.ka-star[data-known="true"] { opacity: 1; filter: none; background: color-mix(in srgb, var(--surface-raised) 92%, var(--accent2-dim)); border-color: color-mix(in srgb, var(--accent2) 48%, var(--border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent2) 8%, transparent), 0 0 22px color-mix(in srgb, var(--accent2) 20%, transparent); }
+.ka-star[data-known="true"]::before { background: radial-gradient(circle, color-mix(in srgb, var(--accent2) 30%, transparent), transparent 68%); opacity: 1; }
+.ka-star[data-root="true"] { border-color: color-mix(in srgb, var(--accent) 58%, var(--border)); }
+.ka-star-glyph { color: var(--accent2-text); font-family: var(--font-display); font-size: 31px; line-height: 1; text-align: center; }
+.ka-star[data-known="true"] .ka-star-glyph { text-shadow: 0 0 13px color-mix(in srgb, var(--accent2) 42%, transparent); }
+.ka-star-copy { min-width: 0; }
+.ka-star-copy strong, .ka-star-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ka-star-copy strong { font-size: 10px; }
+.ka-star-copy small { margin-top: 3px; color: var(--text3); font-size: 8px; }
+.ka-caption { margin: 0; padding: 10px 16px; text-align: center; background: var(--surface); border-top: 1px solid var(--border); }
+.ka-empty { position: absolute; inset: 0; display: grid; place-content: center; gap: 6px; color: var(--text2); text-align: center; }
+.ka-empty strong { font-family: var(--font-display); font-size: 20px; }
 
 /* ---- Kanji Radical Tree overlay ------------------------------------------- */
 body.kt-open { overflow: hidden; }
@@ -1011,6 +1047,8 @@ body.krm-open { overflow: hidden; }
   .krm-embedded .krm-body { height: auto; min-height: 0; }
   .relations-view-switch { width: 100%; }
   .relations-view-switch .btn { min-height: 44px; flex: 1; padding-inline: 8px; }
+  .relations-view-switch { border-radius: var(--r-md); }
+  .relations-view-switch .btn { font-size: 10px; white-space: normal; }
   .kn-shell { overflow: visible; }
   .kn-toolbar { min-height: 60px; padding: 9px 12px; }
   .kn-toolbar .label { display: none; }
@@ -1030,6 +1068,21 @@ body.krm-open { overflow: hidden; }
   .kn-lane-node { width: 174px !important; min-height: 88px !important; flex: 0 0 174px; scroll-snap-align: center; }
   .kn-mobile-detail { padding: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-md); }
   .kn-detail-actions .btn { min-height: 44px; }
+  .ka-shell { overflow: visible; }
+  .ka-toolbar { align-items: stretch; flex-direction: column; gap: 9px; padding: 12px; }
+  .ka-toolbar .label:first-child { display: none; }
+  .ka-toolbar h2 { font-size: 18px; }
+  .ka-picker { width: 100%; }
+  .ka-picker .select { min-height: 44px; }
+  .ka-overview { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .ka-overview::-webkit-scrollbar { display: none; }
+  .ka-overview span { flex: 0 0 auto; }
+  .ka-viewport { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .ka-stage { width: 840px; height: 580px; }
+  .ka-center { width: 108px; }
+  .ka-center span { font-size: 43px; }
+  .ka-star { width: 96px; min-height: 64px; }
+  .ka-caption { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
   .kt-overlay { padding: 0; }
   .kt-shell { width: 100%; height: 100dvh; max-height: none; overflow-y: auto; overscroll-behavior: contain; border-radius: 0; }
   .kt-head { grid-template-columns: auto 1fr auto; min-height: 60px; padding: 8px 10px; }

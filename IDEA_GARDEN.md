@@ -50,6 +50,12 @@ First experiment: a single bounded constellation generated from one selected
 component, with known-state lighting and a doorway back to Relations. Build the
 full atlas only after navigation, density, and phone performance feel good.
 
+Group A is implemented in v10.12.0 as an experimental third Relations view.
+It uses one direct component from the selected root, caps the visible family at
+24 deterministic stars, illuminates the existing known-kanji state, and lets a
+star return to its ordinary neighborhood. Component choice and Atlas position
+remain ephemeral; no new profile or storage format was added.
+
 ## Remaining creative seeds
 
 All of these remain worth revisiting after the first exploration track produces

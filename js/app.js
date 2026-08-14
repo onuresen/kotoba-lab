@@ -27,6 +27,7 @@ import { isKanji } from './script.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
 import { createKanjiNetworkView } from './kanji-network.js';
+import { createKanjiAtlasView } from './kanji-atlas.js';
 import { buildKanjiRelationshipIndex, buildKanjiRelationships } from './kanji-relationships.js';
 import {
   buildKanjiCatalog,
@@ -75,7 +76,7 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const APP_VERSION = '10.11.0';
+const APP_VERSION = '10.12.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -94,6 +95,7 @@ let kanjiMapPromise = null;
 let kanjiRelationshipIndex = null;
 let relationsMap = null;
 let relationsNetwork = null;
+let relationsAtlas = null;
 let relationsPromise = null;
 let relationsSeed = '';
 let relationsView = 'map';
@@ -379,6 +381,7 @@ function resetRelationsFilters() {
   $('#relations-size').value = '24';
   relationsMap?.update();
   relationsNetwork?.update();
+  relationsAtlas?.update();
 }
 
 async function loadRelationsWorkspace() {
@@ -413,10 +416,11 @@ async function loadRelationsWorkspace() {
 }
 
 async function setRelationsView(view, { focus = true } = {}) {
-  relationsView = view === 'network' ? 'network' : 'map';
+  relationsView = ['network', 'atlas'].includes(view) ? view : 'map';
   const map = await loadRelationsWorkspace();
   const mapHost = $('#relations-map-host');
   const networkHost = $('#relations-network-host');
+  const atlasHost = $('#relations-atlas-host');
   if (relationsView === 'network' && !relationsNetwork) {
     relationsNetwork = createKanjiNetworkView({
       mount: networkHost,
@@ -432,8 +436,26 @@ async function setRelationsView(view, { focus = true } = {}) {
       },
     });
   }
+  if (relationsView === 'atlas' && !relationsAtlas) {
+    relationsAtlas = createKanjiAtlasView({
+      mount: atlasHost,
+      index: kanjiRelationshipIndex,
+      isKnown: (char) => knownKanji.has(char),
+      onOpenRelations: (char, trigger) => {
+        selectRelationsSeed(char, trigger).then(() => setRelationsView('map'));
+      },
+      onRender: (graph) => {
+        if (!graph) {
+          $('#relations-status').textContent = 'This kanji has no shared direct-component family in the compact index.';
+          return;
+        }
+        $('#relations-status').textContent = `Exploring ${graph.component} as a ${graph.stars.length}-star direct-component constellation${graph.truncated ? ` · ${graph.total} family members in total` : ''}.`;
+      },
+    });
+  }
   mapHost.hidden = relationsView !== 'map';
   networkHost.hidden = relationsView !== 'network';
+  atlasHost.hidden = relationsView !== 'atlas';
   document.querySelectorAll('[data-relations-view]').forEach((button) => {
     const active = button.dataset.relationsView === relationsView;
     button.classList.toggle('is-active', active);
@@ -443,11 +465,13 @@ async function setRelationsView(view, { focus = true } = {}) {
   if (relationsView === 'network') {
     relationsNetwork.open(char);
     $('#relations-status').textContent = `Exploring ${char} across two relationship hops. Expand a direct branch for more context.`;
+  } else if (relationsView === 'atlas') {
+    relationsAtlas.open(char);
   } else {
     map.open(char, null);
     $('#relations-status').textContent = `Exploring ${char}. Select a connected kanji to make it the new center.`;
   }
-  if (focus) (relationsView === 'network' ? networkHost : mapHost).querySelector('button')?.focus();
+  if (focus) ({ network: networkHost, atlas: atlasHost, map: mapHost })[relationsView].querySelector('button, select')?.focus();
 }
 
 async function selectRelationsSeed(char, trigger = document.activeElement) {
@@ -458,6 +482,7 @@ async function selectRelationsSeed(char, trigger = document.activeElement) {
     if (!map.open(char, trigger)) return;
     usageJournal.record('relations.open');
     relationsNetwork?.open(char);
+    relationsAtlas?.open(char);
     relationsSeed = char;
     $('#relations-search').value = char;
     renderRelationsSearch();
@@ -465,7 +490,7 @@ async function selectRelationsSeed(char, trigger = document.activeElement) {
       $('#relations-status').textContent = `Exploring ${char} across two relationship hops. Expand a direct branch for more context.`;
     }
     if (window.matchMedia('(max-width: 780px)').matches) {
-      const host = relationsView === 'network' ? $('#relations-network-host') : $('#relations-map-host');
+      const host = ({ network: $('#relations-network-host'), atlas: $('#relations-atlas-host'), map: $('#relations-map-host') })[relationsView];
       requestAnimationFrame(() => host.scrollIntoView({ block: 'start', behavior: 'smooth' }));
     }
   } catch (error) {
@@ -504,6 +529,7 @@ function run({ recordUsage = true } = {}) {
     renderRelationsSeeds();
     relationsMap?.update();
     relationsNetwork?.update();
+    relationsAtlas?.update();
   }
 }
 
@@ -689,6 +715,7 @@ function refreshKnownEverywhere() {
   kanjiMap?.update();
   relationsMap?.update();
   relationsNetwork?.update();
+  relationsAtlas?.update();
   renderRelationsSeeds();
 }
 
@@ -1720,6 +1747,7 @@ function showEmpty() {
   renderRelationsSeeds();
   relationsMap?.update();
   relationsNetwork?.update();
+  relationsAtlas?.update();
 }
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t) => {
@@ -1807,6 +1835,7 @@ function wireUi() {
   $('#relations-filters').addEventListener('change', () => {
     relationsMap?.update();
     relationsNetwork?.update();
+    relationsAtlas?.update();
   });
   $('#relations-reset').addEventListener('click', resetRelationsFilters);
   document.querySelectorAll('[data-relations-view]').forEach((button) => button.addEventListener('click', () => {
