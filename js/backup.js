@@ -16,7 +16,7 @@
 // file twice changes nothing the second time.
 
 export const BACKUP_FORMAT = 'kotoba-lab-backup';
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 // ---- shape helpers ----------------------------------------------------------
 
@@ -89,24 +89,38 @@ function cleanLog(raw) {
 // ---- export -----------------------------------------------------------------
 
 /** state = { deck: Entry[], knownWords: string[], knownKanji: string[], reviewLog: {day:n} } */
-export function buildBackup(state, now = Date.now()) {
+export function backupSummary(state) {
   return {
-    format: BACKUP_FORMAT,
-    version: BACKUP_VERSION,
-    exportedAt: new Date(now).toISOString(),
+    cards: Array.isArray(state?.deck) ? state.deck.length : 0,
+    knownWords: Array.isArray(state?.knownWords) ? state.knownWords.length : 0,
+    knownKanji: Array.isArray(state?.knownKanji) ? state.knownKanji.length : 0,
+    reviewDays: isObj(state?.reviewLog) ? Object.keys(state.reviewLog).length : 0,
+  };
+}
+
+export function buildBackup(state, now = Date.now(), { appVersion = '' } = {}) {
+  const cleanState = {
     deck: (state.deck || []).map(cleanEntry).filter(Boolean),
     knownWords: cleanStrings(state.knownWords),
     knownKanji: cleanStrings(state.knownKanji),
     reviewLog: cleanLog(state.reviewLog),
   };
+  return {
+    format: BACKUP_FORMAT,
+    version: BACKUP_VERSION,
+    exportedAt: new Date(now).toISOString(),
+    appVersion: typeof appVersion === 'string' ? appVersion : '',
+    summary: backupSummary(cleanState),
+    ...cleanState,
+  };
 }
 
-export function serializeBackup(state, now = Date.now()) {
-  return JSON.stringify(buildBackup(state, now), null, 2);
+export function serializeBackup(state, now = Date.now(), options = {}) {
+  return JSON.stringify(buildBackup(state, now, options), null, 2);
 }
 
 export function backupFilename(now = Date.now()) {
-  return `kotoba-lab-backup-${new Date(now).toLocaleDateString('en-CA')}.json`;
+  return `kotoba-lab-profile-${new Date(now).toLocaleDateString('en-CA')}.json`;
 }
 
 // ---- import -----------------------------------------------------------------
@@ -116,7 +130,7 @@ export function backupFilename(now = Date.now()) {
  * Throws an Error whose message is safe to show the user — the point of failing
  * loudly here is that the alternative is silently importing nothing.
  */
-export function parseBackup(text) {
+export function inspectBackup(text) {
   let raw;
   try {
     raw = JSON.parse(text);
@@ -139,10 +153,22 @@ export function parseBackup(text) {
     knownKanji: cleanStrings(raw.knownKanji),
     reviewLog: cleanLog(raw.reviewLog),
   };
-  if (!deck.length && !state.knownWords.length && !state.knownKanji.length) {
+  if (!deck.length && !state.knownWords.length && !state.knownKanji.length && !Object.keys(state.reviewLog).length) {
     throw new Error('That backup is empty — no cards and no known words.');
   }
-  return state;
+  return {
+    state,
+    meta: {
+      version: Math.max(1, num(raw.version, 1)),
+      appVersion: typeof raw.appVersion === 'string' ? raw.appVersion : '',
+      exportedAt: typeof raw.exportedAt === 'string' && Number.isFinite(Date.parse(raw.exportedAt)) ? raw.exportedAt : '',
+      summary: backupSummary(state),
+    },
+  };
+}
+
+export function parseBackup(text) {
+  return inspectBackup(text).state;
 }
 
 // ---- merge ------------------------------------------------------------------

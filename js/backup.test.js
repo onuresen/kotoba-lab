@@ -7,7 +7,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  buildBackup, serializeBackup, parseBackup, mergeState, describeMerge,
+  buildBackup, serializeBackup, parseBackup, inspectBackup, backupSummary, backupFilename, mergeState, describeMerge,
   BACKUP_FORMAT, BACKUP_VERSION,
 } from './backup.js';
 
@@ -23,10 +23,35 @@ const state = (over = {}) => ({ deck: [], knownWords: [], knownKanji: [], review
 // ---- export -----------------------------------------------------------------
 
 test('backup carries the srs card that TSV export drops', () => {
-  const out = buildBackup(state({ deck: [entry('専門家')] }), T0);
+  const out = buildBackup(state({ deck: [entry('専門家')] }), T0, { appVersion: '10.7.0' });
   assert.equal(out.format, BACKUP_FORMAT);
   assert.equal(out.version, BACKUP_VERSION);
+  assert.equal(out.appVersion, '10.7.0');
+  assert.deepEqual(out.summary, { cards: 1, knownWords: 0, knownKanji: 0, reviewDays: 0 });
   assert.deepEqual(out.deck[0].srs, card());
+});
+
+test('profile metadata is inspectable without changing the parsed state shape', () => {
+  const original = state({ deck: [entry('本')], knownKanji: ['本'], reviewLog: { '2026-01-15': 2 } });
+  const inspected = inspectBackup(serializeBackup(original, T0, { appVersion: '10.7.0' }));
+  assert.deepEqual(inspected.state, original);
+  assert.deepEqual(inspected.meta, {
+    version: BACKUP_VERSION,
+    appVersion: '10.7.0',
+    exportedAt: new Date(T0).toISOString(),
+    summary: { cards: 1, knownWords: 0, knownKanji: 1, reviewDays: 1 },
+  });
+  assert.deepEqual(backupSummary(original), inspected.meta.summary);
+  assert.match(backupFilename(T0), /^kotoba-lab-profile-\d{4}-\d{2}-\d{2}\.json$/);
+});
+
+test('legacy v1 profiles remain readable and history-only profiles are not discarded', () => {
+  const legacy = inspectBackup(JSON.stringify({
+    format: BACKUP_FORMAT, version: 1, exportedAt: new Date(T0).toISOString(), reviewLog: { '2026-01-15': 4 },
+  }));
+  assert.equal(legacy.meta.version, 1);
+  assert.equal(legacy.meta.appVersion, '');
+  assert.deepEqual(legacy.state.reviewLog, { '2026-01-15': 4 });
 });
 
 test('export → parse is a faithful round trip', () => {

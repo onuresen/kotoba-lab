@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.6.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.7.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -44,6 +44,11 @@
   The optional bounded two-hop view balances structural and reading branches,
   supports branch expansion, root changes, zoom/reset, Radical Tree doorways,
   and clustered mobile swipe lanes without replacing the one-hop default.
+- Data Management Groups A–B are ✓ Done: Profile & Data exports versioned full
+  profiles with metadata, previews imports before any write, defaults to a
+  repeat-safe merge, and gates replacement behind confirmation. Portable Study
+  Packs export current-text, selected-family, or Relations kanji without any
+  personal progress and import into an ephemeral family-study session.
 
 ## Public repository conventions
 
@@ -81,6 +86,10 @@
   question selection, and session scoring; no DOM or storage.
 - `js/text-journey.js` — pure text-specific route ranking, projected coverage,
   word/context collection, and ephemeral journey navigation; no DOM/storage.
+- `js/backup.js` — pure versioned profile serialization, inspection, backward-
+  compatible parsing, summary metadata, and repeat-safe merge rules.
+- `js/study-pack.js` — pure portable kanji-pack schema, sanitization, filenames,
+  and conversion into an ephemeral family-study snapshot; no DOM/storage.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
 - `data/kanji-families.json` — committed compact radical/direct-component
@@ -285,12 +294,29 @@
 
 ## Persistent state
 
-There are exactly four localStorage keys. The Radical Tree adds none:
+There are exactly four localStorage keys. Radical Tree, profiles, and study
+packs add none:
 
 - `kotoba-lab:deck`
 - `kotoba-lab:known-words`
 - `kotoba-lab:known-kanji`
 - `kotoba-lab:review-log`
+
+## Profile and study-pack conventions
+
+- Full profiles use the existing `kotoba-lab-backup` format marker. Version 2
+  adds app version and derived counts; version 1 remains readable.
+- Choosing a profile file must only inspect it. Write the four stores only after
+  the user chooses safe merge or confirms full replacement.
+- Safe merge remains the recommended default: add missing cards/items, keep the
+  more recently reviewed schedule, and take the maximum review count per day.
+- Study packs use the separate `kotoba-lab-study-pack` marker and contain only
+  kanji, meaning, readings, JLPT, and stroke metadata. Never include pasted
+  text, sentence context, known state, scheduling, or review history.
+- Imported packs are temporary family-study sessions. Do not add a fifth
+  storage key for packs, import history, source choice, or progress.
+- Keep `APP_VERSION` in `js/app.js` synchronized with `package.json` when the
+  profile format or public data-management UI ships.
 
 ## Verification
 
@@ -307,6 +333,8 @@ phonetic-signal thresholds/evidence/prediction scoring,
 contrast-set bounds/distinct clues/answer scoring,
 text-journey ranking/coverage/context/session navigation,
 family-mix selection/ambiguity exclusion/interleaving/scoring/restart,
+profile v1/v2 inspection/merge/replace preview and study-pack
+privacy/export/import/session handoff,
 explode/drill/back, `Esc` focus restoration,
 known-state propagation, atomic/missing entries, reduced motion, and clean
 offline-first-load failure. The only module script in `index.html` remains

@@ -54,8 +54,12 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   clustered swipe lanes on a phone.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
-- **My Words:** manage the local study deck and move it between browsers with a
-  JSON backup and restore flow.
+- **Profile & Data:** export the complete local study profile as versioned JSON,
+  inspect an import before it writes anything, then merge safely or explicitly
+  replace local cards, schedules, known items, and review history.
+- **Portable Study Packs:** export kanji from the current text, a selected
+  family, or a Relations network without personal progress; imported packs open
+  directly as temporary Kanji study sessions.
 - **Text import:** open plain-text and Aozora Bunko files, including Shift-JIS
   decoding and common markup cleanup.
 - **Two tokenizers:** use the fast embedded-dictionary tokenizer or opt into the
@@ -118,6 +122,8 @@ ui-base.css              shared UI primitives used by this repository
 palettes/                 Kotoba Lab color palette
 js/                      application modules and tests
 js/kanji-network.js      bounded two-hop graph builder, layout, and UI
+js/backup.js             versioned full-profile export, inspection, and merge
+js/study-pack.js         private-data-free portable kanji pack format
 data/                    dictionaries, samples, KanjiVG data, attribution
 tools/                   reproducible data-generation tools
 vendor/kuromoji/         vendored tokenizer and dictionary

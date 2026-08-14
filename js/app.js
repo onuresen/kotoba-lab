@@ -9,7 +9,8 @@ import { renderReading, applyKnownClasses } from './read.js';
 import { pickStudyWords, toTSV, download } from './flashcards.js';
 import { readAozoraFile } from './aozora.js';
 import { createKnownSet, createDeck, createReviewLog } from './storage.js';
-import { serializeBackup, backupFilename, parseBackup, mergeState, describeMerge } from './backup.js';
+import { serializeBackup, backupFilename, inspectBackup, backupSummary, mergeState, describeMerge } from './backup.js';
+import { serializeStudyPack, parseStudyPack, studyPackFilename, studyPackFamily } from './study-pack.js';
 import { sentenceAt, contextParts } from './context.js';
 import {
   buildTextJourney,
@@ -70,6 +71,7 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const APP_VERSION = '10.7.0';
 
 let jlpt, samples = [];
 let vocabList = [];
@@ -87,6 +89,8 @@ let relationsNetwork = null;
 let relationsPromise = null;
 let relationsSeed = '';
 let relationsView = 'map';
+let pendingProfileImport = null;
+let pendingStudyPack = null;
 let kanjiCatalog = [];
 let kanjiStructureIndex = null;
 let kanjiStructurePromise = null;
@@ -1284,6 +1288,15 @@ function dueCell(entry) {
     : `<span class="hint">${formatWait(delta)}</span>`;
 }
 
+function profileSummaryMarkup(summary) {
+  return [
+    ['Saved cards', summary.cards],
+    ['Known words', summary.knownWords],
+    ['Known kanji', summary.knownKanji],
+    ['Review days', summary.reviewDays],
+  ].map(([label, value]) => `<span><b>${Number(value).toLocaleString()}</b><small>${label}</small></span>`).join('');
+}
+
 function renderMyWords() {
   $('#mw-known-count').textContent = `${knownWords.count()} words · ${knownKanji.count()} kanji`;
   $('#mw-known-words').innerHTML = knownWords.all().length
@@ -1298,6 +1311,7 @@ function renderMyWords() {
   const days = Object.keys(reviewLog.all()).length;
   $('#mw-backup-count').textContent =
     `${rows.length} cards · ${knownWords.count() + knownKanji.count()} known · ${days} day${days === 1 ? '' : 's'} of history`;
+  $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(currentState()));
   $('#mw-deck-tbody').innerHTML = rows.length
     ? rows.map((r) => `
       <tr>
@@ -1308,6 +1322,7 @@ function renderMyWords() {
         <td class="mw-card-action"><button class="btn btn-ghost deck-rm" data-key="${esc(r.surface)}">Remove</button></td>
       </tr>`).join('')
     : `<tr><td colspan="5" class="hint">No saved words yet — tap "☆ Save" on a word in the Read tab.</td></tr>`;
+  updateStudyPackSource();
 }
 
 function onMyWordsClick(e) {
@@ -1352,38 +1367,163 @@ function currentState() {
 
 function downloadBackup() {
   const state = currentState();
-  if (!state.deck.length && !state.knownWords.length && !state.knownKanji.length) {
+  if (!state.deck.length && !state.knownWords.length && !state.knownKanji.length && !Object.keys(state.reviewLog).length) {
     toast('Nothing to back up yet — save a word first.', 'error');
     return;
   }
-  download(backupFilename(), serializeBackup(state), 'application/json');
-  toast(`Backed up ${state.deck.length} card${state.deck.length === 1 ? '' : 's'} and their scheduling.`, 'success');
+  download(backupFilename(), serializeBackup(state, Date.now(), { appVersion: APP_VERSION }), 'application/json');
+  toast(`Profile exported with ${state.deck.length} saved card${state.deck.length === 1 ? '' : 's'}.`, 'success');
 }
 
 async function onBackupFile(e) {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
   try {
-    const incoming = parseBackup(await file.text());
-    const { state, stats } = mergeState(currentState(), incoming);
-    // Written back only after the parse and merge both succeed, so a bad file
-    // leaves the deck exactly as it was.
-    deck.replaceAll(state.deck);
-    knownWords.replaceAll(state.knownWords);
-    knownKanji.replaceAll(state.knownKanji);
-    reviewLog.replaceAll(state.reviewLog);
-    refreshKnownEverywhere();
-    renderMyWords();
-    refreshReview();
-    toast(describeMerge(stats), 'success');
+    const inspected = inspectBackup(await file.text());
+    const merged = mergeState(currentState(), inspected.state);
+    pendingProfileImport = { ...inspected, merged, fileName: file.name };
+    $('#profile-import-name').textContent = file.name;
+    const date = inspected.meta.exportedAt ? new Date(inspected.meta.exportedAt).toLocaleString() : 'Export date unavailable';
+    const app = inspected.meta.appVersion ? `Kotoba Lab ${inspected.meta.appVersion}` : `legacy profile format v${inspected.meta.version}`;
+    $('#profile-import-meta').textContent = `${date} · ${app}`;
+    $('#profile-import-counts').innerHTML = profileSummaryMarkup(inspected.meta.summary);
+    $('#profile-import-impact').textContent = describeMerge(merged.stats);
+    $('#profile-import-preview').hidden = false;
+    $('#profile-import-merge').focus();
   } catch (err) {
     console.error(err);
-    // parseBackup's messages are written to be read by the person holding the
+    pendingProfileImport = null;
+    $('#profile-import-preview').hidden = true;
+    // inspectBackup's messages are written to be read by the person holding the
     // file — pass them through instead of a generic failure.
-    toast(err.message || 'Could not read that backup.', 'error');
+    toast(err.message || 'Could not read that profile.', 'error');
   } finally {
     e.target.value = ''; // allow re-importing the same file
   }
+}
+
+function closeProfileImport() {
+  pendingProfileImport = null;
+  $('#profile-import-preview').hidden = true;
+}
+
+function writeProfileState(state) {
+  deck.replaceAll(state.deck);
+  knownWords.replaceAll(state.knownWords);
+  knownKanji.replaceAll(state.knownKanji);
+  reviewLog.replaceAll(state.reviewLog);
+  sessionCount = 0;
+  refreshKnownEverywhere();
+  refreshReview();
+}
+
+function applyProfileImport(mode) {
+  if (!pendingProfileImport) return;
+  if (mode === 'replace' && !confirm('Replace all local cards, known items, schedules, and review history with this profile? This cannot be undone without another exported profile.')) return;
+  const next = mode === 'replace' ? pendingProfileImport.state : pendingProfileImport.merged.state;
+  const message = mode === 'replace' ? 'Local profile replaced.' : describeMerge(pendingProfileImport.merged.stats);
+  writeProfileState(next);
+  closeProfileImport();
+  toast(message, 'success');
+}
+
+// ---- portable study packs --------------------------------------------------
+function studyPackSource() {
+  const source = $('#study-pack-source').value;
+  if (source === 'family') {
+    return kanjiBrowseActiveFamily
+      ? { source, title: kanjiBrowseActiveFamily.label, items: kanjiBrowseActiveFamily.rows }
+      : { source, title: 'Selected kanji family', items: [] };
+  }
+  if (source === 'relations') {
+    const root = relationsNetwork?.currentChar() || relationsMap?.currentChar() || relationsSeed;
+    if (!root || !kanjiRelationshipIndex) return { source, title: 'Relations network', items: [] };
+    const graphItems = relationsNetwork?.currentChar() === root
+      ? relationsNetwork.graph()?.nodes?.map((node) => node.item)
+      : null;
+    const map = graphItems?.length ? null : buildKanjiRelationships(kanjiRelationshipIndex, root, relationsQueryOptions());
+    return {
+      source,
+      title: `${root} relationship network`,
+      items: graphItems?.length ? graphItems : [map?.center, ...(map?.neighbors || []).map((neighbor) => neighbor.item)].filter(Boolean),
+    };
+  }
+  const chars = current?.kStats?.rows?.map((row) => row.ch) || [];
+  const wanted = new Set(chars);
+  return {
+    source: 'text',
+    title: 'Kanji from current text',
+    items: kanjiCatalog.filter((item) => wanted.has(item.char)),
+  };
+}
+
+function updateStudyPackSource({ replaceTitle = false } = {}) {
+  const select = $('#study-pack-source');
+  if (!select) return;
+  const availability = {
+    text: Boolean(current?.kStats?.rows?.length),
+    family: Boolean(kanjiBrowseActiveFamily?.rows?.length),
+    relations: Boolean((relationsNetwork?.currentChar() || relationsMap?.currentChar() || relationsSeed) && kanjiRelationshipIndex),
+  };
+  [...select.options].forEach((option) => { option.disabled = !availability[option.value]; });
+  if (!availability[select.value]) select.value = Object.keys(availability).find((key) => availability[key]) || 'text';
+  const pack = studyPackSource();
+  $('#study-pack-source-status').textContent = pack.items.length
+    ? `${pack.items.length.toLocaleString()} kanji ready · dictionary fields only · no personal study data.`
+    : 'Open a text, select a Kanji family, or explore Relations to make that source available.';
+  const title = $('#study-pack-title');
+  if (replaceTitle || !title.value.trim()) title.value = pack.title;
+  $('#study-pack-download').disabled = !pack.items.length;
+}
+
+function downloadStudyPack() {
+  const source = studyPackSource();
+  if (!source.items.length) { toast('That study-pack source is not available yet.', 'error'); return; }
+  const title = $('#study-pack-title').value.trim() || source.title;
+  const content = serializeStudyPack({ title, source: source.source, items: source.items }, Date.now(), { appVersion: APP_VERSION });
+  download(studyPackFilename(title), content, 'application/json');
+  toast(`Exported ${source.items.length} kanji as a study pack.`, 'success');
+}
+
+async function onStudyPackFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    pendingStudyPack = parseStudyPack(await file.text());
+    $('#study-pack-preview-title').textContent = pendingStudyPack.title;
+    const date = pendingStudyPack.exportedAt ? new Date(pendingStudyPack.exportedAt).toLocaleString() : 'Export date unavailable';
+    $('#study-pack-preview-meta').textContent = `${pendingStudyPack.kanji.length.toLocaleString()} kanji · ${date} · source: ${pendingStudyPack.source}`;
+    const visible = pendingStudyPack.kanji.slice(0, 80);
+    $('#study-pack-glyphs').innerHTML = visible.map((item) => `<span title="${esc(item.meaning || 'Meaning unavailable')}">${esc(item.char)}</span>`).join('')
+      + (pendingStudyPack.kanji.length > visible.length ? `<small>+${pendingStudyPack.kanji.length - visible.length} more</small>` : '');
+    $('#study-pack-preview').hidden = false;
+    $('#study-pack-start').focus();
+  } catch (error) {
+    console.error(error);
+    pendingStudyPack = null;
+    $('#study-pack-preview').hidden = true;
+    toast(error.message || 'Could not read that study pack.', 'error');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function closeStudyPack() {
+  pendingStudyPack = null;
+  $('#study-pack-preview').hidden = true;
+}
+
+function startStudyPack() {
+  const family = studyPackFamily(pendingStudyPack);
+  if (!family) return;
+  stopKanjiStudy();
+  switchTab('kanji');
+  kanjiBrowseActiveFamily = family;
+  kanjiStudySession = createKanjiStudySession(family, 'study-pack');
+  closeStudyPack();
+  renderKanjiStudy('reveal');
+  revealKanjiWorkspace();
+  toast(`Opened “${family.label}” as a temporary study session.`, 'success');
 }
 
 // ---- flashcards -------------------------------------------------------------
@@ -1436,6 +1576,7 @@ function switchTab(name) {
   // cards come due while you're on another tab — recheck on arrival
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();
+  if (name === 'mywords') renderMyWords();
   if (name === 'relations') {
     renderRelationsSeeds();
     loadRelationsWorkspace().catch((error) => console.error(error));
@@ -1569,6 +1710,14 @@ function wireUi() {
   $('#mw-download').addEventListener('click', () => exportDeck(true));
   $('#mw-backup-download').addEventListener('click', downloadBackup);
   $('#mw-backup-file').addEventListener('change', onBackupFile);
+  $('#profile-import-cancel').addEventListener('click', closeProfileImport);
+  $('#profile-import-merge').addEventListener('click', () => applyProfileImport('merge'));
+  $('#profile-import-replace').addEventListener('click', () => applyProfileImport('replace'));
+  $('#study-pack-source').addEventListener('change', () => updateStudyPackSource({ replaceTitle: true }));
+  $('#study-pack-download').addEventListener('click', downloadStudyPack);
+  $('#study-pack-file').addEventListener('change', onStudyPackFile);
+  $('#study-pack-cancel').addEventListener('click', closeStudyPack);
+  $('#study-pack-start').addEventListener('click', startStudyPack);
   $('#mw-clear-known').addEventListener('click', () => {
     if (!confirm('Clear all known words and kanji? Only a backup file can bring them back.')) return;
     knownWords.clear(); knownKanji.clear();
