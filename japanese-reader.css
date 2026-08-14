@@ -572,11 +572,64 @@ kbd {
 .relations-kind:hover span { transform: translateY(-1px); border-color: var(--accent); }
 .relations-filter-summary { min-height: 16px; margin: -8px 0 0; }
 .relations-status { min-height: 18px; margin: 0 3px; }
+.relations-view-switch { align-self: center; display: inline-flex; gap: 4px; padding: 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-pill); }
+.relations-view-switch .btn { min-height: 38px; border-color: transparent; border-radius: var(--r-pill); }
+.relations-view-switch .btn.is-active { color: var(--accent); background: var(--surface-raised); border-color: var(--accent-glow); box-shadow: var(--shadow-sm); }
 .relations-map-host { scroll-margin-top: 74px; }
+.relations-network-host { scroll-margin-top: 74px; }
+.relations-network-host[hidden], .relations-map-host[hidden] { display: none; }
 .krm-embedded { overflow: hidden; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow-md); }
 .krm-embedded .krm-shell { width: 100%; max-height: none; border: 0; border-radius: 0; box-shadow: none; animation: none; }
 .krm-embedded .krm-body { height: min(720px, calc(100vh - 118px)); min-height: 620px; }
 .krm-embedded .krm-head-spacer { width: 92px; }
+
+/* ---- Bounded two-hop network -------------------------------------------- */
+.kn-shell { overflow: hidden; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow-md); }
+.kn-toolbar { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 11px 16px; background: color-mix(in srgb, var(--surface) 92%, transparent); border-bottom: 1px solid var(--border); }
+.kn-toolbar h2 { margin: 1px 0 0; font-family: var(--font-display); font-size: 21px; }
+.kn-zoom { display: flex; gap: 5px; }
+.kn-zoom .btn { min-width: 40px; }
+.kn-overview { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; padding: 10px 16px; background: var(--surface-sunken); border-bottom: 1px solid var(--border); }
+.kn-overview span { padding: 5px 9px; color: var(--text2); font-size: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill); }
+.kn-overview b { color: var(--accent); font-family: var(--font-mono); }
+.kn-desktop { display: grid; grid-template-columns: minmax(0, 1fr) 280px; min-height: 650px; }
+.kn-viewport { min-width: 0; overflow: auto; background: radial-gradient(circle at center, var(--surface-raised), var(--surface-warm)); }
+.kn-stage { position: relative; width: 980px; height: 620px; margin: 14px auto; transform-origin: center; transition: transform .24s var(--ease); }
+.kn-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.kn-lines line { stroke: var(--accent); stroke-width: .26; vector-effect: non-scaling-stroke; opacity: .48; }
+.kn-lines line[data-kind="radical"] { stroke: var(--accent2-text); stroke-width: .36; }
+.kn-lines line[data-kind="component"] { stroke: var(--accent); stroke-width: .32; }
+.kn-lines line[data-kind="reading"] { stroke: color-mix(in srgb, var(--accent) 48%, var(--text2)); stroke-dasharray: 1.2 1; opacity: .4; }
+.kn-node-position { position: absolute; left: var(--kn-x); top: var(--kn-y); z-index: 2; transform: translate(-50%, -50%); }
+.kn-node {
+  appearance: none; position: relative; width: 112px; min-height: 66px; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 6px; padding: 8px;
+  color: var(--text); font: inherit; text-align: left; cursor: pointer; background: color-mix(in srgb, var(--surface-raised) 95%, transparent);
+  border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-sm);
+  transition: transform .18s var(--ease), border-color .18s var(--ease), box-shadow .2s var(--ease), background .18s var(--ease);
+}
+.kn-node:hover, .kn-node:focus-visible { transform: translateY(-3px) scale(1.025); border-color: var(--kn-color); background: color-mix(in srgb, var(--kn-color) 6%, var(--surface-raised)); box-shadow: 0 9px 22px color-mix(in srgb, var(--kn-color) 15%, var(--ink-shadow)); }
+.kn-node:active { transform: translateY(0) scale(.985); }
+.kn-node[data-kind="radical"] { --kn-color: var(--accent2-text); }
+.kn-node[data-kind="component"] { --kn-color: var(--accent); }
+.kn-node[data-kind="reading"] { --kn-color: color-mix(in srgb, var(--accent) 48%, var(--text2)); }
+.kn-node[data-depth="0"] { width: 148px; min-height: 88px; grid-template-columns: 46px minmax(0, 1fr); --kn-color: var(--accent); border-color: var(--accent-glow); box-shadow: 0 16px 38px color-mix(in srgb, var(--accent) 13%, var(--ink-shadow)); }
+.kn-node[data-depth="2"] { width: 102px; min-height: 60px; }
+.kn-node[data-known="true"]::after { content: '✓'; position: absolute; right: 5px; bottom: 5px; color: var(--accent2-text); font: 700 9px/1 var(--font-mono); }
+.kn-node-glyph { color: var(--kn-color); font-family: var(--font-display); font-size: 29px; line-height: 1; text-align: center; }
+.kn-node[data-depth="0"] .kn-node-glyph { font-size: 40px; }
+.kn-node-copy { min-width: 0; }
+.kn-node-copy strong, .kn-node-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kn-node-copy strong { font-size: 10px; }
+.kn-node-copy small { margin-top: 3px; color: var(--text3); font-size: 8px; }
+.kn-node-badge { position: absolute; top: 4px; right: 5px; color: var(--text3); font: 600 7px/1 var(--font-mono); }
+.kn-detail { padding: 25px 21px; overflow-y: auto; background: var(--surface2); border-left: 1px solid var(--border); }
+.kn-detail-head { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
+.kn-detail-head > span { color: var(--accent); font-family: var(--font-display); font-size: 48px; line-height: 1; }
+.kn-detail-head h3 { margin: 0; font-family: var(--font-display); font-size: 17px; }
+.kn-detail-head p { margin: 4px 0 0; color: var(--text3); font-size: 10px; }
+.kn-detail-reason { margin: 18px 0; padding: 11px; color: var(--text2); font-size: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); }
+.kn-detail-actions { display: flex; flex-direction: column; gap: 8px; }
+.kn-mobile { display: none; }
 
 /* ---- Kanji Radical Tree overlay ------------------------------------------- */
 body.kt-open { overflow: hidden; }
@@ -873,6 +926,27 @@ body.krm-open { overflow: hidden; }
   .krm-embedded { overflow: visible; border-radius: var(--r-lg); }
   .krm-embedded .krm-shell { height: auto; overflow: visible; }
   .krm-embedded .krm-body { height: auto; min-height: 0; }
+  .relations-view-switch { width: 100%; }
+  .relations-view-switch .btn { min-height: 44px; flex: 1; padding-inline: 8px; }
+  .kn-shell { overflow: visible; }
+  .kn-toolbar { min-height: 60px; padding: 9px 12px; }
+  .kn-toolbar .label { display: none; }
+  .kn-toolbar h2 { font-size: 17px; }
+  .kn-zoom { display: none; }
+  .kn-overview { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .kn-overview::-webkit-scrollbar { display: none; }
+  .kn-overview span { flex: 0 0 auto; }
+  .kn-desktop { display: none; }
+  .kn-mobile { display: flex; flex-direction: column; gap: 16px; padding: 14px 12px 20px; }
+  .kn-mobile-root .kn-node { width: 100%; min-height: 94px; }
+  .kn-lane-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 2px; }
+  .kn-lane-head h3 { margin: 0; font-family: var(--font-display); font-size: 16px; }
+  .kn-lane-head span { color: var(--text3); font: 600 10px/1 var(--font-mono); }
+  .kn-lane-track { display: flex; gap: 9px; margin-right: -12px; padding: 8px 12px 7px 0; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .kn-lane-track::-webkit-scrollbar { display: none; }
+  .kn-lane-node { width: 174px !important; min-height: 88px !important; flex: 0 0 174px; scroll-snap-align: center; }
+  .kn-mobile-detail { padding: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-md); }
+  .kn-detail-actions .btn { min-height: 44px; }
   .kt-overlay { padding: 0; }
   .kt-shell { width: 100%; height: 100dvh; max-height: none; overflow-y: auto; overscroll-behavior: contain; border-radius: 0; }
   .kt-head { grid-template-columns: auto 1fr auto; min-height: 60px; padding: 8px 10px; }

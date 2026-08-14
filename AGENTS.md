@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.5.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.6.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -36,12 +36,14 @@
   stroke proximity into bounded neighborhoods; the full-screen map adds
   evidence connectors, recenter/back navigation, known/text/JLPT context, and
   app-wide doorways. Phones use swipeable Structure and Readings lanes.
-- Relations workspace Groups A–B are ✓ Done: the `縁 Relations` tab lazy-loads the
+- Relations workspace Groups A–C are ✓ Done: the `縁 Relations` tab lazy-loads the
   compact relationship index, embeds the existing one-hop explorer, and offers
   dictionary search plus current-text, known-kanji, and discovery starting
   points. Evidence, JLPT, learning-context, and 12/24/40-result filters apply
   before ranking; overflow results use a desktop gallery and mobile lanes.
-  Group C bounded two-hop network exploration remains open.
+  The optional bounded two-hop view balances structural and reading branches,
+  supports branch expansion, root changes, zoom/reset, Radical Tree doorways,
+  and clustered mobile swipe lanes without replacing the one-hop default.
 
 ## Public repository conventions
 
@@ -220,6 +222,12 @@
 - Relations search, filters, selected root, and history are session-only. Reuse
   the existing four storage keys and keep structural data lazy until the tab or
   another relationship doorway is opened.
+- Two-hop graphs are capped at 36 visible nodes and depth two. Balance direct
+  structural and reading branches when both exist; expanding one branch adds
+  context without changing the root. Do not draw redundant cross-branch edges.
+- Keep the one-hop Neighborhood view as the default. Desktop networks may use
+  zoom controls; phones replace the graph with Structure and Readings swipe
+  lanes rather than shrinking the full canvas.
 
 ## Phonetic Component Lab conventions
 

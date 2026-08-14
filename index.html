@@ -320,7 +320,12 @@
       <p id="relations-filter-summary" class="relations-filter-summary hint" aria-live="polite"></p>
     </div>
     <div id="relations-status" class="relations-status hint" role="status" aria-live="polite">Open this tab to load the compact relationship index.</div>
+    <div class="relations-view-switch" role="group" aria-label="Relationship view">
+      <button type="button" class="btn is-active" data-relations-view="map" aria-pressed="true">Neighborhood</button>
+      <button type="button" class="btn" data-relations-view="network" aria-pressed="false">Two-hop network</button>
+    </div>
     <div id="relations-map-host" class="relations-map-host"></div>
+    <div id="relations-network-host" class="relations-network-host" hidden></div>
   </section>
 
   <!-- REVIEW -->

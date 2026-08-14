@@ -21,6 +21,7 @@ import {
 import { isKanji } from './script.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
+import { createKanjiNetworkView } from './kanji-network.js';
 import { buildKanjiRelationshipIndex, buildKanjiRelationships } from './kanji-relationships.js';
 import {
   buildKanjiCatalog,
@@ -82,8 +83,10 @@ let kanjiMap = null;
 let kanjiMapPromise = null;
 let kanjiRelationshipIndex = null;
 let relationsMap = null;
+let relationsNetwork = null;
 let relationsPromise = null;
 let relationsSeed = '';
+let relationsView = 'map';
 let kanjiCatalog = [];
 let kanjiStructureIndex = null;
 let kanjiStructurePromise = null;
@@ -347,6 +350,7 @@ function resetRelationsFilters() {
   $('#relations-state').value = 'all';
   $('#relations-size').value = '24';
   relationsMap?.update();
+  relationsNetwork?.update();
 }
 
 async function loadRelationsWorkspace() {
@@ -380,16 +384,60 @@ async function loadRelationsWorkspace() {
   return relationsPromise;
 }
 
+async function setRelationsView(view, { focus = true } = {}) {
+  relationsView = view === 'network' ? 'network' : 'map';
+  const map = await loadRelationsWorkspace();
+  const mapHost = $('#relations-map-host');
+  const networkHost = $('#relations-network-host');
+  if (relationsView === 'network' && !relationsNetwork) {
+    relationsNetwork = createKanjiNetworkView({
+      mount: networkHost,
+      getRelationships: (char) => buildKanjiRelationships(kanjiRelationshipIndex, char, relationsQueryOptions()),
+      isKnown: (char) => knownKanji.has(char),
+      onOpenTree: (char, trigger) => kanjiTree?.open(char, trigger),
+      onNewRoot: (char) => {
+        relationsSeed = char;
+        map.open(char, null);
+        $('#relations-search').value = char;
+        renderRelationsSearch();
+        $('#relations-status').textContent = `Exploring ${char} across two relationship hops. Expand a direct branch for more context.`;
+      },
+    });
+  }
+  mapHost.hidden = relationsView !== 'map';
+  networkHost.hidden = relationsView !== 'network';
+  document.querySelectorAll('[data-relations-view]').forEach((button) => {
+    const active = button.dataset.relationsView === relationsView;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  const char = relationsSeed || map.currentChar() || '学';
+  if (relationsView === 'network') {
+    relationsNetwork.open(char);
+    $('#relations-status').textContent = `Exploring ${char} across two relationship hops. Expand a direct branch for more context.`;
+  } else {
+    map.open(char, null);
+    $('#relations-status').textContent = `Exploring ${char}. Select a connected kanji to make it the new center.`;
+  }
+  if (focus) (relationsView === 'network' ? networkHost : mapHost).querySelector('button')?.focus();
+}
+
 async function selectRelationsSeed(char, trigger = document.activeElement) {
   if (!char || [...char].length !== 1) return;
   trigger?.setAttribute?.('aria-busy', 'true');
   try {
     const map = await loadRelationsWorkspace();
     if (!map.open(char, trigger)) return;
+    relationsNetwork?.open(char);
+    relationsSeed = char;
     $('#relations-search').value = char;
     renderRelationsSearch();
+    if (relationsView === 'network') {
+      $('#relations-status').textContent = `Exploring ${char} across two relationship hops. Expand a direct branch for more context.`;
+    }
     if (window.matchMedia('(max-width: 780px)').matches) {
-      requestAnimationFrame(() => $('#relations-map-host').scrollIntoView({ block: 'start', behavior: 'smooth' }));
+      const host = relationsView === 'network' ? $('#relations-network-host') : $('#relations-map-host');
+      requestAnimationFrame(() => host.scrollIntoView({ block: 'start', behavior: 'smooth' }));
     }
   } catch (error) {
     console.error(error);
@@ -425,6 +473,7 @@ function run() {
   if ($('#relations-panel').classList.contains('is-active')) {
     renderRelationsSeeds();
     relationsMap?.update();
+    relationsNetwork?.update();
   }
 }
 
@@ -608,6 +657,7 @@ function refreshKnownEverywhere() {
   refreshReview();
   kanjiMap?.update();
   relationsMap?.update();
+  relationsNetwork?.update();
   renderRelationsSeeds();
 }
 
@@ -1370,6 +1420,7 @@ function showEmpty() {
   renderTextJourney();
   renderRelationsSeeds();
   relationsMap?.update();
+  relationsNetwork?.update();
 }
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t) => {
@@ -1452,8 +1503,17 @@ function wireUi() {
       if (item) selectRelationsSeed(item.char, event.target.closest('[data-relations-surprise]'));
     }
   });
-  $('#relations-filters').addEventListener('change', () => relationsMap?.update());
+  $('#relations-filters').addEventListener('change', () => {
+    relationsMap?.update();
+    relationsNetwork?.update();
+  });
   $('#relations-reset').addEventListener('click', resetRelationsFilters);
+  document.querySelectorAll('[data-relations-view]').forEach((button) => button.addEventListener('click', () => {
+    setRelationsView(button.dataset.relationsView).catch((error) => {
+      console.error(error);
+      toast('Could not open that Relations view — try again.', 'error');
+    });
+  }));
   $('#kanji-panel').addEventListener('click', (event) => {
     const level = event.target.closest('.kanji-level');
     if (level) {

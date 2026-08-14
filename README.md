@@ -49,6 +49,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Relations workspace:** start from dictionary search, the current text,
   known kanji, or discovery suggestions; then filter connections by evidence,
   JLPT level, learning context, and neighborhood size without leaving the tab.
+  Switch from the focused neighborhood to a bounded two-hop network, expand
+  individual branches without losing the root, zoom the desktop graph, or use
+  clustered swipe lanes on a phone.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
 - **My Words:** manage the local study deck and move it between browsers with a
@@ -114,6 +117,7 @@ japanese-reader.css      application-specific presentation
 ui-base.css              shared UI primitives used by this repository
 palettes/                 Kotoba Lab color palette
 js/                      application modules and tests
+js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 data/                    dictionaries, samples, KanjiVG data, attribution
 tools/                   reproducible data-generation tools
 vendor/kuromoji/         vendored tokenizer and dictionary
