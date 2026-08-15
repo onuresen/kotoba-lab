@@ -111,6 +111,11 @@
   context, because a word discovered from the known-kanji set has no source
   text behind it. `readableCompoundIndex` holds only the visible rows so saving
   never rescans the vocabulary.
+- Kanji and vocabulary are ✓ no longer separate: `wordsContaining()` supplies
+  the "Appears in" list shown in the Radical Tree info panel and the Read kanji
+  panel, so every existing tree doorway now also reaches vocabulary. Analyze
+  frequency-table kanji became Radical Tree and Relationship Map doorways
+  instead of an inert ranking.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -234,6 +239,9 @@
 - My Words glyph and remove actions must remain separate real buttons.
 - Preserve the pure/DOM split: decomposition belongs in `kanjivg.js`; overlay
   behavior belongs in `kanjitree.js`.
+- `kanjitree.js` keeps no dictionary of its own. Vocabulary for the "Appears in"
+  list arrives through the injected `wordsFor(char)` option, the same way
+  `kanjiInfo` and `isKnown` do, so the overlay stays a renderer.
 - Use design tokens in CSS; do not add hardcoded colors.
 - Keep visual depth derived from the palette tokens (`--surface-raised`,
   `--surface-sunken`, `--surface-warm`, and ink-shadow tokens). Vermilion is

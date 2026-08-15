@@ -14,7 +14,8 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 
 ## Features
 
-- **Analyze:** kanji and word frequency, JLPT distribution, readability,
+- **Analyze:** kanji and word frequency — the ranked kanji open straight into
+  Radical Tree or the Relationship Map — JLPT distribution, readability,
   character mix, personal coverage, and Anki-compatible TSV export.
 - **Read:** furigana, JLPT-colored kanji, dictionary details, saved words, and
   known-word or known-kanji tracking.
@@ -52,7 +53,8 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   component families and identify them in a balanced interleaved session that
   automatically removes ambiguous multi-family answers.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
-  and drill into its decomposition using committed KanjiVG data.
+  and drill into its decomposition using committed KanjiVG data. Each component
+  also lists the words it appears in, so structure and vocabulary sit together.
 - **Kanji Relationship Map:** explore explainable links through shared radicals,
   visual components, and dictionary readings; recenter on neighboring kanji,
   inspect the evidence, and move directly between the map and Radical Tree.

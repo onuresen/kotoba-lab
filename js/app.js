@@ -26,7 +26,7 @@ import {
 import { isKanji } from './script.js';
 import { cacheNameFor } from './offline-cache.js';
 import { parseRoute, routeToHash } from './routing.js';
-import { buildReadableCompounds } from './compound-words.js';
+import { buildReadableCompounds, wordsContaining } from './compound-words.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
 import { createKanjiNetworkView } from './kanji-network.js';
@@ -190,6 +190,7 @@ async function boot() {
         refreshKnownEverywhere();
       },
       onOpenRelationships: (ch, trigger) => openKanjiMap(ch, trigger),
+      wordsFor: (ch) => wordsContaining(vocabList, ch, 6),
       onError: (message) => toast(message, 'error'),
     });
   } catch (err) {
@@ -650,9 +651,14 @@ function renderTable(sel, rows, kind, totalUnique) {
     const head = kind === 'kanji' ? esc(r.ch) : esc(r.surface);
     const reading = kind === 'word' ? esc(r.reading || '') : '';
     const lvl = r.level;
+    // The most frequent kanji in your text are the ones worth studying, so the
+    // ranking is a doorway rather than a readout.
+    const cell = kind === 'kanji'
+      ? `<button type="button" class="freq-kanji jlpt-${levelSlug(lvl)} chip" data-kanji-tree="${head}" aria-label="Open radical tree for ${head}">${head}</button><button type="button" class="freq-map" data-kanji-map="${head}" aria-label="Open relationship map for ${head}"><span aria-hidden="true">↗</span></button>`
+      : `<span class="jlpt-${levelSlug(lvl)} chip">${head}</span>${reading ? `<span class="rd">${reading}</span>` : ''}`;
     return `<tr>
       <td class="rank">${i + 1}</td>
-      <td class="jp"><span class="jlpt-${levelSlug(lvl)} chip">${head}</span>${reading ? `<span class="rd">${reading}</span>` : ''}</td>
+      <td class="jp">${cell}</td>
       <td class="num">${r.n}</td>
       <td><span class="badge" data-status="${lvl == null ? 'archive' : 'reference'}">${levelName(lvl)}</span></td>
     </tr>`;
@@ -665,6 +671,21 @@ function infoHint() {
   return `<div class="empty-state"><span class="e-icon">☝</span><div class="e-title">Tap any kanji or word</div><div class="e-sub">Readings and JLPT level appear here.</div></div>`;
 }
 let lastSel = null; // the currently-inspected kanji/word, for the action buttons
+
+// Kanji study and vocabulary study were separate everywhere else in the app.
+// Seeing 学生 next to 学 is what connects "I can draw it" to "I can read it".
+function infoWordsMarkup(char) {
+  const words = wordsContaining(vocabList, char, 6);
+  if (!words.length) return '';
+  return `<div class="info-words">
+    <span class="label">Appears in</span>
+    ${words.map((word) => `<div class="info-word-row">
+      <span class="jp jlpt-${levelSlug(word.lvl)} chip">${esc(word.w)}</span>
+      ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
+      <span class="info-word-gloss">${esc((word.g || '').split(';')[0].trim())}</span>
+    </div>`).join('')}
+  </div>`;
+}
 
 function knownBtn(known) {
   return `<button class="btn btn-ghost act-known" data-known="${known}">${known ? '✓ Known' : 'Mark known'}</button>`;
@@ -692,6 +713,7 @@ function showInfo(sel) {
       </div>` : ''}
       ${info?.strokes ? `<p class="hint">${info.strokes} strokes</p>` : ''}
       ${!info ? `<p class="hint">Not in the kanji dictionary (very rare character).</p>` : ''}
+      ${infoWordsMarkup(sel.ch)}
       <div class="info-actions">${knownBtn(knownKanji.has(sel.ch))}<button type="button" class="btn btn-ghost" data-kanji-map="${esc(sel.ch)}">Relationship Map</button></div>`;
   } else {
     const kanjiChars = [...new Set([...sel.surface].filter(isKanji))];

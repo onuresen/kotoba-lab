@@ -1797,3 +1797,48 @@ p.hint { margin: 8px 0 0; }
 @media (prefers-reduced-motion: reduce) {
   .compound-save { transition: none; }
 }
+
+/* ---- kanji to vocabulary ------------------------------------------------------ */
+/* The one edge the app was missing: which words a kanji actually appears in. */
+.info-words { display: grid; gap: 4px; margin-top: 12px; }
+.info-word-row { display: flex; align-items: baseline; gap: 7px; }
+.info-word-gloss {
+  font-size: 11px; color: var(--text3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Frequency-table kanji are doorways, not readouts. */
+.freq-kanji {
+  font: inherit; cursor: pointer;
+  border: 1px solid transparent;
+  transition: border-color .16s var(--ease);
+}
+.freq-kanji:hover, .freq-kanji:focus-visible { border-color: var(--accent-glow); }
+.freq-map {
+  min-height: 24px; margin-left: 5px; padding: 2px 6px;
+  color: var(--accent2-text); font: 600 10px/1 var(--font-body); cursor: pointer;
+  background: color-mix(in srgb, var(--accent2-dim) 55%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent2) 24%, var(--border));
+  border-radius: var(--r-pill);
+  opacity: 0; transition: opacity .16s var(--ease), border-color .16s var(--ease);
+}
+tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
+.freq-map:hover { border-color: var(--accent2); }
+
+@media (max-width: 780px) {
+  .freq-map { opacity: 1; min-height: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .freq-kanji, .freq-map { transition: none; }
+}
+
+/* Vocabulary inside the Radical Tree: the tree says what a kanji is made of,
+   this says where it is used. */
+.kt-info-words { display: grid; gap: 5px; margin-top: 14px; }
+.kt-info-word { display: flex; align-items: baseline; gap: 7px; }
+.kt-info-word .jp { font-family: var(--font-display); font-size: 16px; color: var(--text); }
+.kt-info-word small {
+  font-size: 11px; color: var(--text3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}

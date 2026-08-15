@@ -81,6 +81,7 @@ export function createKanjiTree({
   onKnownChange = () => {},
   onOpenRelationships = null,
   onError = () => {},
+  wordsFor = null,
 }) {
   if (typeof loadData !== 'function') throw new TypeError('createKanjiTree requires loadData().');
   document.body.insertAdjacentHTML('beforeend', overlayMarkup());
@@ -151,6 +152,21 @@ export function createKanjiTree({
     (replacement || document.querySelector('.tab.is-active'))?.focus();
   }
 
+  // The tree explains what a kanji is made of; this says where it is actually
+  // used. Injected rather than imported so this module keeps no dictionary of
+  // its own.
+  function treeWordsMarkup(words) {
+    if (!Array.isArray(words) || !words.length) return '';
+    return `<div class="kt-info-words">
+      <span class="label">Appears in</span>
+      ${words.map((word) => `<div class="kt-info-word">
+        <span class="jp">${esc(word.w)}</span>
+        ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
+        <small>${esc(String(word.g || '').split(';')[0].trim())}</small>
+      </div>`).join('')}
+    </div>`;
+  }
+
   function renderInfo(node, missing = false) {
     const direct = kanjiInfo?.(node.element) || null;
     const original = !direct && node.original ? kanjiInfo?.(node.original) || null : null;
@@ -173,6 +189,7 @@ export function createKanjiTree({
       <p class="hint">${missing
         ? 'KanjiVG has no decomposition for this character. Dictionary details remain available.'
         : `${api.strokesOf(node).length} drawn stroke${api.strokesOf(node).length === 1 ? '' : 's'} in this component.`}</p>
+      ${direct && typeof wordsFor === 'function' ? treeWordsMarkup(wordsFor(node.element)) : ''}
       ${direct && typeof toggleKnown === 'function' ? `<div class="kt-info-actions">
         <button type="button" class="btn btn-ghost kt-known" data-known="${isKnown(node.element)}">
           ${isKnown(node.element) ? '✓ Known' : 'Mark known'}

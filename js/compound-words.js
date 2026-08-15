@@ -35,6 +35,33 @@ function compare(a, b) {
   return a.w.codePointAt(0) - b.w.codePointAt(0);
 }
 
+// The other direction: where does this one kanji actually show up? Nothing else
+// in the application links a kanji to vocabulary, so this is what turns "I can
+// draw 学" into "I can read 学生". Any script is allowed here — 学ぶ teaches the
+// kun reading as usefully as 学校 teaches the on reading.
+export function wordsContaining(vocab, char, limit = 6) {
+  const target = String(char || '');
+  if ([...target].length !== 1) return [];
+  const cap = Math.max(0, Number(limit) || 0);
+  const seen = new Set();
+  const matches = [];
+
+  for (const entry of Array.isArray(vocab) ? vocab : []) {
+    const word = entry?.w;
+    if (!word || word === target || seen.has(word) || !word.includes(target)) continue;
+    seen.add(word);
+    matches.push({
+      w: word,
+      r: entry.r || '',
+      g: entry.g || '',
+      lvl: Number.isFinite(entry.lvl) ? entry.lvl : null,
+    });
+  }
+
+  matches.sort(compare);
+  return cap ? matches.slice(0, cap) : [];
+}
+
 export function buildReadableCompounds(vocab, isKnown, limit = 24) {
   if (typeof isKnown !== 'function') return { total: 0, words: [] };
   const cap = Math.max(0, Number(limit) || 0);
