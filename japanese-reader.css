@@ -1775,3 +1775,25 @@ p.hint { margin: 8px 0 0; }
 @media (prefers-reduced-motion: reduce) {
   .compound-kanji { transition: none; }
 }
+
+.compound-save {
+  flex: 0 0 auto; min-height: 30px; padding: 4px 10px;
+  color: var(--text2); font: 600 11px/1 var(--font-body); cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--r-pill);
+  transition: border-color .18s var(--ease), background .18s var(--ease), color .18s var(--ease);
+}
+.compound-save:hover, .compound-save:focus-visible { color: var(--text); border-color: var(--border-strong); }
+.compound-save[aria-pressed="true"] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border-color: var(--accent-glow);
+}
+
+@media (max-width: 780px) {
+  .compound-save { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compound-save { transition: none; }
+}

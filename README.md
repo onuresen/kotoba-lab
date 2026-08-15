@@ -88,7 +88,7 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Words you can now read:** My Words lists the compound words written entirely
   in kanji you have marked known — what those kanji combine into, rather than
   what they break down from. Ranked easiest-first, and every kanji opens its
-  Radical Tree.
+  Radical Tree. Save any of them straight into the review deck.
 - **Bookmarkable views:** each workspace has its own address, so `#kanji` opens
   the Kanji library and the browser's back button steps back through the views
   you visited instead of leaving the app.

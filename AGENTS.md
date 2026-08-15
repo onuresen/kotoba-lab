@@ -105,7 +105,12 @@
   all-kanji compounds every one of whose characters is already marked known —
   the reverse of the decomposition features. Ranked easiest-first by JLPT, capped
   at 24 visible while the total stays honest, kanji reuse the existing
-  `[data-kanji-tree]` doorway. No new storage key, tab, or usage event.
+  `[data-kanji-tree]` doorway, and each word can be saved straight into the
+  review deck. No new storage key, tab, or usage event.
+- Compound saves reuse the ordinary deck entry shape and carry no sentence
+  context, because a word discovered from the known-kanji set has no source
+  text behind it. `readableCompoundIndex` holds only the visible rows so saving
+  never rescans the vocabulary.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study

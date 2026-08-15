@@ -1758,6 +1758,9 @@ function renderProfilePanel() {
 }
 
 const COMPOUND_LIMIT = 24;
+// Surface -> entry for the compounds currently on screen, so saving one does not
+// mean re-scanning 10,808 vocabulary rows to recover its reading and gloss.
+const readableCompoundIndex = new Map();
 
 // The reverse of everything else in the app: instead of taking a kanji apart,
 // report the words the known kanji already combine into.
@@ -1769,6 +1772,8 @@ function renderReadableCompounds() {
   const { total, words } = buildReadableCompounds(
     vocabList, (char) => knownKanji.has(char), COMPOUND_LIMIT,
   );
+  readableCompoundIndex.clear();
+  for (const word of words) readableCompoundIndex.set(word.w, word);
 
   count.textContent = total
     ? `${total} word${total === 1 ? '' : 's'}${total > words.length ? ` · showing ${words.length}` : ''}`
@@ -1781,7 +1786,9 @@ function renderReadableCompounds() {
     return;
   }
 
-  host.innerHTML = words.map((word) => `
+  host.innerHTML = words.map((word) => {
+    const saved = deck.has(word.w);
+    return `
     <div class="compound-row">
       <div class="compound-word jp">${[...word.w].map((char) =>
         `<button type="button" class="compound-kanji" data-kanji-tree="${esc(char)}" aria-label="Open radical tree for ${esc(char)}">${esc(char)}</button>`).join('')}</div>
@@ -1790,7 +1797,9 @@ function renderReadableCompounds() {
         <span class="compound-gloss">${esc(word.g)}</span>
       </div>
       <span class="badge" data-status="${word.lvl == null ? 'archive' : 'reference'}">${levelName(word.lvl)}</span>
-    </div>`).join('');
+      <button type="button" class="compound-save" data-compound-save="${esc(word.w)}" aria-pressed="${saved}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★ Saved' : '☆ Save'}</button>
+    </div>`;
+  }).join('');
 }
 
 function renderMyWords() {
@@ -2308,6 +2317,23 @@ function wireUi() {
   document.addEventListener('keydown', onKanjiAlchemyKey);
   // One delegated path covers dynamic Read, Review, and My Words markup.
   document.addEventListener('click', (event) => {
+    // Save an unlocked compound straight into the review deck. There is no
+    // source text here, so the entry carries no sentence context.
+    const compoundSave = event.target.closest?.('[data-compound-save]');
+    if (compoundSave) {
+      const surface = compoundSave.dataset.compoundSave;
+      const entry = readableCompoundIndex.get(surface);
+      if (entry) {
+        const now = deck.toggle({
+          surface, reading: entry.r, gloss: entry.g, level: entry.lvl, srs: newCard(),
+        });
+        toast(now ? 'Saved to deck — due for review now.' : 'Removed from deck.', 'success');
+        renderMyWords();
+        renderProfilePanel();
+        refreshReview();
+      }
+      return;
+    }
     // Batch marking from the Kanji library: toggle without opening the card.
     const knownToggle = event.target.closest?.('[data-kanji-known]');
     if (knownToggle) {
