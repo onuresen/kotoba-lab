@@ -59,28 +59,45 @@ does today.
 
 ## Cache tiers
 
-Tier 1 precaches on install. Tiers 2 and 3 are never precached. They reach the
-cache by one of two paths, both of which write to the same cache entry:
-
-- **Passively**, when the learner uses the feature that needs the artifact. The
-  cache-first strategy for data artifacts stores the response as a natural
-  consequence of the ordinary fetch — the worker does this, and no extra code is
-  involved.
-- **Proactively**, when the learner uses the Offline control in Profile & Data.
-  The page fetches and writes the entry itself so it can drive its own progress
-  indicator.
+Two tiers. Everything the default app can reach is precached; only the opt-in
+tokenizer is held back.
 
 | Tier | Contents | Size | Cached when |
 |---|---|---|---|
-| 1 | `index.html`, 3 CSS files, `palettes/washi-sumi.css`, all 29 non-test `js/*.js`, `favicon.png`, `assets/alchemy/*`, `assets/icons/*`, `manifest.webmanifest`, `data/kanjidic.json`, `data/jlpt-vocab.json`, `data/samples.json`, `data/kanji-families.json` | ~2.6 MB | worker `install` |
-| 2 | `data/kanjivg.json` | 5.85 MB | first Radical Tree open, or explicit download |
-| 3 | `vendor/kuromoji/**` | 18 MB | opting into that tokenizer, or explicit download |
+| 1 | `index.html`, 3 CSS files, `palettes/washi-sumi.css`, all 29 non-test `js/*.js`, `favicon.png`, `assets/alchemy/*`, `assets/icons/*`, `manifest.webmanifest`, `data/kanjidic.json`, `data/jlpt-vocab.json`, `data/samples.json`, `data/kanji-families.json`, `data/kanjivg.json` | ~8.5 MB | worker `install` |
+| 2 | `vendor/kuromoji/**` | 18 MB | opting into that tokenizer, or explicit download |
 | fonts | Google Fonts CSS and woff2 responses | varies with the glyph ranges actually rendered | first online load, runtime |
 
-`data/kanji-families.json` is in tier 1 despite being lazily fetched at runtime.
-Precaching it does not make `app.js` fetch it any earlier; it only guarantees
-that Relations, Atlas, Alchemy, and structural families work offline. At 192 KB
-that is worth the install cost.
+### Why the stroke artifact is precached
+
+`data/kanjivg.json` is 5.85 MB and AGENTS.md requires it stay lazy at runtime.
+Precaching does not violate that rule: the worker stores the file on disk, while
+`app.js` still does not fetch, parse, or hold it in memory until a Radical Tree
+doorway opens. The runtime laziness the rule protects is unchanged.
+
+What it buys is the removal of an entire class of failure. Under a lazy-cache
+model, whether Radical Tree works on a train depends on whether the learner
+happened to open it before leaving — an invisible, unpredictable condition. It
+also collapses the Offline UI from three states to two and removes one of the
+two proactive download paths.
+
+The cost is close to zero. Service worker `install` runs in the background after
+the page has already loaded and rendered, so a larger precache does not delay
+first paint or first interaction. It is background bandwidth, once per release.
+
+`data/kanji-families.json` is included on the same reasoning at 192 KB: it keeps
+Relations, Atlas, Alchemy, and structural families working offline.
+
+### How tier 2 reaches the cache
+
+Two paths, both writing the same cache entry:
+
+- **Passively**, when the learner opts into the kuromoji tokenizer. Cache-first
+  for data artifacts stores the response as an ordinary consequence of the
+  fetch; the worker does this and no extra code is involved.
+- **Proactively**, through the Offline control in Profile & Data. The page
+  fetches and writes the entry itself so it can drive its own progress
+  indicator.
 
 ## Fetch strategy
 
@@ -123,20 +140,22 @@ destroyed by an update.
 ## Offline preparation UI
 
 A new **Offline** section in Profile & Data. Because the Cache API is available
-to the page, the page performs tier 2/3 downloads itself, writing into the same
+to the page, the page performs the tier 2 download itself, writing into the same
 cache the worker reads from. No progress messaging between page and worker is
 needed, and the worker stays thin.
 
 ```
-Core app and dictionaries    2.6 MB    ✓ Available offline
-Stroke data (Radical Tree)   5.9 MB    Not downloaded   [Download]
-Precise tokenizer             18 MB    Not downloaded   [Download]
+App, dictionaries and stroke data   8.5 MB   ✓ Available offline
+Precise tokenizer (optional)         18 MB   Not downloaded   [Download]
 ```
 
-Per-row controls rather than one all-or-nothing action, so stroke data can be
-prepared for a trip without also storing 18 MB of a tokenizer that may never be
-enabled. Row state is derived by querying the cache at render time; it is not
-persisted anywhere.
+The first row is status only — it reports the precache result and has no
+control, because there is nothing for the learner to decide. The second row is
+the single deliberate choice: 18 MB for a tokenizer many learners never enable.
+
+Row state is derived by querying the cache at render time; it is not persisted
+anywhere. If the first row ever reports unavailable, the precache failed and the
+worker did not activate — which is the honest thing to show.
 
 `navigator.storage.persist()` is requested once on first successful
 registration, asking Android not to evict the cache under storage pressure.
@@ -155,11 +174,14 @@ today.**
 - An offline navigation to an uncached URL falls back to cached `index.html`.
 - An uncached data file while offline fails through to the existing
   dictionary-failure banner rather than being swallowed by the worker.
-- `QuotaExceededError` during a tier 2/3 download is caught and reported with
+- `QuotaExceededError` during the tier 2 download is caught and reported with
   the artifact's size. Whatever was already cached is left intact; a partial
   cache degrades to a cache miss, which is harmless under cache-first.
 - A failed tier-1 precache rejects `install`, so a broken worker never activates
-  and the previous version keeps serving.
+  and the previous version keeps serving. Because tier 1 is now ~8.5 MB, this
+  path matters more than it would with a small precache: a flaky connection
+  during install must leave the previously working version untouched, not a
+  half-populated cache.
 
 ## Testing
 
@@ -182,7 +204,9 @@ Browser QA additions to the AGENTS.md verification list:
   maskable icon surviving a circular crop.
 - Launch in airplane mode after install; confirm Analyze, Read, Kanji, Review,
   and My Words all work.
-- Radical Tree offline before and after a tier 2 download.
+- Radical Tree opens offline on a fresh install that has never opened it online.
+- Kuromoji tokenizer offline before and after the tier 2 download.
+- Install interrupted mid-precache leaves the previous version working.
 - Update toast appears on an `APP_VERSION` bump and does not auto-reload.
 - Registration failure degrades silently in an unsupported browser.
 - The startup warning still behaves correctly over `http://` and `file://`.
@@ -208,5 +232,11 @@ Browser QA additions to the AGENTS.md verification list:
   rotate, the cached files remain valid and the next online load caches the new
   ones; the failure mode is a redundant cache entry, not a broken page.
 - **Cache eviction on low-storage devices.** Mitigated by `storage.persist()`,
-  but not guaranteed. A tier 2/3 eviction shows as "Not downloaded" again,
-  which is honest and recoverable.
+  but not guaranteed. A tier 2 eviction shows as "Not downloaded" again, which
+  is honest and recoverable.
+- **Repeated 8.5 MB precache across releases.** Every `APP_VERSION` bump
+  discards the old cache and refetches everything, including the 5.85 MB stroke
+  artifact that rarely changes. Acceptable for a personal tool on a release
+  cadence of days, and the download is backgrounded. If release frequency ever
+  makes this wasteful, the fix is a per-artifact cache keyed by content rather
+  than a single version-stamped cache — explicitly out of scope here.
