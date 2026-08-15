@@ -76,7 +76,7 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const APP_VERSION = '10.12.0';
+const APP_VERSION = '10.13.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -441,8 +441,23 @@ async function setRelationsView(view, { focus = true } = {}) {
       mount: atlasHost,
       index: kanjiRelationshipIndex,
       isKnown: (char) => knownKanji.has(char),
+      toggleKnown: (char) => knownKanji.toggle(char),
+      onKnownChange: (_char, known) => {
+        usageJournal.record('known.change');
+        toast(known ? 'Star illuminated — marked known.' : 'Star dimmed — unmarked.', 'success');
+        refreshKnownEverywhere();
+      },
+      onOpenTree: openKanjiTree,
       onOpenRelations: (char, trigger) => {
         selectRelationsSeed(char, trigger).then(() => setRelationsView('map'));
+      },
+      onNewRoot: (char, detail) => {
+        relationsSeed = char;
+        map.open(char, null);
+        relationsNetwork?.open(char);
+        $('#relations-search').value = char;
+        renderRelationsSearch();
+        $('#relations-status').textContent = `${char} is now the Atlas root inside the ${detail.component} direct-component constellation.`;
       },
       onRender: (graph) => {
         if (!graph) {

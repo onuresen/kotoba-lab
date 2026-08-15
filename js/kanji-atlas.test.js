@@ -8,7 +8,7 @@ import {
 
 function fixture() {
   const rows = [
-    { char: '晴', meaning: 'clear', jlpt: 3, strokes: 12 },
+    { char: '晴', meaning: 'clear', jlpt: 3, strokes: 12, on: 'セイ', kun: 'は.れる' },
     { char: '清', meaning: 'pure', jlpt: 2, strokes: 11 },
     { char: '情', meaning: 'feeling', jlpt: 3, strokes: 11 },
     { char: '静', meaning: 'quiet', jlpt: 3, strokes: 14 },
@@ -38,6 +38,8 @@ test('constellation is deterministic, bounded, and keeps the root visible first'
   assert.equal(first.stars.length, 3);
   assert.equal(first.total, 4);
   assert.equal(first.truncated, true);
+  assert.equal(first.stars.find((star) => star.char === '晴').on, 'セイ');
+  assert.equal(first.stars.find((star) => star.char === '晴').kun, 'は.れる');
 });
 
 test('layout stays within the sky and assigns every star exactly once', () => {

@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.12.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.13.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -44,11 +44,14 @@
   The optional bounded two-hop view balances structural and reading branches,
   supports branch expansion, root changes, zoom/reset, Radical Tree doorways,
   and clustered mobile swipe lanes without replacing the one-hop default.
-- Kanji Constellation Atlas Group A is ✓ Done: an experimental third Relations
+- Kanji Constellation Atlas Groups A–B are ✓ Done: an experimental third Relations
   view projects one selected direct-component family into a deterministic,
   bounded 24-star sky. Existing known-kanji state illuminates stars, unfamiliar
   stars stay quiet, and each star returns to its normal one-hop neighborhood.
-  The chosen component and Atlas position are ephemeral and add no storage key.
+  Star focus now opens a reading/detail panel with known-state control, explicit
+  Neighborhood and Radical Tree doorways, and an Atlas-root action that keeps
+  the current component when valid. The chosen component, star, and Atlas
+  position are ephemeral and add no storage key.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -125,6 +128,8 @@
   reverse index; lazy-loaded only for structural family views.
 - `data/kanjivg.manifest.json` — pinned input and artifact checksums used by CI.
 - `js/app.js` — retryable lazy loader plus delegated doorway integration.
+- `js/kanji-atlas.js` — pure bounded component-family graph/layout helpers plus
+  the ephemeral Constellation explorer, star detail, and doorway interactions.
 - `japanese-reader.css` — app-specific styles, including Tree and Relationship
   Map overlays and their responsive layouts.
 - `README.md` — concise public overview, local setup, architecture, and license
@@ -285,6 +290,14 @@
   the default. A star doorway returns to the ordinary one-hop Relations view.
 - Phones keep the full bounded sky in a touch-pannable viewport rather than
   shrinking nodes until labels or targets become illegible.
+- Selecting a star changes only ephemeral focus. Show its dictionary meaning,
+  JLPT level, stroke count, on’yomi, and kun’yomi before offering deliberate
+  actions; a star tap must not immediately leave the Atlas.
+- Re-rooting stays in the Atlas and preserves the current direct component when
+  that component belongs to the new root. Synchronize the Relations seed and
+  search field so subsequent Neighborhood and Network views use the same root.
+- Known-state control reuses the existing global refresh path. Radical Tree
+  close must restore focus to the Atlas doorway that opened it.
 
 ## Phonetic Component Lab conventions
 

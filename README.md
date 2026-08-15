@@ -54,7 +54,10 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   clustered swipe lanes on a phone. The experimental Constellation view turns
   one selected direct component into a bounded 24-star family sky: known kanji
   glow, unfamiliar stars stay quiet, and every star opens its normal Relations
-  neighborhood.
+  neighborhood. Select a star to inspect its readings and study state first,
+  then deliberately mark it known, make it the Atlas root, open its ordinary
+  neighborhood, or enter Radical Tree. Phones keep the compact detail card
+  visible while the full sky remains touch-pannable.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
 - **Profile & Data:** export the complete local study profile as versioned JSON,

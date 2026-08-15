@@ -51,6 +51,8 @@ export function buildComponentConstellation(index, component, options = {}) {
     meaning: item.meaning || 'Meaning unavailable',
     jlpt: item.jlpt || null,
     strokes: item.strokes || null,
+    on: item.on || '',
+    kun: item.kun || '',
     order,
     isRoot: item.char === rootChar,
   }));
@@ -103,11 +105,33 @@ function levelLabel(level) {
   return Number(level) >= 1 && Number(level) <= 5 ? `N${level}` : '—';
 }
 
+function detailMarkup(item, { root, known, canToggleKnown, canOpenTree } = {}) {
+  if (!item) return '<div class="ka-detail-empty"><span>✦</span><p>Select a star to inspect this component family.</p></div>';
+  const rootAction = item.char === root
+    ? '<button type="button" class="btn btn-ghost" disabled>Current root</button>'
+    : '<button type="button" class="btn btn-ghost" data-ka-action="root">Make Atlas root</button>';
+  return `<article class="ka-detail-card" data-known="${known}">
+    <header class="ka-detail-head"><span>${esc(item.char)}</span><div><span class="badge" data-status="reference">${levelLabel(item.jlpt)}</span><h3>${esc(item.meaning || 'Meaning unavailable')}</h3><p>${item.strokes || '—'} dictionary strokes${item.char === root ? ' · Current Atlas root' : ''}</p></div></header>
+    <div class="ka-detail-readings"><span><b>On’yomi</b>${esc(item.on || '—')}</span><span><b>Kun’yomi</b>${esc(item.kun || '—')}</span></div>
+    <p class="ka-detail-evidence">This kanji is here because KanjiVG lists <strong>${esc(item.component)}</strong> as a direct visual component.</p>
+    <div class="ka-detail-actions">
+      ${canToggleKnown ? `<button type="button" class="btn btn-ghost ka-known" data-ka-action="known" data-known="${known}">${known ? '✓ Known' : 'Mark known'}</button>` : ''}
+      ${rootAction}
+      <button type="button" class="btn btn-primary" data-ka-action="relations">Open neighborhood</button>
+      ${canOpenTree ? '<button type="button" class="btn btn-ghost" data-ka-action="tree">Radical Tree</button>' : ''}
+    </div>
+  </article>`;
+}
+
 export function createKanjiAtlasView({
   mount,
   index,
   isKnown = () => false,
+  toggleKnown = null,
+  onKnownChange = () => {},
   onOpenRelations = () => {},
+  onOpenTree = null,
+  onNewRoot = () => {},
   onRender = () => {},
 } = {}) {
   if (typeof document === 'undefined') throw new Error('createKanjiAtlasView requires a document.');
@@ -118,7 +142,7 @@ export function createKanjiAtlasView({
       <label class="label ka-picker">Direct component<select class="select" data-ka-component></select></label>
     </header>
     <div class="ka-overview" aria-live="polite"></div>
-    <div class="ka-viewport"><div class="ka-stage"></div></div>
+    <div class="ka-explorer"><aside class="ka-detail" aria-live="polite"></aside><div class="ka-viewport"><div class="ka-stage"></div></div></div>
     <p class="ka-caption hint">Each line means “contains this direct visual component.” Illuminated stars are kanji already marked known.</p>
   </section>`;
   const shell = mount.firstElementChild;
@@ -127,11 +151,36 @@ export function createKanjiAtlasView({
   const overview = shell.querySelector('.ka-overview');
   const viewport = shell.querySelector('.ka-viewport');
   const stage = shell.querySelector('.ka-stage');
+  const detail = shell.querySelector('.ka-detail');
   let root = '';
   let component = '';
+  let selected = '';
   let graph = null;
 
-  function render() {
+  function selectedItem() {
+    const star = graph?.stars.find((item) => item.char === selected) || graph?.stars[0];
+    return star ? { ...star, component } : null;
+  }
+
+  function renderDetail() {
+    const item = selectedItem();
+    selected = item?.char || '';
+    detail.innerHTML = detailMarkup(item, {
+      root,
+      known: item ? isKnown(item.char) : false,
+      canToggleKnown: typeof toggleKnown === 'function',
+      canOpenTree: typeof onOpenTree === 'function',
+    });
+    stage.querySelectorAll('[data-ka-char]').forEach((star) => {
+      const active = star.dataset.kaChar === selected;
+      star.dataset.selected = String(active);
+      star.setAttribute('aria-pressed', String(active));
+    });
+    stage.querySelectorAll('.ka-lines line').forEach((line) => { line.dataset.selected = String(line.dataset.char === selected); });
+  }
+
+  function render({ preserveScroll = false, preserveSelection = false } = {}) {
+    const previousScroll = viewport.scrollLeft;
     const choices = componentConstellationChoices(index, root);
     if (!choices.length) {
       component = '';
@@ -141,6 +190,7 @@ export function createKanjiAtlasView({
       picker.disabled = true;
       overview.innerHTML = '<span>No shared direct-component family is available.</span>';
       stage.innerHTML = '<div class="ka-empty"><strong>No shared component sky yet</strong><span>Try another kanji in Neighborhood or Two-hop network.</span></div>';
+      detail.innerHTML = detailMarkup(null);
       onRender(null);
       return false;
     }
@@ -148,18 +198,23 @@ export function createKanjiAtlasView({
     if (!choices.some((choice) => choice.component === component)) component = choices[0].component;
     picker.innerHTML = choices.map((choice) => `<option value="${esc(choice.component)}"${choice.component === component ? ' selected' : ''}>${esc(choice.component)} · ${choice.count} kanji</option>`).join('');
     graph = buildComponentConstellation(index, component, { rootChar: root });
+    if (!preserveSelection || !graph.stars.some((star) => star.char === selected)) selected = root;
+    if (!graph.stars.some((star) => star.char === selected)) selected = graph.stars[0]?.char || '';
     const layout = layoutComponentConstellation(graph);
     const knownCount = graph.stars.filter((star) => isKnown(star.char)).length;
     title.textContent = `${component} — component constellation`;
     overview.innerHTML = `<span><b>${graph.stars.length}</b> visible stars</span><span><b>${knownCount}</b> illuminated</span><span><b>${graph.total}</b> in this component family</span>${graph.truncated ? '<span>Bounded for clarity</span>' : ''}`;
-    const lines = layout.map((star) => `<line x1="50" y1="50" x2="${star.x}" y2="${star.y}" data-known="${isKnown(star.char)}" />`).join('');
+    const lines = layout.map((star) => `<line x1="50" y1="50" x2="${star.x}" y2="${star.y}" data-char="${esc(star.char)}" data-known="${isKnown(star.char)}" data-selected="${star.char === selected}" />`).join('');
     const stars = layout.map((star) => `<div class="ka-star-position" style="--ka-x:${star.x}%;--ka-y:${star.y}%">
-      <button type="button" class="ka-star" data-ka-char="${esc(star.char)}" data-known="${isKnown(star.char)}" data-root="${star.isRoot}" aria-label="Open ${esc(star.char)}, ${esc(star.meaning)}, in Relations">
+      <button type="button" class="ka-star" data-ka-char="${esc(star.char)}" data-known="${isKnown(star.char)}" data-root="${star.isRoot}" data-selected="${star.char === selected}" aria-pressed="${star.char === selected}" aria-label="Inspect ${esc(star.char)}, ${esc(star.meaning)}">
         <span class="ka-star-glyph">${esc(star.char)}</span><span class="ka-star-copy"><strong>${esc(star.meaning)}</strong><small>${levelLabel(star.jlpt)} · ${star.strokes || '—'} strokes</small></span>
       </button></div>`).join('');
     stage.innerHTML = `<svg class="ka-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>
       <div class="ka-center"><span>${esc(component)}</span><small>direct component</small></div>${stars}`;
-    requestAnimationFrame(() => { viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2); });
+    renderDetail();
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = preserveScroll ? previousScroll : Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
+    });
     onRender({ ...graph, knownCount });
     return true;
   }
@@ -168,13 +223,41 @@ export function createKanjiAtlasView({
     if (!char || !index.byChar.has(char)) return false;
     root = char;
     component = '';
+    selected = char;
     return render();
   }
 
-  picker.addEventListener('change', () => { component = picker.value; render(); });
+  picker.addEventListener('change', () => { component = picker.value; selected = root; render(); });
+  shell.addEventListener('focusin', (event) => {
+    const star = event.target.closest('[data-ka-char]');
+    if (star && star.dataset.kaChar !== selected) { selected = star.dataset.kaChar; renderDetail(); }
+  });
   shell.addEventListener('click', (event) => {
     const star = event.target.closest('[data-ka-char]');
-    if (star) onOpenRelations(star.dataset.kaChar, star);
+    if (star) { selected = star.dataset.kaChar; renderDetail(); return; }
+    const action = event.target.closest('[data-ka-action]')?.dataset.kaAction;
+    const item = selectedItem();
+    if (!action || !item) return;
+    if (action === 'known' && typeof toggleKnown === 'function') {
+      const known = toggleKnown(item.char);
+      render({ preserveScroll: true, preserveSelection: true });
+      onKnownChange(item.char, known);
+    } else if (action === 'root') {
+      root = item.char;
+      render({ preserveScroll: true, preserveSelection: true });
+      onNewRoot(root, { component });
+    } else if (action === 'relations') {
+      onOpenRelations(item.char, event.target.closest('[data-ka-action]'));
+    } else if (action === 'tree' && typeof onOpenTree === 'function') {
+      onOpenTree(item.char, event.target.closest('[data-ka-action]'));
+    }
   });
-  return { open, update: () => root && render(), currentChar: () => root, currentComponent: () => component, graph: () => graph };
+  return {
+    open,
+    update: () => root && render({ preserveScroll: true, preserveSelection: true }),
+    currentChar: () => root,
+    currentComponent: () => component,
+    selectedChar: () => selected,
+    graph: () => graph,
+  };
 }

@@ -56,6 +56,13 @@ It uses one direct component from the selected root, caps the visible family at
 star return to its ordinary neighborhood. Component choice and Atlas position
 remain ephemeral; no new profile or storage format was added.
 
+Group B is implemented in v10.13.0 as the exploration layer. A star now opens
+an in-Atlas dictionary panel with readings, level, strokes, component evidence,
+and known-state illumination. Explicit actions can make it the new Atlas root,
+open its ordinary Relations neighborhood, or enter Radical Tree; tapping the
+star itself no longer throws the learner out of the sky. The phone version uses
+a compact sticky detail card above the touch-pannable constellation.
+
 ## Remaining creative seeds
 
 All of these remain worth revisiting after the first exploration track produces
