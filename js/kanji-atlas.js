@@ -256,6 +256,7 @@ export function createKanjiAtlasView({
   onStartStudy = null,
   onExportPack = null,
   onRender = () => {},
+  onFocusChange = () => {},
 } = {}) {
   if (typeof document === 'undefined') throw new Error('createKanjiAtlasView requires a document.');
   if (!mount || !index) throw new Error('createKanjiAtlasView requires mount and index.');
@@ -268,6 +269,7 @@ export function createKanjiAtlasView({
           <button type="button" class="btn btn-ghost" data-ka-control="out" aria-label="Zoom constellation out">−</button>
           <button type="button" class="btn btn-ghost ka-zoom-value" data-ka-control="reset" aria-label="Reset constellation zoom">100%</button>
           <button type="button" class="btn btn-ghost" data-ka-control="in" aria-label="Zoom constellation in">＋</button>
+          <button type="button" class="btn btn-ghost ka-focus-toggle" data-ka-control="focus" aria-label="Expand Atlas focus mode" aria-pressed="false" title="Use more of the screen · Escape exits">Focus</button>
         </div>
       </div>
     </header>
@@ -285,13 +287,16 @@ export function createKanjiAtlasView({
   const stage = shell.querySelector('.ka-stage');
   const detail = shell.querySelector('.ka-detail');
   const routesToggle = shell.querySelector('[data-ka-control="routes"]');
+  const focusToggle = shell.querySelector('[data-ka-control="focus"]');
   const zoomValue = shell.querySelector('.ka-zoom-value');
   const phoneQuery = window.matchMedia('(max-width: 720px)');
+  const wideQuery = window.matchMedia('(min-width: 1440px)');
   let root = '';
   let component = '';
   let selected = '';
   let zoom = 1;
   let showRoutes = true;
+  let focusMode = false;
   let challengeOpen = false;
   let challengeIndex = 0;
   let challengeChoice = '';
@@ -335,7 +340,9 @@ export function createKanjiAtlasView({
   function applyZoom({ preserveCenter = true } = {}) {
     const oldWidth = Math.max(1, stage.scrollWidth || stage.getBoundingClientRect().width);
     const centerRatio = (viewport.scrollLeft + viewport.clientWidth / 2) / oldWidth;
-    const base = phoneQuery.matches ? { width: 840, height: 580 } : { width: 980, height: 640 };
+    const base = phoneQuery.matches
+      ? { width: 840, height: 580 }
+      : wideQuery.matches ? { width: 1100, height: 680 } : { width: 980, height: 640 };
     stage.style.width = `${Math.round(base.width * zoom)}px`;
     stage.style.height = `${Math.round(base.height * zoom)}px`;
     stage.querySelector('.ka-sky')?.style.setProperty('--ka-zoom', String(zoom));
@@ -345,6 +352,19 @@ export function createKanjiAtlasView({
     requestAnimationFrame(() => {
       viewport.scrollLeft = Math.max(0, (preserveCenter ? centerRatio * stage.scrollWidth : stage.scrollWidth / 2) - viewport.clientWidth / 2);
     });
+  }
+
+  function setFocus(nextFocus, { restoreFocus = false } = {}) {
+    const next = Boolean(nextFocus) && !phoneQuery.matches;
+    if (focusMode === next) return focusMode;
+    focusMode = next;
+    shell.dataset.focus = String(focusMode);
+    focusToggle.setAttribute('aria-pressed', String(focusMode));
+    focusToggle.setAttribute('aria-label', focusMode ? 'Exit Atlas focus mode' : 'Expand Atlas focus mode');
+    focusToggle.textContent = focusMode ? 'Exit focus' : 'Focus';
+    onFocusChange(focusMode);
+    if (restoreFocus) requestAnimationFrame(() => focusToggle.focus());
+    return focusMode;
   }
 
   function render({ preserveScroll = false, preserveSelection = false } = {}) {
@@ -420,7 +440,11 @@ export function createKanjiAtlasView({
   }
 
   picker.addEventListener('change', () => { component = picker.value; selected = root; challengeOpen = false; challengeIndex = 0; challengeChoice = ''; render(); });
-  phoneQuery.addEventListener?.('change', () => applyZoom({ preserveCenter: false }));
+  phoneQuery.addEventListener?.('change', () => {
+    if (phoneQuery.matches) setFocus(false);
+    applyZoom({ preserveCenter: false });
+  });
+  wideQuery.addEventListener?.('change', () => applyZoom({ preserveCenter: false }));
   shell.addEventListener('focusin', (event) => {
     const star = event.target.closest('[data-ka-char]');
     if (star && star.dataset.kaChar !== selected) { selected = star.dataset.kaChar; renderDetail(); }
@@ -437,7 +461,9 @@ export function createKanjiAtlasView({
     const action = event.target.closest('[data-ka-action]')?.dataset.kaAction;
     const control = event.target.closest('[data-ka-control]')?.dataset.kaControl;
     if (control) {
-      if (control === 'routes') {
+      if (control === 'focus') {
+        setFocus(!focusMode);
+      } else if (control === 'routes') {
         showRoutes = !showRoutes;
         stage.querySelector('.ka-reading-routes')?.setAttribute('data-visible', String(showRoutes));
         routesToggle.setAttribute('aria-pressed', String(showRoutes));
@@ -495,6 +521,12 @@ export function createKanjiAtlasView({
       onOpenTree(item.char, event.target.closest('[data-ka-action]'));
     }
   });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && focusMode) {
+      event.preventDefault();
+      setFocus(false, { restoreFocus: true });
+    }
+  });
   return {
     open,
     update: () => root && render({ preserveScroll: true, preserveSelection: true }),
@@ -502,5 +534,6 @@ export function createKanjiAtlasView({
     currentComponent: () => component,
     selectedChar: () => selected,
     graph: () => graph,
+    setFocus,
   };
 }

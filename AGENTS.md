@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.15.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.16.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -59,6 +59,12 @@
   session, returns directly to the same Atlas, exports all visible stars through
   the existing private-data-free pack format, and offers ephemeral component
   and reading-exception challenges. Opt-in usage counts stay payload-free.
+- Desktop space-efficiency Groups A–B are ✓ Done: the Relations workspace alone
+  grows to the available large-screen width, while Analyze and Read retain their
+  focused measure. Atlas uses a larger canvas from 1440 px upward without page
+  overflow. Its session-only focus mode hides the surrounding Relations setup,
+  preserves the current component and selected star, exits with Escape or when
+  leaving the view, and stays unavailable on phones where touch panning remains.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -297,6 +303,12 @@
   the default. A star doorway returns to the ordinary one-hop Relations view.
 - Phones keep the full bounded sky in a touch-pannable viewport rather than
   shrinking nodes until labels or targets become illegible.
+- On desktop, Relations may widen independently of the shared reading measure.
+  Use the larger Atlas geometry only from 1440 px upward, keep common laptop
+  widths free of horizontal scrolling, and preserve the existing phone canvas.
+- Atlas focus mode is ephemeral UI state: keep its explicit button keyboard
+  reachable, let Escape restore focus to that button, exit when leaving Atlas or
+  Relations, and never add it to localStorage, profile export, or usage payloads.
 - Selecting a star changes only ephemeral focus. Show its dictionary meaning,
   JLPT level, stroke count, on’yomi, and kun’yomi before offering deliberate
   actions; a star tap must not immediately leave the Atlas.

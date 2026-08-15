@@ -76,7 +76,7 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const APP_VERSION = '10.15.0';
+const APP_VERSION = '10.16.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -483,8 +483,13 @@ async function setRelationsView(view, { focus = true, preserveAtlas = false } = 
         }
         $('#relations-status').textContent = `Exploring ${graph.component} as a ${graph.stars.length}-star direct-component constellation${graph.truncated ? ` · ${graph.total} family members in total` : ''}.`;
       },
+      onFocusChange: (focused) => {
+        $('#relations-panel').dataset.atlasFocus = String(focused);
+        requestAnimationFrame(() => atlasHost.scrollIntoView({ block: 'start', behavior: 'auto' }));
+      },
     });
   }
+  if (relationsView !== 'atlas') relationsAtlas?.setFocus(false);
   mapHost.hidden = relationsView !== 'map';
   networkHost.hidden = relationsView !== 'network';
   atlasHost.hidden = relationsView !== 'atlas';
@@ -1795,6 +1800,7 @@ function showEmpty() {
   relationsAtlas?.update();
 }
 function switchTab(name) {
+  if (name !== 'relations') relationsAtlas?.setFocus(false);
   document.querySelectorAll('.tab').forEach((t) => {
     const active = t.dataset.tab === name;
     t.classList.toggle('is-active', active);

@@ -618,6 +618,9 @@ kbd {
 
 /* ---- Relations workspace ------------------------------------------------- */
 .relations-panel { gap: 14px; }
+@media (min-width: 1081px) {
+  .relations-panel.is-active { width: min(1560px, calc(100vw - 32px)); align-self: center; }
+}
 .relations-toolbar { display: flex; flex-direction: column; gap: 17px; }
 .relations-intro { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); align-items: end; gap: 24px; }
 .relations-intro h2 { margin: 3px 0 5px; font-family: var(--font-display); font-size: 25px; }
@@ -724,6 +727,7 @@ kbd {
 .ka-sky-controls { display: flex; gap: 4px; }
 .ka-sky-controls .btn { min-width: 38px; min-height: 38px; padding-inline: 9px; }
 .ka-sky-controls .ka-routes-toggle { min-width: 78px; }
+.ka-sky-controls .ka-focus-toggle { min-width: 66px; }
 .ka-sky-controls .ka-zoom-value { min-width: 54px; font-family: var(--font-mono); font-size: 9px; }
 .ka-sky-controls [aria-pressed="true"] { color: var(--accent2-text); background: var(--accent2-dim); border-color: color-mix(in srgb, var(--accent2) 36%, var(--border)); }
 .ka-overview { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; padding: 10px 16px; background: var(--surface-sunken); border-bottom: 1px solid var(--border); }
@@ -805,6 +809,19 @@ kbd {
 .ka-caption { margin: 0; padding: 10px 16px; text-align: center; background: var(--surface); border-top: 1px solid var(--border); }
 .ka-empty { position: absolute; inset: 0; display: grid; place-content: center; gap: 6px; color: var(--text2); text-align: center; }
 .ka-empty strong { font-family: var(--font-display); font-size: 20px; }
+
+@media (min-width: 1440px) {
+  .ka-explorer { grid-template-columns: minmax(0, 1fr) 300px; min-height: 680px; }
+  .ka-stage, .ka-sky { width: 1100px; height: 680px; }
+}
+
+@media (min-width: 1081px) {
+  .relations-panel[data-atlas-focus="true"] { width: calc(100vw - 24px); max-width: none; gap: 0; }
+  .relations-panel[data-atlas-focus="true"] > .relations-toolbar,
+  .relations-panel[data-atlas-focus="true"] > .relations-status,
+  .relations-panel[data-atlas-focus="true"] > .relations-view-switch { display: none; }
+  .relations-panel[data-atlas-focus="true"] .ka-explorer { min-height: max(680px, calc(100dvh - 330px)); }
+}
 
 @keyframes ka-route-travel { to { stroke-dashoffset: -22; } }
 @keyframes ka-star-twinkle { from { opacity: .65; transform: scale(.92); } to { opacity: 1; transform: scale(1.08); } }
@@ -1136,6 +1153,7 @@ body.krm-open { overflow: hidden; }
   .ka-picker { width: 100%; }
   .ka-picker .select { min-height: 44px; }
   .ka-sky-controls { display: grid; grid-template-columns: 1.35fr repeat(3, 1fr); gap: 5px; }
+  .ka-focus-toggle { display: none; }
   .ka-sky-controls .btn, .ka-sky-controls .ka-routes-toggle, .ka-sky-controls .ka-zoom-value { min-width: 0; min-height: 44px; padding-inline: 5px; }
   .ka-overview { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .ka-overview::-webkit-scrollbar { display: none; }

@@ -49,6 +49,8 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Relations workspace:** start from dictionary search, the current text,
   known kanji, or discovery suggestions; then filter connections by evidence,
   JLPT level, learning context, and neighborhood size without leaving the tab.
+  Relations expands beyond the reading-column width on larger desktops so its
+  visual maps use the available screen without changing the focused text tools.
   Switch from the focused neighborhood to a bounded two-hop network, expand
   individual branches without losing the root, zoom the desktop graph, or use
   clustered swipe lanes on a phone. The experimental Constellation view turns
@@ -61,6 +63,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   selected component while bounded dashed routes expose shared on’yomi and
   kun’yomi; routes can be hidden and the sky zooms from 80–120%. Subtle motion
   brings the map to life and switches off for reduced-motion preferences.
+  Desktop Atlas focus mode temporarily hides the surrounding discovery and
+  filter chrome, keeps the picker, routes, zoom, study tools, and detail panel,
+  and exits with Escape without losing the selected component or star.
   Study the currently unknown stars in a temporary session, return directly to
   the same sky, export its visible kanji as a private-data-free study pack, or
   try short shared-component and reading-exception challenges with no score.
