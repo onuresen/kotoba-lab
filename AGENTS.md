@@ -242,6 +242,10 @@
 - `kanjitree.js` keeps no dictionary of its own. Vocabulary for the "Appears in"
   list arrives through the injected `wordsFor(char)` option, the same way
   `kanjiInfo` and `isKnown` do, so the overlay stays a renderer.
+- Every terse or icon-only control carries a `title` that names the destination
+  or the consequence, not the mechanism: "Save 学生 to your Review deck", not
+  "Save". `aria-label` stays the short accessible name; `title` is the sighted
+  hover explanation, and toggles must swap both with their state.
 - Use design tokens in CSS; do not add hardcoded colors.
 - Keep visual depth derived from the palette tokens (`--surface-raised`,
   `--surface-sunken`, `--surface-warm`, and ink-shadow tokens). Vermilion is

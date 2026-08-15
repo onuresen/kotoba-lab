@@ -654,7 +654,7 @@ function renderTable(sel, rows, kind, totalUnique) {
     // The most frequent kanji in your text are the ones worth studying, so the
     // ranking is a doorway rather than a readout.
     const cell = kind === 'kanji'
-      ? `<button type="button" class="freq-kanji jlpt-${levelSlug(lvl)} chip" data-kanji-tree="${head}" aria-label="Open radical tree for ${head}">${head}</button><button type="button" class="freq-map" data-kanji-map="${head}" aria-label="Open relationship map for ${head}"><span aria-hidden="true">↗</span></button>`
+      ? `<button type="button" class="freq-kanji jlpt-${levelSlug(lvl)} chip" data-kanji-tree="${head}" title="Open the Radical Tree for ${head}" aria-label="Open radical tree for ${head}">${head}</button><button type="button" class="freq-map" data-kanji-map="${head}" title="Open the Relationship Map for ${head}" aria-label="Open relationship map for ${head}"><span aria-hidden="true">↗</span></button>`
       : `<span class="jlpt-${levelSlug(lvl)} chip">${head}</span>${reading ? `<span class="rd">${reading}</span>` : ''}`;
     return `<tr>
       <td class="rank">${i + 1}</td>
@@ -688,10 +688,10 @@ function infoWordsMarkup(char) {
 }
 
 function knownBtn(known) {
-  return `<button class="btn btn-ghost act-known" data-known="${known}">${known ? '✓ Known' : 'Mark known'}</button>`;
+  return `<button class="btn btn-ghost act-known" data-known="${known}" title="${known ? 'Unmark this as known' : 'Mark as known — dims it while reading and updates your coverage meter'}">${known ? '✓ Known' : 'Mark known'}</button>`;
 }
 function saveBtn(saved) {
-  return `<button class="btn ${saved ? '' : 'btn-ghost'} act-save" data-saved="${saved}">${saved ? '★ Saved' : '☆ Save'}</button>`;
+  return `<button class="btn ${saved ? '' : 'btn-ghost'} act-save" data-saved="${saved}" title="${saved ? 'Remove from your Review deck' : 'Save to your Review deck with its sentence — due for review now'}">${saved ? '★ Saved' : '☆ Save'}</button>`;
 }
 
 function setInfoSheet(open) {
@@ -728,7 +728,7 @@ function showInfo(sel) {
       <div class="info-actions">${knownBtn(knownWords.has(sel.surface))}${saveBtn(deck.has(sel.surface))}</div>
       ${kanjiChars.length ? `<div class="info-kchars">
         <span class="label">Kanji in this word</span>
-        <div class="chips">${kanjiChars.map((c) => `<span class="info-kpair jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="k info-kchar" data-k="${esc(c)}" data-kanji-tree="${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</button><button type="button" class="info-kmap" data-kanji-map="${esc(c)}" aria-label="Open relationship map for ${esc(c)}">↗</button></span>`).join('')}</div>
+        <div class="chips">${kanjiChars.map((c) => `<span class="info-kpair jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="k info-kchar" data-k="${esc(c)}" data-kanji-tree="${esc(c)}" title="Open the Radical Tree for ${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</button><button type="button" class="info-kmap" data-kanji-map="${esc(c)}" title="Open the Relationship Map for ${esc(c)}" aria-label="Open relationship map for ${esc(c)}">↗</button></span>`).join('')}</div>
       </div>` : ''}`;
   }
   if (window.matchMedia('(max-width: 780px)').matches) setInfoSheet(true);
@@ -887,7 +887,7 @@ function kanjiCard(item) {
       <span class="kanji-card-meta">${item.strokes} strokes${known ? ' · ✓ Known' : ''}</span>
     </span>
     <span class="badge" data-status="${item.jlpt == null ? 'archive' : 'reference'}">${level}</span>
-  </button><div class="kanji-card-actions"><button type="button" class="kanji-card-known" data-kanji-known="${esc(item.char)}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(item.char)} as known"><span aria-hidden="true">✓</span> Known</button><button type="button" class="kanji-card-map" data-kanji-map="${esc(item.char)}" aria-label="Open relationship map for ${esc(item.char)}"><span aria-hidden="true">↗</span> Map</button></div></div>`;
+  </button><div class="kanji-card-actions"><button type="button" class="kanji-card-known" data-kanji-known="${esc(item.char)}" title="${known ? `Unmark ${esc(item.char)} as known` : `Mark ${esc(item.char)} as known — updates your coverage meter and Words you can now read`}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(item.char)} as known"><span aria-hidden="true">✓</span> Known</button><button type="button" class="kanji-card-map" data-kanji-map="${esc(item.char)}" title="Open the Relationship Map for ${esc(item.char)}" aria-label="Open relationship map for ${esc(item.char)}"><span aria-hidden="true">↗</span> Map</button></div></div>`;
 }
 
 function renderFamilyMixSetup(workspace) {
@@ -1813,13 +1813,13 @@ function renderReadableCompounds() {
     return `
     <div class="compound-row">
       <div class="compound-word jp">${[...word.w].map((char) =>
-        `<button type="button" class="compound-kanji" data-kanji-tree="${esc(char)}" aria-label="Open radical tree for ${esc(char)}">${esc(char)}</button>`).join('')}</div>
+        `<button type="button" class="compound-kanji" data-kanji-tree="${esc(char)}" title="Open the Radical Tree for ${esc(char)}" aria-label="Open radical tree for ${esc(char)}">${esc(char)}</button>`).join('')}</div>
       <div class="compound-meta">
         ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
         <span class="compound-gloss">${esc(word.g)}</span>
       </div>
       <span class="badge" data-status="${word.lvl == null ? 'archive' : 'reference'}">${levelName(word.lvl)}</span>
-      <button type="button" class="compound-save" data-compound-save="${esc(word.w)}" aria-pressed="${saved}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★ Saved' : '☆ Save'}</button>
+      <button type="button" class="compound-save" data-compound-save="${esc(word.w)}" title="${saved ? `Remove ${esc(word.w)} from your Review deck` : `Save ${esc(word.w)} to your Review deck — it becomes due immediately`}" aria-pressed="${saved}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★ Saved' : '☆ Save'}</button>
     </div>`;
   }).join('');
 }
@@ -1827,10 +1827,10 @@ function renderReadableCompounds() {
 function renderMyWords() {
   $('#mw-known-count').textContent = `${knownWords.count()} words · ${knownKanji.count()} kanji`;
   $('#mw-known-words').innerHTML = knownWords.all().length
-    ? knownWords.all().map((w) => `<span class="known-chip"><span class="known-chip-label">${esc(w)}</span><button type="button" class="known-rm" data-kind="word" data-key="${esc(w)}" aria-label="Unmark known word ${esc(w)}">×</button></span>`).join('')
+    ? knownWords.all().map((w) => `<span class="known-chip"><span class="known-chip-label">${esc(w)}</span><button type="button" class="known-rm" data-kind="word" data-key="${esc(w)}" title="Unmark ${esc(w)} as known" aria-label="Unmark known word ${esc(w)}">×</button></span>`).join('')
     : `<span class="hint">None marked yet.</span>`;
   $('#mw-known-kanji').innerHTML = knownKanji.all().length
-    ? knownKanji.all().map((c) => `<span class="known-chip jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="known-kanji-open" data-kanji-tree="${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</button><button type="button" class="known-kanji-map" data-kanji-map="${esc(c)}" aria-label="Open relationship map for ${esc(c)}">↗</button><button type="button" class="known-rm" data-kind="kanji" data-key="${esc(c)}" aria-label="Unmark known kanji ${esc(c)}">×</button></span>`).join('')
+    ? knownKanji.all().map((c) => `<span class="known-chip jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="known-kanji-open" data-kanji-tree="${esc(c)}" title="Open the Radical Tree for ${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</button><button type="button" class="known-kanji-map" data-kanji-map="${esc(c)}" title="Open the Relationship Map for ${esc(c)}" aria-label="Open relationship map for ${esc(c)}">↗</button><button type="button" class="known-rm" data-kind="kanji" data-key="${esc(c)}" title="Unmark ${esc(c)} as known" aria-label="Unmark known kanji ${esc(c)}">×</button></span>`).join('')
     : `<span class="hint">None marked yet.</span>`;
 
   renderReadableCompounds();

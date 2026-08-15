@@ -49,7 +49,7 @@
            bar, which stays at six columns. Icon and label swap the same way the
            tabs do — text on desktop, glyph on phones — so aria-label carries the
            name at the width where the label is hidden. -->
-      <button type="button" class="head-action" data-tab="profile" aria-label="Settings">
+      <button type="button" class="head-action" data-tab="profile" title="Profile &amp; Data — backups, local dashboard, usage journal, and offline availability" aria-label="Settings">
         <span class="head-action-icon" aria-hidden="true">設</span>
         <span class="head-action-label">Settings</span>
       </button>
@@ -391,7 +391,7 @@
         <span class="ui-section-title">Known</span>
         <span class="ui-section-line"></span>
         <span class="hint" id="mw-known-count"></span>
-        <button id="mw-clear-known" class="btn btn-ghost btn-danger-ghost">Clear</button>
+        <button id="mw-clear-known" class="btn btn-ghost btn-danger-ghost" title="Unmark every known word and kanji. Only a backup file can bring them back">Clear</button>
       </div>
       <p class="hint">Marked "✓ Known" while reading. Personalizes the coverage meter and dims these in the Read tab.</p>
       <div class="label" style="margin-top:10px">Words</div>
@@ -415,7 +415,7 @@
         <span class="ui-section-title">Saved deck</span>
         <span class="ui-section-line"></span>
         <span class="hint" id="mw-deck-count"></span>
-        <button id="mw-clear-deck" class="btn btn-ghost btn-danger-ghost">Clear</button>
+        <button id="mw-clear-deck" class="btn btn-ghost btn-danger-ghost" title="Delete every saved card and its review scheduling. Only a backup file can bring them back">Clear</button>
       </div>
       <p class="hint">Saved with "☆ Save" while reading. <strong>Next</strong> is when each card comes back in the <a href="#" class="go-review">Review</a> tab. Review-history totals are managed separately in <a href="#" class="go-profile">Profile &amp; Data</a>.</p>
       <div class="table-scroll">
@@ -445,7 +445,7 @@
       </div>
       <p id="study-pack-source-status" class="study-pack-source-status hint"></p>
       <div class="profile-actions">
-        <button type="button" id="study-pack-download" class="btn btn-primary">Download study pack</button>
+        <button type="button" id="study-pack-download" class="btn btn-primary" title="Download kanji dictionary metadata only — never your progress, known state, or pasted text">Download study pack</button>
         <label class="file-btn btn">Open a study pack<input type="file" id="study-pack-file" accept=".json,application/json" hidden></label>
       </div>
       <section id="study-pack-preview" class="profile-import-preview" hidden aria-live="polite">
@@ -473,7 +473,7 @@
         <div id="profile-categories" class="profile-categories"></div>
         <div class="profile-reset-zone">
           <div><strong>Reset all local Kotoba Lab data</strong><p class="hint">Clears cards, known items, schedules, review history, and the optional usage journal from this browser.</p></div>
-          <button type="button" id="profile-reset-open" class="btn btn-ghost profile-replace">Begin reset</button>
+          <button type="button" id="profile-reset-open" class="btn btn-ghost profile-replace" title="Erase all local study data. Requires typing a confirmation phrase">Begin reset</button>
         </div>
         <section id="profile-reset-confirm" class="profile-reset-confirm" hidden>
           <label for="profile-reset-phrase">Type <strong>RESET KOTOBA LAB</strong> to confirm.</label>
@@ -509,7 +509,7 @@
           <p><strong>No study content is recorded.</strong> Never pasted text, words, kanji, searches, filenames, answers, grades, or timestamps for individual actions. Nothing is transmitted or included in profile backups.</p>
         </div>
         <div class="profile-actions">
-          <button type="button" id="usage-journal-toggle" class="btn btn-primary">Enable journal</button>
+          <button type="button" id="usage-journal-toggle" class="btn btn-primary" title="Record daily counts of sessions, active minutes, and coarse actions in this browser only. Never study content, never transmitted">Enable journal</button>
           <button type="button" id="usage-journal-clear" class="btn btn-ghost" disabled>Reset journal</button>
         </div>
       </section>
@@ -522,7 +522,7 @@
         <div id="offline-rows" class="offline-rows"></div>
       </section>
       <div class="profile-actions">
-        <button id="mw-backup-download" class="btn btn-primary">Download profile (.json)</button>
+        <button id="mw-backup-download" class="btn btn-primary" title="Download every saved card, schedule, known word and kanji, and review history as one JSON file">Download profile (.json)</button>
         <label class="file-btn btn">Choose profile to import<input type="file" id="mw-backup-file" accept=".json,application/json" hidden></label>
       </div>
       <section id="profile-import-preview" class="profile-import-preview" hidden aria-live="polite">
