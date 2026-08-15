@@ -28,6 +28,7 @@ import { cacheNameFor } from './offline-cache.js';
 import { parseRoute, routeToHash } from './routing.js';
 import { buildReadableCompounds, wordsContaining, isReadableCompound, unlockedBy } from './compound-words.js';
 import { searchWords } from './word-browser.js';
+import { buildMilestones } from './milestones.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
 import { createKanjiNetworkView } from './kanji-network.js';
@@ -1770,6 +1771,38 @@ function downloadUsageReport() {
   recordUsageReportExport('Downloaded privacy-safe usage report.');
 }
 
+// Capability milestones, recomputed from current profile numbers every render.
+// Nothing here is stored: see js/milestones.js for why.
+function renderMilestones() {
+  const host = $('#profile-milestones');
+  if (!host) return;
+
+  const readableWords = buildReadableCompounds(
+    vocabList, (char) => knownKanji.has(char), 0,
+  ).total;
+
+  const { passed, next } = buildMilestones({
+    knownKanji: knownKanji.count(),
+    knownWords: knownWords.count(),
+    readableWords,
+    savedCards: deck.count(),
+    reviewDays: Object.keys(reviewLog.all()).length,
+  });
+
+  if (!passed.length && !next) {
+    host.innerHTML = '';
+    host.hidden = true;
+    return;
+  }
+  host.hidden = false;
+
+  // Passed milestones only. A forward line appears just once, and only when the
+  // pure module judged it close enough to be encouraging rather than nagging.
+  host.innerHTML = `
+    ${passed.map((m) => `<span class="milestone">${esc(m.label)}</span>`).join('')}
+    ${next ? `<span class="milestone milestone--next">${next.remaining.toLocaleString()} to ${esc(next.label)}</span>` : ''}`;
+}
+
 // Profile & Data lives in its own panel, so it renders independently of the
 // My Words study collection. Both read the same stores, so anything that
 // changes cards or known state must refresh both.
@@ -1782,6 +1815,7 @@ function renderProfilePanel() {
   $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(profileState));
   renderProfileDashboard(profileState);
   renderUsageJournal(profileState);
+  renderMilestones();
 }
 
 const COMPOUND_LIMIT = 24;

@@ -1855,3 +1855,25 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 @media (max-width: 780px) {
   .wl-controls .input, .wl-controls .select { flex: 1 1 100%; min-height: 44px; }
 }
+
+/* ---- milestones ---------------------------------------------------------------- */
+/* Passed capability only. No badges, no progress bars, no locked slots: an empty
+   slot would turn "what you can read" into "what you have not done". */
+.milestones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.milestones[hidden] { display: none; }
+
+.milestone {
+  padding: 4px 10px;
+  font: 600 11px/1.5 var(--font-body);
+  color: var(--accent2-text);
+  background: color-mix(in srgb, var(--accent2-dim) 50%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent2) 24%, var(--border));
+  border-radius: var(--r-pill);
+}
+
+.milestone--next {
+  color: var(--text3);
+  background: var(--surface-sunken);
+  border-style: dashed;
+  border-color: var(--border);
+}
