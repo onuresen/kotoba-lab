@@ -57,3 +57,9 @@ test('balanced activity produces a neutral positive result', () => {
   }), { dueCards: 0 });
   assert.deepEqual(result.signals.map((item) => item.id), ['clear-path']);
 });
+
+test('opening the profile panel counts toward the data category', () => {
+  const result = buildUsageInsights(summary({ 'tab.profile': 3, 'profile.export': 1 }));
+  const data = result.featureMix.find((feature) => feature.key === 'data');
+  assert.equal(data.count, 4);
+});

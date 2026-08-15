@@ -95,3 +95,11 @@ test('daily totals are bounded to the newest ninety days', () => {
   assert.equal(Object.keys(journal.all().days).length, 90);
   assert.equal(journal.summary().eventCount, 90);
 });
+
+test('the fixed profile panel event is allowed without accepting a payload', () => {
+  const journal = createUsageJournal({ storage: fakeStorage(), now: () => NOW });
+  journal.setEnabled(true);
+  assert.equal(journal.record('tab.profile'), true);
+  assert.equal(journal.record('tab.profile.export'), false);
+  assert.equal(journal.summary().eventCount, 1);
+});

@@ -7,7 +7,7 @@ const FEATURE_GROUPS = Object.freeze([
   { key: 'kanji', label: 'Kanji', glyph: '漢', events: ['tab.kanji', 'tree.open', 'study.family', 'study.pack', 'study.atlas'] },
   { key: 'relations', label: 'Relations', glyph: '縁', events: ['tab.relations', 'relations.open', 'atlas.open'] },
   { key: 'review', label: 'Review', glyph: '復', events: ['tab.review', 'review.answer'] },
-  { key: 'data', label: 'Data', glyph: '守', events: ['tab.mywords', 'profile.export', 'pack.export', 'report.export'] },
+  { key: 'data', label: 'Data', glyph: '守', events: ['tab.mywords', 'tab.profile', 'profile.export', 'pack.export', 'report.export'] },
 ]);
 
 const countOf = (events, name) => Math.max(0, Number(events?.[name]) || 0);
