@@ -8,7 +8,16 @@ its place through a small experiment and real study use.
 
 These four directions were selected as the strongest personal favorites on
 2026-08-14. The order below is the recommended implementation sequence, based
-on shared foundations and increasing scope.
+on shared foundations and increasing scope. Actual exploration did not follow
+that order: the Atlas was validated before Alchemy. Status, not list position,
+is authoritative.
+
+| Direction | Current status | Remaining decision |
+|---|---|---|
+| Radical Alchemy | ✓ Bounded Groups A–C complete in v10.20.0 | Observe real study use before adding recipes or persistence |
+| Kanji Genealogy | Parked idea | Define a directed component → kanji → word → sentence experiment |
+| Japanese Detective Board | Parked idea | Test whether a freeform evidence canvas improves study rather than adding novelty |
+| Kanji Constellation Atlas | ✓ Bounded Groups A–D complete in v10.15.0 | Refine only from navigation, density, or practice friction |
 
 ### 1. Radical Alchemy
 
@@ -108,8 +117,9 @@ kanji, components, readings, choices, or a new profile field.
 
 ## Remaining creative seeds
 
-All of these remain worth revisiting after the first exploration track produces
-real usage evidence.
+Kanji Genealogy and Japanese Detective Board above remain the two unfinished
+directions from the selected first track. The additional seeds below are also
+parked until real usage evidence identifies a study problem worth solving.
 
 ### Kanji Mystery Casebook
 

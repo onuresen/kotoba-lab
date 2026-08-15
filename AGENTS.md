@@ -101,10 +101,11 @@
   sessions. Group C is ✓ Done: a previewable/copyable/downloadable Markdown
   report shares aggregate activity, feature rhythm, profile totals, and fixed
   signal labels without exposing the raw journal or study content.
-- `IDEA_GARDEN.md` is the durable creative backlog. The user-selected first
-  exploration track is Radical Alchemy → Kanji Genealogy → Japanese Detective
-  Board → Kanji Constellation Atlas. Treat each as a bounded experiment and do
-  not interpret the sequence as approval to implement the next item.
+- `IDEA_GARDEN.md` is the durable creative backlog. Radical Alchemy Groups A–C
+  and Kanji Constellation Atlas Groups A–D are ✓ Done. Kanji Genealogy and
+  Japanese Detective Board remain parked, unapproved ideas. The original list
+  order is no longer an implementation queue; continue from observed study
+  friction and request approval for every new bounded experiment.
 
 ## Public repository conventions
 
@@ -349,8 +350,9 @@
   four nodes per arc. Additional ranked one-hop results belong in the desktop
   gallery or mobile swipe lanes, not on overlapping canvas coordinates.
 - Relations search, filters, selected root, and history are session-only. Reuse
-  the existing four storage keys and keep structural data lazy until the tab or
-  another relationship doorway is opened.
+  the existing durable study stores (plus the optional payload-free journal)
+  and keep structural data lazy until the tab or another relationship doorway
+  is opened.
 - Two-hop graphs are capped at 36 visible nodes and depth two. Balance direct
   structural and reading branches when both exist; expanding one branch adds
   context without changing the root. Do not draw redundant cross-branch edges.
@@ -530,6 +532,8 @@ phonetic-signal thresholds/evidence/prediction scoring,
 contrast-set bounds/distinct clues/answer scoring,
 text-journey ranking/coverage/context/session navigation,
 family-mix selection/ambiguity exclusion/interleaving/scoring/restart,
+alchemy recipe uniqueness/determinism, missing/reverse answers,
+transformation-chain continuity, known filtering, and session history,
 profile v1/v2 inspection/merge/replace preview and study-pack
 privacy/export/import/session handoff,
 explode/drill/back, `Esc` focus restoration,

@@ -113,8 +113,9 @@ application usable when those fonts are unavailable.
 
 The project keeps its imaginative long-term directions in
 [IDEA_GARDEN.md](IDEA_GARDEN.md). Radical Alchemy and Kanji Constellation Atlas
-have begun as bounded experiments; Kanji Genealogy and Japanese Detective
-Board remain ideas rather than release promises.
+have completed their bounded A–C and A–D experiments. Kanji Genealogy and
+Japanese Detective Board remain parked ideas rather than release promises;
+future work should follow observed study use instead of their original order.
 
 ## Run locally
 
