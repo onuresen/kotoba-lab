@@ -1,6 +1,6 @@
 {
   "name": "kotoba-lab",
-  "version": "10.13.0",
+  "version": "10.14.0",
   "private": true,
   "description": "Japanese reading, kanji exploration, and study — browser tool. This manifest exists only to run the tests; the app itself has no build step and no dependencies.",
   "type": "module",

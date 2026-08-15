@@ -63,6 +63,14 @@ open its ordinary Relations neighborhood, or enter Radical Tree; tapping the
 star itself no longer throws the learner out of the sky. The phone version uses
 a compact sticky detail card above the touch-pannable constellation.
 
+Group C is implemented in v10.14.0 as the living-sky layer. The selected
+component keeps its solid spokes while bounded dashed on’yomi and kun’yomi
+routes reveal reading families among visible stars. A route toggle and
+session-only 80–120% zoom support different densities on desktop and phone.
+Small route-travel, center-breathing, and known-star-twinkle cues add life
+without moving the deterministic star layout, and all motion is disabled for
+reduced-motion preferences. The Atlas still adds no profile or storage field.
+
 ## Remaining creative seeds
 
 All of these remain worth revisiting after the first exploration track produces

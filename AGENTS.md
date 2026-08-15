@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.13.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.14.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -44,14 +44,17 @@
   The optional bounded two-hop view balances structural and reading branches,
   supports branch expansion, root changes, zoom/reset, Radical Tree doorways,
   and clustered mobile swipe lanes without replacing the one-hop default.
-- Kanji Constellation Atlas Groups A–B are ✓ Done: an experimental third Relations
+- Kanji Constellation Atlas Groups A–C are ✓ Done: an experimental third Relations
   view projects one selected direct-component family into a deterministic,
   bounded 24-star sky. Existing known-kanji state illuminates stars, unfamiliar
   stars stay quiet, and each star returns to its normal one-hop neighborhood.
   Star focus now opens a reading/detail panel with known-state control, explicit
   Neighborhood and Radical Tree doorways, and an Atlas-root action that keeps
   the current component when valid. The chosen component, star, and Atlas
-  position are ephemeral and add no storage key.
+  position are ephemeral and add no storage key. Solid component spokes now
+  sit beside bounded dashed reading routes; learners can hide those routes and
+  zoom the sky from 80–120%. Gentle route, center, and known-star motion makes
+  the sky feel alive while the reduced-motion path remains completely still.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -298,6 +301,17 @@
   search field so subsequent Neighborhood and Network views use the same root.
 - Known-state control reuses the existing global refresh path. Radical Tree
   close must restore focus to the Atlas doorway that opened it.
+- Reading routes use only normalized on’yomi and kun’yomi shared by visible
+  stars. Cap the sky at 12 routes and each reading at three edges, prefer the
+  smallest visible reading families, and label every route with its exact
+  dictionary evidence. Never imply semantic similarity or etymology.
+- Solid spokes always mean the direct component; dashed indigo and vermilion
+  routes mean shared on’yomi and kun’yomi. Keep the route toggle and 80–120%
+  zoom session-only, preserve 44 px phone controls, and keep the whole sky
+  touch-pannable at every zoom level.
+- Motion may breathe the center, twinkle known stars, or travel along route
+  dashes, but it must not move star positions. Disable all Atlas animation and
+  transition effects under `prefers-reduced-motion: reduce`.
 
 ## Phonetic Component Lab conventions
 

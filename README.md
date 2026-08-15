@@ -57,7 +57,10 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   neighborhood. Select a star to inspect its readings and study state first,
   then deliberately mark it known, make it the Atlas root, open its ordinary
   neighborhood, or enter Radical Tree. Phones keep the compact detail card
-  visible while the full sky remains touch-pannable.
+  visible while the full sky remains touch-pannable. Solid spokes show the
+  selected component while bounded dashed routes expose shared on’yomi and
+  kun’yomi; routes can be hidden and the sky zooms from 80–120%. Subtle motion
+  brings the map to life and switches off for reduced-motion preferences.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
 - **Profile & Data:** export the complete local study profile as versioned JSON,

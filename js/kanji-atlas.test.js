@@ -2,26 +2,31 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildComponentConstellation,
+  buildConstellationReadingRoutes,
   componentConstellationChoices,
   layoutComponentConstellation,
 } from './kanji-atlas.js';
 
 function fixture() {
   const rows = [
-    { char: '晴', meaning: 'clear', jlpt: 3, strokes: 12, on: 'セイ', kun: 'は.れる' },
-    { char: '清', meaning: 'pure', jlpt: 2, strokes: 11 },
-    { char: '情', meaning: 'feeling', jlpt: 3, strokes: 11 },
-    { char: '静', meaning: 'quiet', jlpt: 3, strokes: 14 },
+    { char: '晴', meaning: 'clear', jlpt: 3, strokes: 12, on: 'セイ', kun: 'は.れる', _onReadings: [{ key: 'せい', display: 'セイ' }] },
+    { char: '清', meaning: 'pure', jlpt: 2, strokes: 11, on: 'セイ', _onReadings: [{ key: 'せい', display: 'セイ' }] },
+    { char: '情', meaning: 'feeling', jlpt: 3, strokes: 11, on: 'ジョウ', _onReadings: [{ key: 'じょう', display: 'ジョウ' }] },
+    { char: '静', meaning: 'quiet', jlpt: 3, strokes: 14, on: 'セイ', _onReadings: [{ key: 'せい', display: 'セイ' }] },
   ];
   return {
     byChar: new Map(rows.map((row) => [row.char, row])),
     attributes: new Map([
-      ['晴', { component: ['青', '日'] }],
-      ['清', { component: ['青'] }],
-      ['情', { component: ['青'] }],
-      ['静', { component: ['青'] }],
+      ['晴', { component: ['青', '日'], 'on-reading': ['せい'], 'kun-reading': [] }],
+      ['清', { component: ['青'], 'on-reading': ['せい'], 'kun-reading': [] }],
+      ['情', { component: ['青'], 'on-reading': ['じょう'], 'kun-reading': [] }],
+      ['静', { component: ['青'], 'on-reading': ['せい'], 'kun-reading': [] }],
     ]),
-    buckets: { component: new Map([['青', rows.map((row) => row.char)], ['日', ['晴']]]) },
+    buckets: {
+      component: new Map([['青', rows.map((row) => row.char)], ['日', ['晴']]]),
+      'on-reading': new Map([['せい', ['晴', '清', '静']], ['じょう', ['情']]]),
+      'kun-reading': new Map(),
+    },
   };
 }
 
@@ -48,6 +53,20 @@ test('layout stays within the sky and assigns every star exactly once', () => {
   assert.equal(layout.length, constellation.stars.length);
   assert.deepEqual(new Set(layout.map((star) => star.char)), new Set(constellation.stars.map((star) => star.char)));
   assert.ok(layout.every((star) => star.x >= 6 && star.x <= 94 && star.y >= 6 && star.y <= 94));
+});
+
+test('reading routes are visible-only, deterministic, explainable, and bounded', () => {
+  const index = fixture();
+  const stars = buildComponentConstellation(index, '青', { rootChar: '晴' }).stars;
+  const first = buildConstellationReadingRoutes(index, stars, { limit: 2 });
+  const second = buildConstellationReadingRoutes(index, stars, { limit: 2 });
+  assert.deepEqual(first, second);
+  assert.equal(first.length, 2);
+  assert.ok(first.every((route) => route.kind === 'on-reading' && route.key === 'せい'));
+  assert.ok(first.every((route) => route.label === 'セイ on’yomi'));
+  assert.ok(first.every((route) => stars.some((star) => star.char === route.from) && stars.some((star) => star.char === route.to)));
+  assert.equal(new Set(first.map((route) => [route.from, route.to].sort().join(':'))).size, first.length);
+  assert.deepEqual(buildConstellationReadingRoutes(index, stars.slice(0, 1)), []);
 });
 
 test('the full 24-star layout does not overlap desktop cards', () => {

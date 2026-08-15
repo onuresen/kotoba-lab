@@ -3,6 +3,8 @@
 // can be tested without a browser; the view adds only ephemeral UI state.
 
 const MAX_STARS = 24;
+const MAX_READING_ROUTES = 12;
+const MAX_EDGES_PER_READING = 3;
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -101,11 +103,64 @@ export function layoutComponentConstellation(constellation) {
   return layout;
 }
 
+function readingRouteLabel(index, kind, key, char) {
+  const readings = kind === 'on-reading' ? index.byChar.get(char)?._onReadings : index.byChar.get(char)?._kunReadings;
+  const display = readings?.find((reading) => reading.key === key)?.display || key;
+  return `${display} ${kind === 'on-reading' ? 'on’yomi' : 'kun’yomi'}`;
+}
+
+export function buildConstellationReadingRoutes(index, stars, options = {}) {
+  if (!index?.attributes || !Array.isArray(stars) || stars.length < 2) return [];
+  const limit = Math.min(MAX_READING_ROUTES, Math.max(0, Number.isInteger(options.limit) ? options.limit : MAX_READING_ROUTES));
+  if (!limit) return [];
+  const order = new Map(stars.map((star, position) => [star.char, position]));
+  const groups = new Map();
+  for (const star of stars) {
+    const attributes = index.attributes.get(star.char) || {};
+    for (const kind of ['on-reading', 'kun-reading']) {
+      for (const key of attributes[kind] || []) {
+        const id = `${kind}:${key}`;
+        if (!groups.has(id)) groups.set(id, { kind, key, chars: [] });
+        groups.get(id).chars.push(star.char);
+      }
+    }
+  }
+  const candidates = [...groups.values()]
+    .map((group) => ({ ...group, chars: [...new Set(group.chars)].sort((a, b) => order.get(a) - order.get(b)) }))
+    .filter((group) => group.chars.length >= 2)
+    .sort((a, b) => a.chars.length - b.chars.length
+      || (a.kind === b.kind ? 0 : a.kind === 'on-reading' ? -1 : 1)
+      || a.key.localeCompare(b.key, 'ja'));
+  const routes = [];
+  const pairs = new Set();
+  for (const group of candidates) {
+    let used = 0;
+    for (let position = 1; position < group.chars.length && used < MAX_EDGES_PER_READING; position += 1) {
+      const from = group.chars[position - 1];
+      const to = group.chars[position];
+      const pair = [from, to].sort().join(':');
+      if (pairs.has(pair)) continue;
+      pairs.add(pair);
+      routes.push({
+        from,
+        to,
+        kind: group.kind,
+        key: group.key,
+        label: readingRouteLabel(index, group.kind, group.key, from),
+        familySize: index.buckets?.[group.kind]?.get(group.key)?.length || group.chars.length,
+      });
+      used += 1;
+      if (routes.length >= limit) return routes;
+    }
+  }
+  return routes;
+}
+
 function levelLabel(level) {
   return Number(level) >= 1 && Number(level) <= 5 ? `N${level}` : '—';
 }
 
-function detailMarkup(item, { root, known, canToggleKnown, canOpenTree } = {}) {
+function detailMarkup(item, { root, known, canToggleKnown, canOpenTree, routes = [] } = {}) {
   if (!item) return '<div class="ka-detail-empty"><span>✦</span><p>Select a star to inspect this component family.</p></div>';
   const rootAction = item.char === root
     ? '<button type="button" class="btn btn-ghost" disabled>Current root</button>'
@@ -113,6 +168,7 @@ function detailMarkup(item, { root, known, canToggleKnown, canOpenTree } = {}) {
   return `<article class="ka-detail-card" data-known="${known}">
     <header class="ka-detail-head"><span>${esc(item.char)}</span><div><span class="badge" data-status="reference">${levelLabel(item.jlpt)}</span><h3>${esc(item.meaning || 'Meaning unavailable')}</h3><p>${item.strokes || '—'} dictionary strokes${item.char === root ? ' · Current Atlas root' : ''}</p></div></header>
     <div class="ka-detail-readings"><span><b>On’yomi</b>${esc(item.on || '—')}</span><span><b>Kun’yomi</b>${esc(item.kun || '—')}</span></div>
+    ${routes.length ? `<div class="ka-detail-routes"><b>Reading routes</b>${routes.slice(0, 3).map((route) => `<span data-kind="${esc(route.kind)}"><i></i>${esc(route.label)} · ${esc(route.from === item.char ? route.to : route.from)}</span>`).join('')}</div>` : ''}
     <p class="ka-detail-evidence">This kanji is here because KanjiVG lists <strong>${esc(item.component)}</strong> as a direct visual component.</p>
     <div class="ka-detail-actions">
       ${canToggleKnown ? `<button type="button" class="btn btn-ghost ka-known" data-ka-action="known" data-known="${known}">${known ? '✓ Known' : 'Mark known'}</button>` : ''}
@@ -139,11 +195,18 @@ export function createKanjiAtlasView({
   mount.innerHTML = `<section class="ka-shell">
     <header class="ka-toolbar">
       <div><span class="label">KANJI CONSTELLATION ATLAS</span><h2 class="ka-title">Component constellation</h2></div>
-      <label class="label ka-picker">Direct component<select class="select" data-ka-component></select></label>
+      <div class="ka-toolbar-tools"><label class="label ka-picker">Direct component<select class="select" data-ka-component></select></label>
+        <div class="ka-sky-controls" role="group" aria-label="Constellation controls">
+          <button type="button" class="btn btn-ghost ka-routes-toggle" data-ka-control="routes" aria-pressed="true">Routes on</button>
+          <button type="button" class="btn btn-ghost" data-ka-control="out" aria-label="Zoom constellation out">−</button>
+          <button type="button" class="btn btn-ghost ka-zoom-value" data-ka-control="reset" aria-label="Reset constellation zoom">100%</button>
+          <button type="button" class="btn btn-ghost" data-ka-control="in" aria-label="Zoom constellation in">＋</button>
+        </div>
+      </div>
     </header>
     <div class="ka-overview" aria-live="polite"></div>
     <div class="ka-explorer"><aside class="ka-detail" aria-live="polite"></aside><div class="ka-viewport"><div class="ka-stage"></div></div></div>
-    <p class="ka-caption hint">Each line means “contains this direct visual component.” Illuminated stars are kanji already marked known.</p>
+    <p class="ka-caption hint">Solid spokes mean “contains this direct visual component.” Dashed routes mean a shared dictionary reading. Illuminated stars are kanji already marked known.</p>
   </section>`;
   const shell = mount.firstElementChild;
   const title = shell.querySelector('.ka-title');
@@ -152,9 +215,14 @@ export function createKanjiAtlasView({
   const viewport = shell.querySelector('.ka-viewport');
   const stage = shell.querySelector('.ka-stage');
   const detail = shell.querySelector('.ka-detail');
+  const routesToggle = shell.querySelector('[data-ka-control="routes"]');
+  const zoomValue = shell.querySelector('.ka-zoom-value');
+  const phoneQuery = window.matchMedia('(max-width: 720px)');
   let root = '';
   let component = '';
   let selected = '';
+  let zoom = 1;
+  let showRoutes = true;
   let graph = null;
 
   function selectedItem() {
@@ -165,18 +233,38 @@ export function createKanjiAtlasView({
   function renderDetail() {
     const item = selectedItem();
     selected = item?.char || '';
+    const routes = showRoutes ? (graph?.routes || []).filter((route) => route.from === selected || route.to === selected) : [];
     detail.innerHTML = detailMarkup(item, {
       root,
       known: item ? isKnown(item.char) : false,
       canToggleKnown: typeof toggleKnown === 'function',
       canOpenTree: typeof onOpenTree === 'function',
+      routes,
     });
     stage.querySelectorAll('[data-ka-char]').forEach((star) => {
       const active = star.dataset.kaChar === selected;
       star.dataset.selected = String(active);
       star.setAttribute('aria-pressed', String(active));
     });
-    stage.querySelectorAll('.ka-lines line').forEach((line) => { line.dataset.selected = String(line.dataset.char === selected); });
+    stage.querySelectorAll('.ka-component-lines line').forEach((line) => { line.dataset.selected = String(line.dataset.char === selected); });
+    stage.querySelectorAll('.ka-reading-routes line').forEach((line) => {
+      line.dataset.selected = String(line.dataset.from === selected || line.dataset.to === selected);
+    });
+  }
+
+  function applyZoom({ preserveCenter = true } = {}) {
+    const oldWidth = Math.max(1, stage.scrollWidth || stage.getBoundingClientRect().width);
+    const centerRatio = (viewport.scrollLeft + viewport.clientWidth / 2) / oldWidth;
+    const base = phoneQuery.matches ? { width: 840, height: 580 } : { width: 980, height: 640 };
+    stage.style.width = `${Math.round(base.width * zoom)}px`;
+    stage.style.height = `${Math.round(base.height * zoom)}px`;
+    stage.querySelector('.ka-sky')?.style.setProperty('--ka-zoom', String(zoom));
+    zoomValue.textContent = `${Math.round(zoom * 100)}%`;
+    shell.querySelector('[data-ka-control="out"]').disabled = zoom <= .8;
+    shell.querySelector('[data-ka-control="in"]').disabled = zoom >= 1.2;
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = Math.max(0, (preserveCenter ? centerRatio * stage.scrollWidth : stage.scrollWidth / 2) - viewport.clientWidth / 2);
+    });
   }
 
   function render({ preserveScroll = false, preserveSelection = false } = {}) {
@@ -201,16 +289,28 @@ export function createKanjiAtlasView({
     if (!preserveSelection || !graph.stars.some((star) => star.char === selected)) selected = root;
     if (!graph.stars.some((star) => star.char === selected)) selected = graph.stars[0]?.char || '';
     const layout = layoutComponentConstellation(graph);
+    graph.routes = buildConstellationReadingRoutes(index, graph.stars);
     const knownCount = graph.stars.filter((star) => isKnown(star.char)).length;
     title.textContent = `${component} — component constellation`;
-    overview.innerHTML = `<span><b>${graph.stars.length}</b> visible stars</span><span><b>${knownCount}</b> illuminated</span><span><b>${graph.total}</b> in this component family</span>${graph.truncated ? '<span>Bounded for clarity</span>' : ''}`;
+    overview.innerHTML = `<span><b>${graph.stars.length}</b> visible stars</span><span><b>${knownCount}</b> illuminated</span><span><b>${graph.routes.length}</b> reading routes</span><span><b>${graph.total}</b> in this component family</span>${graph.truncated ? '<span>Bounded for clarity</span>' : ''}`;
+    const byChar = new Map(layout.map((star) => [star.char, star]));
     const lines = layout.map((star) => `<line x1="50" y1="50" x2="${star.x}" y2="${star.y}" data-char="${esc(star.char)}" data-known="${isKnown(star.char)}" data-selected="${star.char === selected}" />`).join('');
+    const readingRoutes = graph.routes.map((route) => {
+      const from = byChar.get(route.from);
+      const to = byChar.get(route.to);
+      return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" data-from="${esc(route.from)}" data-to="${esc(route.to)}" data-kind="${esc(route.kind)}" data-selected="${route.from === selected || route.to === selected}"><title>${esc(route.label)}</title></line>`;
+    }).join('');
     const stars = layout.map((star) => `<div class="ka-star-position" style="--ka-x:${star.x}%;--ka-y:${star.y}%">
       <button type="button" class="ka-star" data-ka-char="${esc(star.char)}" data-known="${isKnown(star.char)}" data-root="${star.isRoot}" data-selected="${star.char === selected}" aria-pressed="${star.char === selected}" aria-label="Inspect ${esc(star.char)}, ${esc(star.meaning)}">
         <span class="ka-star-glyph">${esc(star.char)}</span><span class="ka-star-copy"><strong>${esc(star.meaning)}</strong><small>${levelLabel(star.jlpt)} · ${star.strokes || '—'} strokes</small></span>
       </button></div>`).join('');
-    stage.innerHTML = `<svg class="ka-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>
-      <div class="ka-center"><span>${esc(component)}</span><small>direct component</small></div>${stars}`;
+    stage.innerHTML = `<div class="ka-sky"><svg class="ka-lines ka-component-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>
+      <svg class="ka-lines ka-reading-routes" data-visible="${showRoutes}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${readingRoutes}</svg>
+      <div class="ka-center"><span>${esc(component)}</span><small>direct component</small></div>${stars}</div>`;
+    routesToggle.disabled = graph.routes.length === 0;
+    routesToggle.setAttribute('aria-pressed', String(showRoutes));
+    routesToggle.textContent = showRoutes ? 'Routes on' : 'Routes off';
+    applyZoom({ preserveCenter: preserveScroll });
     renderDetail();
     requestAnimationFrame(() => {
       viewport.scrollLeft = preserveScroll ? previousScroll : Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
@@ -228,6 +328,7 @@ export function createKanjiAtlasView({
   }
 
   picker.addEventListener('change', () => { component = picker.value; selected = root; render(); });
+  phoneQuery.addEventListener?.('change', () => applyZoom({ preserveCenter: false }));
   shell.addEventListener('focusin', (event) => {
     const star = event.target.closest('[data-ka-char]');
     if (star && star.dataset.kaChar !== selected) { selected = star.dataset.kaChar; renderDetail(); }
@@ -236,6 +337,20 @@ export function createKanjiAtlasView({
     const star = event.target.closest('[data-ka-char]');
     if (star) { selected = star.dataset.kaChar; renderDetail(); return; }
     const action = event.target.closest('[data-ka-action]')?.dataset.kaAction;
+    const control = event.target.closest('[data-ka-control]')?.dataset.kaControl;
+    if (control) {
+      if (control === 'routes') {
+        showRoutes = !showRoutes;
+        stage.querySelector('.ka-reading-routes')?.setAttribute('data-visible', String(showRoutes));
+        routesToggle.setAttribute('aria-pressed', String(showRoutes));
+        routesToggle.textContent = showRoutes ? 'Routes on' : 'Routes off';
+        renderDetail();
+      } else {
+        zoom = control === 'reset' ? 1 : Math.min(1.2, Math.max(.8, zoom + (control === 'in' ? .1 : -.1)));
+        applyZoom();
+      }
+      return;
+    }
     const item = selectedItem();
     if (!action || !item) return;
     if (action === 'known' && typeof toggleKnown === 'function') {
