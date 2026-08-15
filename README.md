@@ -91,6 +91,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   in kanji you have marked known — what those kanji combine into, rather than
   what they break down from. Ranked easiest-first, and every kanji opens its
   Radical Tree. Save any of them straight into the review deck.
+- **Word lookup:** search all 10,808 committed vocabulary entries by word,
+  reading, or English meaning, filter by JLPT level or by whether every kanji in
+  the word is one you already know, and save any result straight into review.
 - **Bookmarkable views:** each workspace has its own address, so `#kanji` opens
   the Kanji library and the browser's back button steps back through the views
   you visited instead of leaving the app.

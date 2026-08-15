@@ -1842,3 +1842,16 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
   font-size: 11px; color: var(--text3);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+
+/* ---- word lookup --------------------------------------------------------------- */
+.wl-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.wl-controls .input { flex: 1 1 220px; min-width: 0; }
+.wl-controls .select { flex: 0 0 auto; }
+.compound-kana {
+  font-family: var(--font-display); font-size: 20px; line-height: 1.1;
+  padding: 2px 1px; color: var(--text2);
+}
+
+@media (max-width: 780px) {
+  .wl-controls .input, .wl-controls .select { flex: 1 1 100%; min-height: 44px; }
+}

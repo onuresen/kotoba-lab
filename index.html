@@ -412,6 +412,32 @@
 
     <div class="card">
       <div class="ui-section-header">
+        <span class="ui-section-title">Word lookup</span>
+        <span class="ui-section-line"></span>
+        <span class="hint" id="wl-count"></span>
+      </div>
+      <p class="hint">Search the committed vocabulary by word, reading, or English meaning — the same way the Kanji library searches glyphs and readings. Readings match whether you type hiragana or katakana.</p>
+      <div class="wl-controls">
+        <input id="wl-search" class="input" type="search" placeholder="学生 · がくせい · student" autocomplete="off" spellcheck="false" aria-label="Search vocabulary">
+        <select id="wl-level" class="select" aria-label="Filter by JLPT level" title="Show only words at one JLPT level">
+          <option value="">All levels</option>
+          <option value="5">N5</option>
+          <option value="4">N4</option>
+          <option value="3">N3</option>
+          <option value="2">N2</option>
+          <option value="1">N1</option>
+        </select>
+        <select id="wl-readable" class="select" aria-label="Filter by whether you can read it" title="Readable means every kanji in the word is one you have marked known">
+          <option value="all">Any</option>
+          <option value="readable">Readable now</option>
+          <option value="unreadable">Not yet readable</option>
+        </select>
+      </div>
+      <div id="wl-results" class="compound-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="ui-section-header">
         <span class="ui-section-title">Saved deck</span>
         <span class="ui-section-line"></span>
         <span class="hint" id="mw-deck-count"></span>

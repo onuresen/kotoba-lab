@@ -26,7 +26,8 @@ import {
 import { isKanji } from './script.js';
 import { cacheNameFor } from './offline-cache.js';
 import { parseRoute, routeToHash } from './routing.js';
-import { buildReadableCompounds, wordsContaining } from './compound-words.js';
+import { buildReadableCompounds, wordsContaining, isReadableCompound } from './compound-words.js';
+import { searchWords } from './word-browser.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
 import { createKanjiNetworkView } from './kanji-network.js';
@@ -1780,9 +1781,24 @@ function renderProfilePanel() {
 }
 
 const COMPOUND_LIMIT = 24;
-// Surface -> entry for the compounds currently on screen, so saving one does not
-// mean re-scanning 10,808 vocabulary rows to recover its reading and gloss.
-const readableCompoundIndex = new Map();
+const WORD_LOOKUP_LIMIT = 30;
+
+// One row shape for every vocabulary list, so the compound card and the lookup
+// stay visually identical and gain features together.
+function wordRowMarkup(word) {
+  const saved = deck.has(word.w);
+  return `<div class="compound-row">
+      <div class="compound-word jp">${[...word.w].map((char) => (isKanji(char)
+        ? `<button type="button" class="compound-kanji" data-kanji-tree="${esc(char)}" title="Open the Radical Tree for ${esc(char)}" aria-label="Open radical tree for ${esc(char)}">${esc(char)}</button>`
+        : `<span class="compound-kana">${esc(char)}</span>`)).join('')}</div>
+      <div class="compound-meta">
+        ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
+        <span class="compound-gloss">${esc(word.g)}</span>
+      </div>
+      <span class="badge" data-status="${word.lvl == null ? 'archive' : 'reference'}">${levelName(word.lvl)}</span>
+      <button type="button" class="compound-save" data-compound-save="${esc(word.w)}" title="${saved ? `Remove ${esc(word.w)} from your Review deck` : `Save ${esc(word.w)} to your Review deck — it becomes due immediately`}" aria-pressed="${saved}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★ Saved' : '☆ Save'}</button>
+    </div>`;
+}
 
 // The reverse of everything else in the app: instead of taking a kanji apart,
 // report the words the known kanji already combine into.
@@ -1794,8 +1810,6 @@ function renderReadableCompounds() {
   const { total, words } = buildReadableCompounds(
     vocabList, (char) => knownKanji.has(char), COMPOUND_LIMIT,
   );
-  readableCompoundIndex.clear();
-  for (const word of words) readableCompoundIndex.set(word.w, word);
 
   count.textContent = total
     ? `${total} word${total === 1 ? '' : 's'}${total > words.length ? ` · showing ${words.length}` : ''}`
@@ -1808,20 +1822,32 @@ function renderReadableCompounds() {
     return;
   }
 
-  host.innerHTML = words.map((word) => {
-    const saved = deck.has(word.w);
-    return `
-    <div class="compound-row">
-      <div class="compound-word jp">${[...word.w].map((char) =>
-        `<button type="button" class="compound-kanji" data-kanji-tree="${esc(char)}" title="Open the Radical Tree for ${esc(char)}" aria-label="Open radical tree for ${esc(char)}">${esc(char)}</button>`).join('')}</div>
-      <div class="compound-meta">
-        ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
-        <span class="compound-gloss">${esc(word.g)}</span>
-      </div>
-      <span class="badge" data-status="${word.lvl == null ? 'archive' : 'reference'}">${levelName(word.lvl)}</span>
-      <button type="button" class="compound-save" data-compound-save="${esc(word.w)}" title="${saved ? `Remove ${esc(word.w)} from your Review deck` : `Save ${esc(word.w)} to your Review deck — it becomes due immediately`}" aria-pressed="${saved}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★ Saved' : '☆ Save'}</button>
-    </div>`;
-  }).join('');
+  host.innerHTML = words.map(wordRowMarkup).join('');
+}
+
+// Vocabulary lookup: the counterpart to the Kanji library's search, so a word
+// is reachable without waiting for it to turn up in pasted text.
+function renderWordLookup() {
+  const host = $('#wl-results');
+  const count = $('#wl-count');
+  if (!host || !count) return;
+
+  const levelValue = $('#wl-level').value;
+  const { total, words } = searchWords(vocabList, {
+    term: $('#wl-search').value,
+    level: levelValue === '' ? null : Number(levelValue),
+    readable: $('#wl-readable').value,
+    isReadable: (word) => isReadableCompound(word, (char) => knownKanji.has(char)),
+    limit: WORD_LOOKUP_LIMIT,
+  });
+
+  count.textContent = total
+    ? `${total.toLocaleString()} match${total === 1 ? '' : 'es'}${total > words.length ? ` · showing ${words.length}` : ''}`
+    : 'No matches';
+
+  host.innerHTML = words.length
+    ? words.map(wordRowMarkup).join('')
+    : '<p class="hint">No vocabulary matches that search. Try a reading, or part of an English meaning.</p>';
 }
 
 function renderMyWords() {
@@ -1834,6 +1860,7 @@ function renderMyWords() {
     : `<span class="hint">None marked yet.</span>`;
 
   renderReadableCompounds();
+  renderWordLookup();
 
   const rows = deck.all();
   $('#mw-deck-count').textContent = `${rows.length} card${rows.length === 1 ? '' : 's'}`;
@@ -2318,6 +2345,13 @@ function wireUi() {
   $('#study-pack-file').addEventListener('change', onStudyPackFile);
   $('#study-pack-cancel').addEventListener('click', closeStudyPack);
   $('#study-pack-start').addEventListener('click', startStudyPack);
+  let wordLookupDebounce;
+  $('#wl-search').addEventListener('input', () => {
+    clearTimeout(wordLookupDebounce);
+    wordLookupDebounce = setTimeout(renderWordLookup, 200);
+  });
+  $('#wl-level').addEventListener('change', renderWordLookup);
+  $('#wl-readable').addEventListener('change', renderWordLookup);
   $('#mw-clear-known').addEventListener('click', () => {
     if (!confirm('Clear all known words and kanji? Only a backup file can bring them back.')) return;
     knownWords.clear(); knownKanji.clear();
@@ -2344,13 +2378,15 @@ function wireUi() {
     const compoundSave = event.target.closest?.('[data-compound-save]');
     if (compoundSave) {
       const surface = compoundSave.dataset.compoundSave;
-      const entry = readableCompoundIndex.get(surface);
+      const entry = vocabList.find((row) => row.w === surface);
       if (entry) {
         const now = deck.toggle({
-          surface, reading: entry.r, gloss: entry.g, level: entry.lvl, srs: newCard(),
+          surface, reading: entry.r || '', gloss: entry.g || '',
+          level: Number.isFinite(entry.lvl) ? entry.lvl : null, srs: newCard(),
         });
         toast(now ? 'Saved to deck — due for review now.' : 'Removed from deck.', 'success');
         renderMyWords();
+        renderWordLookup();
         renderProfilePanel();
         refreshReview();
       }

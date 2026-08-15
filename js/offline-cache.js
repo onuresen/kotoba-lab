@@ -47,6 +47,7 @@ const JS_MODULES = Object.freeze([
   'js/usage-insights.js',
   'js/usage-journal.js',
   'js/usage-report.js',
+  'js/word-browser.js',
 ]);
 
 const SHELL_PATHS = Object.freeze([

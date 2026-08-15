@@ -116,6 +116,12 @@
   panel, so every existing tree doorway now also reaches vocabulary. Analyze
   frequency-table kanji became Radical Tree and Relationship Map doorways
   instead of an inert ranking.
+- Word lookup is ✓ Done: `js/word-browser.js` searches the 10,808 committed
+  vocabulary entries by surface, normalized reading, or English meaning, with
+  JLPT and readable-state filters. It closes the asymmetry where 6,813 kanji
+  were fully browsable while words were reachable only through pasted text.
+  Results share one row shape with the compound card, so both save into the
+  review deck the same way.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -436,6 +442,23 @@
 - Recipe history lives only on the open Alchemy session. Its temporary study
   handoff deduplicates brewed target kanji and reuses `createKanjiStudySession`;
   leaving the lab or study must not write history or scores anywhere.
+
+## Vocabulary conventions
+
+- Keep vocabulary search pure in `js/word-browser.js`, mirroring the split
+  between `kanji-browser.js` and its DOM renderer in `app.js`.
+- Reading search normalizes katakana to hiragana and strips separators, the same
+  `readingForm()` rule the kanji library uses, so a query typed either way
+  matches. English matching applies only to plain-ASCII queries.
+- Sort easiest first by JLPT, then shorter words, then **code point** order.
+  Never `localeCompare`: collation depends on ICU being present, and the list
+  must sort identically in every browser and in Node.
+- Results are bounded but the total is always reported honestly, so the page
+  never implies it is the whole set.
+- "Readable" means every kanji in the word is already marked known. It reuses
+  `isReadableCompound()` rather than a second definition.
+- Every vocabulary list uses the shared `wordRowMarkup()` so the compound card
+  and the lookup stay identical and gain features together.
 
 ## Kanji family study conventions
 
