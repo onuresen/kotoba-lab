@@ -10,7 +10,17 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-15-history-routing-design.md`
 
-## Deviation from the spec
+## Descoped during execution
+
+**Task 3 (overlay sentinels) was not implemented.** The sentinel machinery —
+a depth counter plus two re-entrancy guards — carried real risk of stranding a
+history entry in ways unit tests cannot catch, for a benefit the overlays'
+existing Close buttons already provide. Shipped scope is tabs only.
+
+Overlays remain unrouted. If closing them with the back gesture proves to matter
+on a phone, it is a separate, self-contained addition.
+
+## Original deviation from the spec
 
 The spec listed **three** participating overlays. This plan implements **two**: Radical Tree and the full-screen Relationship Map. The Read info sheet is excluded, for two reasons found while planning:
 

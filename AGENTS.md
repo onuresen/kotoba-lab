@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.22.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.23.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -97,6 +97,10 @@
   Settings control in the header. It deliberately has no slot in the bottom tab
   bar, so the mobile bar stays at six columns. My Words keeps Known, Saved deck,
   and Portable Study Packs.
+- Back-button routing is ✓ Done: tabs push hash routes, so the Android back
+  gesture steps back through views instead of leaving the installed app, and
+  views are bookmarkable. `#settings` opens Profile & Data. Full-screen overlays
+  are deliberately not routed; they keep their own Close buttons.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -180,6 +184,8 @@
   caches on activate, apply the imported strategies on fetch, and accept only
   `SKIP_WAITING`. Holds no path list of its own.
 - `manifest.webmanifest` — installable metadata; every path relative.
+- `js/routing.js` — pure hash parsing, tab/route translation, and unknown-route
+  fallback; no DOM, history, or fetch.
 - `index.html` `[data-panel="profile"]` — Profile & Data panel: summary,
   dashboard, reset, usage journal, friction radar, report, offline availability,
   backup actions, and import preview. Reached only from the header control.
@@ -277,6 +283,25 @@
   review browsers cannot register one at all. `js/sw-routing.test.js` loads the
   real worker with stubbed globals to cover routing, lifecycle, and messaging;
   genuine Cache API behavior still requires manual QA in a real browser.
+
+## Routing conventions
+
+- Hash routes only. Never push a pathname: `/kotoba-lab/kanji` 404s on GitHub
+  Pages and would route every tab switch through the worker's navigate handler.
+- Keep the tab/route vocabulary split inside `js/routing.js`. `app.js` handles
+  only internal tab names; the module is the single place they translate. The
+  `profile` tab is reached at `#settings`, and `#profile` is deliberately not a
+  valid route so one view never has two URLs.
+- An unknown hash resolves to Analyze. A URL is user-editable input, so parsing
+  must never throw or leave a blank screen.
+- Overlays are **not** routed. Radical Tree, the Relationship Map, and the Read
+  info sheet keep their Close buttons, scrim, and Escape. Routing them needs
+  sentinel history entries whose consumption rules are easy to get subtly wrong,
+  and the info sheet in particular would fire a stray `history.back()` on every
+  tab change because `setInfoSheet(false)` runs in the tab-switch path.
+- Programmatic `switchTab()` calls create history entries on purpose — arriving
+  via an in-app link is navigation. Any new caller must therefore be a response
+  to a user action, never a timer or a loop.
 
 ## Mobile interface conventions
 

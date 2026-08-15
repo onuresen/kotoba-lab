@@ -25,6 +25,7 @@ import {
 } from './text-journey.js';
 import { isKanji } from './script.js';
 import { cacheNameFor } from './offline-cache.js';
+import { parseRoute, routeToHash } from './routing.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
 import { createKanjiNetworkView } from './kanji-network.js';
@@ -87,7 +88,7 @@ delete window.__kotobaBootFallback;
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.22.0';
+const APP_VERSION = '10.23.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -2053,7 +2054,11 @@ function showEmpty() {
   relationsNetwork?.update();
   relationsAtlas?.update();
 }
-function switchTab(name) {
+let currentTab = 'analyze';
+
+// push=false when the change came from the history stack itself, so restoring a
+// tab never pushes a duplicate entry.
+function switchTab(name, push = true) {
   if (name !== 'relations') relationsAtlas?.setFocus(false);
   // [data-tab] rather than .tab so the header Data control shares the same
   // active-state and aria-current path as the six bottom-bar tabs.
@@ -2081,6 +2086,12 @@ function switchTab(name) {
   if (window.matchMedia('(max-width: 780px)').matches) {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
   }
+  // Arriving somewhere is navigation whether the user clicked a tab or followed
+  // an in-app link, so both create history. Re-selecting the active tab does not.
+  if (push && name !== currentTab) {
+    history.pushState({ tab: name }, '', routeToHash(name));
+  }
+  currentTab = name;
 }
 let toastTimer;
 function toast(msg, kind) {
@@ -2456,6 +2467,28 @@ async function downloadKuromoji(button) {
   renderOfflineStatus();
 }
 
+// ---- routing -----------------------------------------------------------------
+// Tabs live in the hash so the back gesture steps back through views instead of
+// leaving an installed app. Full-screen overlays keep their own Close buttons
+// and are deliberately not routed.
+
+window.addEventListener('popstate', (event) => {
+  // state is null after a browser session restore, so fall back to the URL.
+  const tab = event.state?.tab || parseRoute(location.hash).tab;
+  switchTab(tab, false);
+});
+
+function applyInitialRoute() {
+  const { tab } = parseRoute(location.hash);
+  // Exactly one entry for the entry point, so back from it leaves the app.
+  history.replaceState({ tab }, '', routeToHash(tab));
+  // boot() already renders Analyze as active; only move if the URL asks for
+  // something else, so an ordinary load records no extra usage event.
+  if (tab !== 'analyze') switchTab(tab, false);
+  currentTab = tab;
+}
+
 boot();
+applyInitialRoute();
 registerOfflineWorker();
 renderOfflineStatus();

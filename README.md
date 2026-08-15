@@ -85,6 +85,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   use the available desktop space, because both are visual workspaces that need
   it. Every other view — Analyze, Read, Review, My Words, and Settings — keeps a
   focused reading measure. Tablet and phone layouts keep their existing flow.
+- **Bookmarkable views:** each workspace has its own address, so `#kanji` opens
+  the Kanji library and the browser's back button steps back through the views
+  you visited instead of leaving the app.
 - **Profile & Data:** a dedicated panel, opened with Settings in the header, that
   exports the complete local study profile as versioned JSON,
   inspect an import before it writes anything, then merge safely or explicitly
