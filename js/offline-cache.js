@@ -19,6 +19,7 @@ const JS_MODULES = Object.freeze([
   'js/aozora.js',
   'js/app.js',
   'js/backup.js',
+  'js/compound-words.js',
   'js/context.js',
   'js/flashcards.js',
   'js/jlpt.js',

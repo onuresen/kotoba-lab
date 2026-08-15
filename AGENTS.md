@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.23.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.24.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -101,6 +101,11 @@
   gesture steps back through views instead of leaving the installed app, and
   views are bookmarkable. `#settings` opens Profile & Data. Full-screen overlays
   are deliberately not routed; they keep their own Close buttons.
+- Compound words is ✓ a bounded first experiment: a My Words card reports the
+  all-kanji compounds every one of whose characters is already marked known —
+  the reverse of the decomposition features. Ranked easiest-first by JLPT, capped
+  at 24 visible while the total stays honest, kanji reuse the existing
+  `[data-kanji-tree]` doorway. No new storage key, tab, or usage event.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -184,6 +189,9 @@
   caches on activate, apply the imported strategies on fetch, and accept only
   `SKIP_WAITING`. Holds no path list of its own.
 - `manifest.webmanifest` — installable metadata; every path relative.
+- `js/compound-words.js` — pure readable-compound detection, ranking, and
+  bounding from the committed JLPT vocabulary and the known-kanji set; no DOM
+  or storage.
 - `js/routing.js` — pure hash parsing, tab/route translation, and unknown-route
   fallback; no DOM, history, or fetch.
 - `index.html` `[data-panel="profile"]` — Profile & Data panel: summary,

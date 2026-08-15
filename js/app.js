@@ -26,6 +26,7 @@ import {
 import { isKanji } from './script.js';
 import { cacheNameFor } from './offline-cache.js';
 import { parseRoute, routeToHash } from './routing.js';
+import { buildReadableCompounds } from './compound-words.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
 import { createKanjiNetworkView } from './kanji-network.js';
@@ -88,7 +89,7 @@ delete window.__kotobaBootFallback;
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.23.0';
+const APP_VERSION = '10.24.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -1756,6 +1757,42 @@ function renderProfilePanel() {
   renderUsageJournal(profileState);
 }
 
+const COMPOUND_LIMIT = 24;
+
+// The reverse of everything else in the app: instead of taking a kanji apart,
+// report the words the known kanji already combine into.
+function renderReadableCompounds() {
+  const host = $('#mw-compounds');
+  const count = $('#mw-compound-count');
+  if (!host || !count) return;
+
+  const { total, words } = buildReadableCompounds(
+    vocabList, (char) => knownKanji.has(char), COMPOUND_LIMIT,
+  );
+
+  count.textContent = total
+    ? `${total} word${total === 1 ? '' : 's'}${total > words.length ? ` · showing ${words.length}` : ''}`
+    : '';
+
+  if (!words.length) {
+    host.innerHTML = knownKanji.count()
+      ? '<p class="hint">No compound words yet from these kanji. Marking a few more known will start unlocking them.</p>'
+      : '<p class="hint">Mark kanji "✓ Known" while reading, and the words they combine into will appear here.</p>';
+    return;
+  }
+
+  host.innerHTML = words.map((word) => `
+    <div class="compound-row">
+      <div class="compound-word jp">${[...word.w].map((char) =>
+        `<button type="button" class="compound-kanji" data-kanji-tree="${esc(char)}" aria-label="Open radical tree for ${esc(char)}">${esc(char)}</button>`).join('')}</div>
+      <div class="compound-meta">
+        ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
+        <span class="compound-gloss">${esc(word.g)}</span>
+      </div>
+      <span class="badge" data-status="${word.lvl == null ? 'archive' : 'reference'}">${levelName(word.lvl)}</span>
+    </div>`).join('');
+}
+
 function renderMyWords() {
   $('#mw-known-count').textContent = `${knownWords.count()} words · ${knownKanji.count()} kanji`;
   $('#mw-known-words').innerHTML = knownWords.all().length
@@ -1764,6 +1801,8 @@ function renderMyWords() {
   $('#mw-known-kanji').innerHTML = knownKanji.all().length
     ? knownKanji.all().map((c) => `<span class="known-chip jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="known-kanji-open" data-kanji-tree="${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</button><button type="button" class="known-kanji-map" data-kanji-map="${esc(c)}" aria-label="Open relationship map for ${esc(c)}">↗</button><button type="button" class="known-rm" data-kind="kanji" data-key="${esc(c)}" aria-label="Unmark known kanji ${esc(c)}">×</button></span>`).join('')
     : `<span class="hint">None marked yet.</span>`;
+
+  renderReadableCompounds();
 
   const rows = deck.all();
   $('#mw-deck-count').textContent = `${rows.length} card${rows.length === 1 ? '' : 's'}`;

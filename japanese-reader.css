@@ -1712,3 +1712,45 @@ p.hint { margin: 8px 0 0; }
 @media (prefers-reduced-motion: reduce) {
   .head-action { transition: none; }
 }
+
+/* ---- words unlocked by known kanji ------------------------------------------ */
+.compound-list { display: grid; gap: 6px; margin-top: 12px; }
+
+.compound-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 9px 12px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.compound-word { display: flex; gap: 2px; flex: 0 0 auto; }
+.compound-kanji {
+  font-family: var(--font-display);
+  font-size: 22px; line-height: 1.1;
+  padding: 2px 3px;
+  color: var(--text);
+  background: none; border: 0; border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color 0.16s var(--ease), background 0.16s var(--ease);
+}
+.compound-kanji:hover, .compound-kanji:focus-visible {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.compound-meta { display: grid; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.compound-gloss {
+  font-size: 12px; color: var(--text2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+@media (max-width: 780px) {
+  .compound-row { flex-wrap: wrap; }
+  .compound-kanji { min-height: 44px; min-width: 34px; }
+  .compound-gloss { white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compound-kanji { transition: none; }
+}

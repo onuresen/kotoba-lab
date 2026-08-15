@@ -85,6 +85,10 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   use the available desktop space, because both are visual workspaces that need
   it. Every other view — Analyze, Read, Review, My Words, and Settings — keeps a
   focused reading measure. Tablet and phone layouts keep their existing flow.
+- **Words you can now read:** My Words lists the compound words written entirely
+  in kanji you have marked known — what those kanji combine into, rather than
+  what they break down from. Ranked easiest-first, and every kanji opens its
+  Radical Tree.
 - **Bookmarkable views:** each workspace has its own address, so `#kanji` opens
   the Kanji library and the browser's back button steps back through the views
   you visited instead of leaving the app.
