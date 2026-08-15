@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.16.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.17.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -59,12 +59,13 @@
   session, returns directly to the same Atlas, exports all visible stars through
   the existing private-data-free pack format, and offers ephemeral component
   and reading-exception challenges. Opt-in usage counts stay payload-free.
-- Desktop space-efficiency Groups A–B are ✓ Done: the Relations workspace alone
-  grows to the available large-screen width, while Analyze and Read retain their
-  focused measure. Atlas uses a larger canvas from 1440 px upward without page
-  overflow. Its session-only focus mode hides the surrounding Relations setup,
-  preserves the current component and selected star, exits with Escape or when
-  leaving the view, and stays unavailable on phones where touch panning remains.
+- Desktop space-efficiency Groups A–C are ✓ Done: shared layout tokens keep
+  Analyze, Read, and Review at the focused reading measure while data-heavy
+  Kanji and My Words expand to 1440 px and Relations to 1560 px. Atlas uses a
+  larger canvas from 1440 px upward without page overflow. Its session-only
+  focus mode hides the surrounding Relations setup, preserves the current
+  component and selected star, exits with Escape or when leaving the view, and
+  stays unavailable on phones where touch panning remains.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -181,6 +182,18 @@
 - `compactPath()` must preserve negative zero. In SVG path syntax a minus sign
   can separate adjacent coordinates, so converting `3.57-0.01` to `3.60`
   silently merges two Bézier parameters and distorts the stroke.
+
+## Desktop layout conventions
+
+- Keep `--layout-reading`, `--layout-data`, and `--layout-visual` as the shared
+  width contract. Do not scatter new panel-specific desktop widths through the
+  stylesheet.
+- Only panels explicitly marked `data-layout="wide"` may escape the reading
+  measure. Kanji and My Words use the data width; Relations overrides that
+  shared limit with the visual width. Analyze, Read, and Review stay narrow.
+- Wide workspaces begin above the 1080 px reading measure and must not create
+  page overflow. Tablet and phone behavior remains governed by the existing
+  responsive rules rather than separate narrow-screen width overrides.
 
 ## Mobile interface conventions
 

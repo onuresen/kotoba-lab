@@ -11,6 +11,9 @@
 
 /* ---- JLPT color scale (domain-specific, easy → hard, distinct from accent) - */
 :root {
+  --layout-reading: 1080px;
+  --layout-data: 1440px;
+  --layout-visual: 1560px;
   --jlpt-n5: #2f8f6f;  /* green   — easiest */
   --jlpt-n4: #2f74b5;  /* blue    */
   --jlpt-n3: #6a57c9;  /* indigo  */
@@ -37,7 +40,7 @@ body {
   font-size: 14px;
   line-height: 1.5;
 }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+.wrap { max-width: var(--layout-reading); margin: 0 auto; padding: 0 20px; }
 
 .site-head {
   position: sticky; top: 0; z-index: var(--z-sticky);
@@ -82,6 +85,12 @@ main.wrap { padding-top: 20px; padding-bottom: 28px; display: flex; flex-directi
 /* ---- panels + grids -------------------------------------------------------- */
 .panel { display: none; flex-direction: column; gap: 16px; }
 .panel.is-active { display: flex; animation: panel-enter .32s var(--ease) both; }
+@media (min-width: 1081px) {
+  .panel[data-layout="wide"].is-active {
+    width: min(var(--panel-wide-max, var(--layout-data)), calc(100vw - 32px));
+    align-self: center;
+  }
+}
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid-read { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
 @media (max-width: 780px) { .grid-2, .grid-read { grid-template-columns: 1fr; } }
@@ -259,7 +268,7 @@ td.hint, .hint { color: var(--text3); font-size: 12px; }
   background: var(--accent-dim, #f4e2dd); color: var(--text, #1c1a17);
   padding: 14px 18px; font-size: 13px; line-height: 1.6;
   font-family: var(--font-body, system-ui, -apple-system, Segoe UI, sans-serif);
-  max-width: 1080px; margin: 0 auto;
+  max-width: var(--layout-reading); margin: 0 auto;
 }
 .boot-warning strong { display: block; margin-bottom: 6px; font-size: 14px; color: var(--accent, #b23a2f); }
 .boot-warning p { margin: 6px 0 0; color: var(--text2, #57534a); }
@@ -617,10 +626,7 @@ kbd {
 }
 
 /* ---- Relations workspace ------------------------------------------------- */
-.relations-panel { gap: 14px; }
-@media (min-width: 1081px) {
-  .relations-panel.is-active { width: min(1560px, calc(100vw - 32px)); align-self: center; }
-}
+.relations-panel { --panel-wide-max: var(--layout-visual); gap: 14px; }
 .relations-toolbar { display: flex; flex-direction: column; gap: 17px; }
 .relations-intro { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); align-items: end; gap: 24px; }
 .relations-intro h2 { margin: 3px 0 5px; font-family: var(--font-display); font-size: 25px; }
@@ -816,7 +822,7 @@ kbd {
 }
 
 @media (min-width: 1081px) {
-  .relations-panel[data-atlas-focus="true"] { width: calc(100vw - 24px); max-width: none; gap: 0; }
+  .relations-panel.is-active[data-atlas-focus="true"] { width: calc(100vw - 24px); max-width: none; gap: 0; }
   .relations-panel[data-atlas-focus="true"] > .relations-toolbar,
   .relations-panel[data-atlas-focus="true"] > .relations-status,
   .relations-panel[data-atlas-focus="true"] > .relations-view-switch { display: none; }

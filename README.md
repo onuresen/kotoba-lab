@@ -25,7 +25,8 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning;
   combine JLPT, stroke-count, and known-state filters; then browse ordinary
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
-  an on’yomi, kun’yomi, canonical radical, or direct visual component.
+  an on’yomi, kun’yomi, canonical radical, or direct visual component. On large
+  screens the library expands into a denser five-card workspace.
 - **Family study:** turn any selected kanji family into a focused reveal
   session with progress, previous/next and keyboard navigation, shuffle and
   restart, known-state controls, and direct Radical Tree access.
@@ -71,6 +72,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   try short shared-component and reading-exception challenges with no score.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
+- **Adaptive workspace width:** data-heavy Kanji, Relations, and My Words views
+  use the available desktop space, while Analyze, Read, and Review retain a
+  focused reading measure. Tablet and phone layouts keep their existing flow.
 - **Profile & Data:** export the complete local study profile as versioned JSON,
   inspect an import before it writes anything, then merge safely or explicitly
   replace local cards, schedules, known items, and review history. A local-data
