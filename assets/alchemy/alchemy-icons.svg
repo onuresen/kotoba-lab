@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="flask" viewBox="0 0 64 64">
+    <path d="M24 7h16M27 7v17L14 47c-3 5 1 10 7 10h22c6 0 10-5 7-10L37 24V7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 42c7-4 17 4 24-1M25 49h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".72"/>
+    <circle cx="27" cy="36" r="2" fill="currentColor" opacity=".65"/>
+    <circle cx="36" cy="31" r="1.5" fill="currentColor" opacity=".5"/>
+  </symbol>
+  <symbol id="crucible" viewBox="0 0 64 64">
+    <path d="M12 20h40l-5 23c-1 6-6 10-12 10h-6c-6 0-11-4-12-10l-5-23Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M8 20h48M24 53l-4 5M40 53l4 5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <path d="M23 14c-3-4 3-5 0-9M33 14c-3-4 3-5 0-9M43 14c-3-4 3-5 0-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+  </symbol>
+  <symbol id="book" viewBox="0 0 64 64">
+    <path d="M8 12c9-2 18 0 24 6 6-6 15-8 24-6v39c-9-2-18 0-24 6-6-6-15-8-24-6V12Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M32 18v39M14 21c5-1 9 0 13 2M14 29c5-1 9 0 13 2M50 21c-5-1-9 0-13 2M50 29c-5-1-9 0-13 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".65"/>
+  </symbol>
+  <symbol id="seal" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="25" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="32" cy="32" r="18" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 5"/>
+    <path d="M32 16l4 11 12 1-9 7 3 12-10-7-10 7 3-12-9-7 12-1 4-11Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="circle" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="32" cy="32" r="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <path d="M32 9l20 35H12L32 9Zm0 46L12 20h40L32 55Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="32" cy="32" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+  </symbol>
+  <symbol id="spark" viewBox="0 0 64 64">
+    <path d="M32 6c2 16 8 22 26 26-18 4-24 10-26 26-3-16-9-22-26-26 17-4 23-10 26-26Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M48 8c1 7 4 10 11 11-7 2-10 5-11 12-2-7-5-10-12-12 7-1 10-4 12-11Z" fill="currentColor" opacity=".55"/>
+  </symbol>
+</svg>

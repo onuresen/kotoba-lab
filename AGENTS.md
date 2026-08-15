@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.18.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.19.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -72,6 +72,12 @@
   cites that visual-structure evidence, avoids etymology claims, and offers a
   delegated Radical Tree doorway. The lab, score, and current formula are
   ephemeral, add no storage key, and keep full stroke paths lazy.
+- Radical Alchemy Group B is ✓ Done: a 78 KB original text-free workbench WebP
+  provides quiet atmosphere while a reusable SVG sprite owns every functional
+  flask, crucible, book, seal, spark, and transmutation-circle symbol. Bubbles,
+  vessel pours, ink bloom, seal stamping, and completion sparkle remain
+  restrained and become fully static under reduced motion. Study meaning and
+  controls stay in accessible HTML rather than the generated image.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -131,6 +137,9 @@
 - `js/kanji-alchemy.js` — pure unique two-component recipe generation,
   deterministic daily selection, answers, scoring, and bounded navigation;
   no DOM, storage, fetch, or stroke paths.
+- `assets/alchemy/` — optimized original workbench backdrop, code-native SVG
+  icon sprite, and public asset provenance. Runtime references stay relative
+  so they work beneath the GitHub Pages project path.
 - `js/text-journey.js` — pure text-specific route ranking, projected coverage,
   word/context collection, and ephemeral journey navigation; no DOM/storage.
 - `js/backup.js` — pure versioned profile serialization, inspection, backward-
@@ -281,6 +290,13 @@
 - Visual feedback must include text and symbols in addition to color. Preserve
   44px phone controls, number-key answers, bounded arrow navigation, Escape,
   focus restoration, and a still `prefers-reduced-motion` path.
+- Keep `laboratory-backdrop.webp` atmospheric and text-free. It must never carry
+  kanji, component evidence, labels, controls, or readable pseudo-writing; keep
+  the optimized deployed file below 150 KB unless a documented visual need
+  justifies more.
+- Keep functional Alchemy symbols in `alchemy-icons.svg` with `currentColor`
+  strokes. Do not replace ingredient glyphs, results, or controls with raster
+  artwork. Any added motion must be included in the reduced-motion shutdown.
 
 ## Kanji family study conventions
 

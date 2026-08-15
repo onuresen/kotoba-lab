@@ -30,7 +30,10 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Radical Alchemy:** enter a daily five-formula challenge from the Kanji
   library, combine two direct visual components, choose the resulting kanji,
   and reveal dictionary details plus the exact KanjiVG evidence. Each brew
-  spans N5–N1, stays session-only, and hands every answer to Radical Tree.
+  spans N5–N1, stays session-only, and hands every answer to Radical Tree. A
+  text-free illustrated workbench, crisp SVG laboratory symbols, ingredient
+  bubbles, ink blooms, seal reveals, and a still reduced-motion path give the
+  lab its own visual identity without putting study information inside images.
 - **Family study:** turn any selected kanji family into a focused reveal
   session with progress, previous/next and keyboard navigation, shuffle and
   restart, known-state controls, and direct Radical Tree access.
@@ -165,6 +168,7 @@ js/                      application modules and tests
 js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 js/kanji-atlas.js        bounded component constellation graph, layout, and UI
 js/kanji-alchemy.js      deterministic component recipes and session state
+assets/alchemy/           optimized backdrop and code-native SVG icon sprite
 js/backup.js             versioned full-profile export, inspection, and merge
 js/profile-dashboard.js  local data metrics and category-reset helpers
 js/usage-journal.js      opt-in, payload-free local activity counters

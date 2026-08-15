@@ -28,6 +28,14 @@ code-native, responsive, and reduced-motion safe. Scores and position remain
 session-only, the full stroke artifact stays lazy until Radical Tree opens,
 and the wording describes visual structure rather than historical etymology.
 
+Group B is implemented in v10.19.0 as the Alchemical Visual Identity layer.
+An original text-free laboratory illustration is committed as a 78 KB WebP;
+functional flasks, crucible, formula book, seal, spark, and transmutation
+circle remain a crisp code-native SVG sprite. Ingredient bubbles, vessel pours,
+ink bloom, seal stamping, and completion sparkle add restrained feedback while
+the reduced-motion path is completely still. No meaning, component, kanji, or
+control is baked into the generated backdrop.
+
 ### 2. Kanji Genealogy
 
 Show an explainable lineage from component → kanji → word → sentence, with

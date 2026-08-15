@@ -29,7 +29,7 @@ const TYPES = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
   '.mjs': 'text/javascript', '.json': 'application/json', '.map': 'application/json',
   '.txt': 'text/plain', '.md': 'text/markdown', '.svg': 'image/svg+xml',
-  '.png': 'image/png', '.jpg': 'image/jpeg', '.gif': 'image/gif',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif',
   '.ico': 'image/x-icon', '.woff': 'font/woff', '.woff2': 'font/woff2',
   // kuromoji ships its dictionary as .dat.gz and gunzips it ITSELF. Serving
   // these with `Content-Encoding: gzip` would make the browser decompress them
