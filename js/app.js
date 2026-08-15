@@ -62,6 +62,15 @@ import {
   phoneticCardMatches,
   phoneticScore,
 } from './kanji-labs.js';
+import {
+  alchemyProgress,
+  answerAlchemyQuestion,
+  buildDailyAlchemyChallenge,
+  createAlchemySession,
+  currentAlchemyQuestion,
+  moveAlchemyQuestion,
+  restartAlchemySession,
+} from './kanji-alchemy.js';
 
 import {
   newCard, cardOf, isNew, schedule, preview, formatWait,
@@ -76,7 +85,7 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const APP_VERSION = '10.17.0';
+const APP_VERSION = '10.18.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -110,6 +119,9 @@ let kanjiBrowseFamily = '';
 let kanjiBrowseActiveFamily = null;
 let kanjiBrowseFamilies = [];
 let kanjiStudySession = null;
+let kanjiAlchemyOpen = false;
+let kanjiAlchemySession = null;
+let kanjiAlchemyReturnFocus = null;
 let textJourney = null;
 let textJourneySession = null;
 let usageReportPreviewOpen = false;
@@ -1090,8 +1102,150 @@ function onKanjiStudyKey(event) {
   }
 }
 
+function setKanjiAlchemyVisibility(open) {
+  $('#kanji-alchemy-workspace').hidden = !open;
+  $('#kanji-panel .kanji-toolbar').hidden = open;
+  $('#kanji-study-workspace').hidden = true;
+  $('#kanji-results-head').hidden = open;
+  $('#kanji-results').hidden = open;
+  $('#kanji-more').hidden = true;
+}
+
+function renderKanjiAlchemy(focusTarget = '') {
+  const workspace = $('#kanji-alchemy-workspace');
+  if (!workspace || !kanjiAlchemyOpen) return;
+  setKanjiAlchemyVisibility(true);
+  if (!kanjiAlchemySession) {
+    workspace.innerHTML = `<div class="alchemy-loading" role="status"><span class="alchemy-loading-seal" aria-hidden="true">錬</span><div><span class="eyebrow">Radical Alchemy</span><h3>Preparing today’s ingredients…</h3><p class="hint">Reading the compact component index. The full stroke-path file stays asleep until you open a Radical Tree.</p></div></div>`;
+    return;
+  }
+
+  const question = currentAlchemyQuestion(kanjiAlchemySession);
+  const answer = kanjiAlchemySession.answers[kanjiAlchemySession.index];
+  const progress = alchemyProgress(kanjiAlchemySession);
+  const level = levelName(question.target.jlpt);
+  const selected = answer?.choice || '';
+  const completion = progress.complete && kanjiAlchemySession.index === progress.total - 1;
+  const choiceState = (char) => !answer ? 'ready' : char === question.target.char ? 'correct' : char === selected ? 'incorrect' : 'dimmed';
+  workspace.innerHTML = `
+    <div class="alchemy-head">
+      <div><span class="eyebrow">Radical Alchemy · ${esc(kanjiAlchemySession.date)}</span><h3>${esc(kanjiAlchemySession.title)}</h3></div>
+      <button type="button" class="btn btn-ghost" data-alchemy-action="close">Leave lab</button>
+    </div>
+    <div class="alchemy-status">
+      <span>Formula ${progress.current} of ${progress.total}</span>
+      <span>${progress.correct} correct · ${progress.answered} brewed</span>
+    </div>
+    <div class="alchemy-progress" data-complete="${progress.complete}" role="progressbar" aria-label="Today’s Brew progress" aria-valuemin="0" aria-valuemax="${progress.total}" aria-valuenow="${progress.answered}"><span style="width:${Math.round(progress.answered / progress.total * 100)}%"></span></div>
+    ${completion ? `<div class="alchemy-complete"><span aria-hidden="true">✦</span><div><strong>Brew complete — ${progress.correct} / ${progress.total}</strong><p>You can inspect any formula again or reset today’s brew. Nothing was saved.</p></div></div>` : ''}
+    <div class="alchemy-stage" data-revealed="${!!answer}" data-result="${answer ? (answer.correct ? 'correct' : 'incorrect') : 'waiting'}">
+      <div class="alchemy-apparatus" aria-label="Ingredient ${esc(question.ingredients[0])} plus ingredient ${esc(question.ingredients[1])}">
+        <div class="alchemy-vessel alchemy-vessel-left"><span class="label">Ingredient I</span><strong>${esc(question.ingredients[0])}</strong></div>
+        <div class="alchemy-circle" aria-hidden="true"><span class="alchemy-ring"></span><span class="alchemy-core">${answer ? esc(question.target.char) : '？'}</span></div>
+        <div class="alchemy-vessel alchemy-vessel-right"><span class="label">Ingredient II</span><strong>${esc(question.ingredients[1])}</strong></div>
+        <span class="alchemy-plus alchemy-plus-left" aria-hidden="true">＋</span><span class="alchemy-plus alchemy-plus-right" aria-hidden="true">＋</span>
+      </div>
+      <div class="alchemy-question">
+        <div><span class="label">Choose the result</span><h4>Which kanji contains both visual components?</h4></div>
+        <div class="alchemy-choices" role="group" aria-label="Kanji choices">
+          ${question.choices.map((choice, index) => `<button type="button" class="alchemy-choice jlpt-${levelSlug(choice.jlpt)}" data-alchemy-choice="${esc(choice.char)}" data-state="${choiceState(choice.char)}" ${answer ? 'disabled' : ''}><span class="alchemy-choice-key">${index + 1}</span><strong>${esc(choice.char)}</strong><span>${esc(choice.meaning || 'Meaning unavailable')}</span></button>`).join('')}
+        </div>
+        ${answer ? `<div class="alchemy-reveal" data-correct="${answer.correct}">
+          <div class="alchemy-verdict"><span class="label">Transmutation result</span><strong>${answer.correct ? 'Formula balanced' : `Not quite — the result is ${esc(question.target.char)}`}</strong></div>
+          <div class="alchemy-recipe"><span class="alchemy-recipe-glyph jlpt-${levelSlug(question.target.jlpt)}">${esc(question.target.char)}</span><div><strong>${esc(question.target.meaning)}</strong><p>${question.target.strokes} strokes · ${esc(level)}</p><p>On’yomi ${esc(question.target.on || '—')} · Kun’yomi ${esc(question.target.kun || '—')}</p></div></div>
+          <p class="alchemy-evidence">KanjiVG lists <strong>${esc(question.ingredients[0])}</strong> and <strong>${esc(question.ingredients[1])}</strong> as the two direct labelled components of <strong>${esc(question.target.char)}</strong>. This describes visual structure, not historical etymology.</p>
+        </div>` : '<p class="hint alchemy-hint">Select with the buttons or keys 1–4. Every formula uses an unambiguous two-component pair from the committed KanjiVG index.</p>'}
+      </div>
+    </div>
+    <div class="alchemy-actions">
+      <button type="button" class="btn btn-ghost" data-alchemy-action="previous" ${kanjiAlchemySession.index === 0 ? 'disabled' : ''}>← Previous</button>
+      ${answer ? `<button type="button" class="btn btn-ghost" data-kanji-tree="${esc(question.target.char)}">Open Radical Tree</button>` : ''}
+      ${completion ? '<button type="button" class="btn btn-primary" data-alchemy-action="restart">Brew again</button>' : `<button type="button" class="btn btn-primary" data-alchemy-action="next" ${!answer || kanjiAlchemySession.index === progress.total - 1 ? 'disabled' : ''}>Next formula →</button>`}
+    </div>`;
+  if (focusTarget === 'choice') workspace.querySelector('[data-alchemy-choice]')?.focus({ preventScroll: true });
+  else if (focusTarget) workspace.querySelector(`[data-alchemy-action="${focusTarget}"]`)?.focus({ preventScroll: true });
+}
+
+async function openKanjiAlchemy(trigger) {
+  stopKanjiStudy();
+  kanjiAlchemyOpen = true;
+  kanjiAlchemySession = null;
+  kanjiAlchemyReturnFocus = trigger || $('#kanji-alchemy-open');
+  renderKanjiAlchemy();
+  requestAnimationFrame(() => $('#kanji-alchemy-workspace').scrollIntoView({
+    block: 'start',
+    behavior: window.matchMedia('(max-width: 780px)').matches ? 'smooth' : 'auto',
+  }));
+  try {
+    const structureIndex = await loadKanjiStructureIndex();
+    if (!kanjiAlchemyOpen) return;
+    const challenge = buildDailyAlchemyChallenge(kanjiCatalog, structureIndex);
+    kanjiAlchemySession = createAlchemySession(challenge);
+    if (!kanjiAlchemySession) throw new Error('Not enough unambiguous component recipes were found.');
+    renderKanjiAlchemy('choice');
+  } catch (error) {
+    console.error(error);
+    closeKanjiAlchemy();
+    toast('Could not prepare Radical Alchemy. Please try again.', 'error');
+  }
+}
+
+function closeKanjiAlchemy() {
+  const returnFocus = kanjiAlchemyReturnFocus;
+  kanjiAlchemyOpen = false;
+  kanjiAlchemySession = null;
+  kanjiAlchemyReturnFocus = null;
+  setKanjiAlchemyVisibility(false);
+  renderKanjiBrowser();
+  requestAnimationFrame(() => returnFocus?.focus());
+}
+
+function onKanjiAlchemyAction(event) {
+  const choice = event.target.closest('[data-alchemy-choice]');
+  if (choice && kanjiAlchemySession) {
+    kanjiAlchemySession = answerAlchemyQuestion(kanjiAlchemySession, choice.dataset.alchemyChoice);
+    const progress = alchemyProgress(kanjiAlchemySession);
+    renderKanjiAlchemy(progress.complete ? 'restart' : 'next');
+    return;
+  }
+  const button = event.target.closest('[data-alchemy-action]');
+  if (!button || !kanjiAlchemyOpen) return;
+  const action = button.dataset.alchemyAction;
+  if (action === 'close') { closeKanjiAlchemy(); return; }
+  if (!kanjiAlchemySession) return;
+  if (action === 'previous' || action === 'next') {
+    kanjiAlchemySession = moveAlchemyQuestion(kanjiAlchemySession, action === 'previous' ? -1 : 1);
+    renderKanjiAlchemy(kanjiAlchemySession.answers[kanjiAlchemySession.index] ? action : 'choice');
+  } else if (action === 'restart') {
+    kanjiAlchemySession = restartAlchemySession(kanjiAlchemySession);
+    renderKanjiAlchemy('choice');
+  }
+}
+
+function onKanjiAlchemyKey(event) {
+  if (!kanjiAlchemyOpen || !kanjiAlchemySession || !$('#kanji-panel').classList.contains('is-active') || event.target.closest('input, textarea, select') || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (/^[1-4]$/.test(event.key) && !kanjiAlchemySession.answers[kanjiAlchemySession.index]) {
+    const choice = currentAlchemyQuestion(kanjiAlchemySession).choices[Number(event.key) - 1];
+    if (!choice) return;
+    event.preventDefault();
+    kanjiAlchemySession = answerAlchemyQuestion(kanjiAlchemySession, choice.char);
+    renderKanjiAlchemy(alchemyProgress(kanjiAlchemySession).complete ? 'restart' : 'next');
+  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    const answered = kanjiAlchemySession.answers[kanjiAlchemySession.index];
+    if (event.key === 'ArrowRight' && !answered) return;
+    event.preventDefault();
+    kanjiAlchemySession = moveAlchemyQuestion(kanjiAlchemySession, event.key === 'ArrowLeft' ? -1 : 1);
+    renderKanjiAlchemy(kanjiAlchemySession.answers[kanjiAlchemySession.index] ? (event.key === 'ArrowLeft' ? 'previous' : 'next') : 'choice');
+  } else if (event.key === 'Escape' && !document.querySelector('.kt-overlay:not([hidden])')) {
+    event.preventDefault();
+    closeKanjiAlchemy();
+  }
+}
+
 function renderKanjiBrowser() {
   if (!kanjiCatalog.length || !$('#kanji-results')) return;
+  if (kanjiAlchemyOpen) { renderKanjiAlchemy(); return; }
+  setKanjiAlchemyVisibility(false);
   const rows = filterKanji(kanjiCatalog, {
     query: $('#kanji-search').value,
     levels: [...kanjiBrowseLevels],
@@ -1942,6 +2096,8 @@ function wireUi() {
   $('#kanji-reset').addEventListener('click', resetKanjiBrowser);
   $('#kanji-study-start').addEventListener('click', startKanjiStudy);
   $('#kanji-mix-open').addEventListener('click', openFamilyMixSetup);
+  $('#kanji-alchemy-open').addEventListener('click', (event) => openKanjiAlchemy(event.currentTarget));
+  $('#kanji-alchemy-workspace').addEventListener('click', onKanjiAlchemyAction);
   $('#kanji-study-workspace').addEventListener('click', onKanjiStudyAction);
   $('#text-journey').addEventListener('click', onTextJourneyAction);
   $('#info').addEventListener('click', onInfoAction);
@@ -1995,6 +2151,7 @@ function wireUi() {
   $('#srs-direction').addEventListener('change', renderStage);
   document.addEventListener('keydown', onReviewKey);
   document.addEventListener('keydown', onKanjiStudyKey);
+  document.addEventListener('keydown', onKanjiAlchemyKey);
   // One delegated path covers dynamic Read, Review, and My Words markup.
   document.addEventListener('click', (event) => {
     const mapDoorway = event.target.closest?.('[data-kanji-map]');

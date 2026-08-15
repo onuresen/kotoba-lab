@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.17.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.18.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -66,6 +66,12 @@
   focus mode hides the surrounding Relations setup, preserves the current
   component and selected star, exits with Escape or when leaving the view, and
   stays unavailable on phones where touch panning remains.
+- Radical Alchemy Group A is ✓ Done: the Kanji-library doorway opens a
+  deterministic five-formula Today’s Brew spanning N5–N1. Only unique pairs
+  of exactly two direct labelled components become questions; every reveal
+  cites that visual-structure evidence, avoids etymology claims, and offers a
+  delegated Radical Tree doorway. The lab, score, and current formula are
+  ephemeral, add no storage key, and keep full stroke paths lazy.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -122,6 +128,9 @@
   bounded navigation, and shuffle/restart behavior; no DOM or storage.
 - `js/kanji-labs.js` — pure phonetic-signal analysis, contrast-set generation,
   question selection, and session scoring; no DOM or storage.
+- `js/kanji-alchemy.js` — pure unique two-component recipe generation,
+  deterministic daily selection, answers, scoring, and bounded navigation;
+  no DOM, storage, fetch, or stroke paths.
 - `js/text-journey.js` — pure text-specific route ranking, projected coverage,
   word/context collection, and ephemeral journey navigation; no DOM/storage.
 - `js/backup.js` — pure versioned profile serialization, inspection, backward-
@@ -253,6 +262,25 @@
   and are covered by the manifest/check command.
 - The selected family is ephemeral UI state. Do not add a localStorage key for
   browsing preferences.
+
+## Radical Alchemy conventions
+
+- Keep Alchemy inside the Kanji library rather than adding another primary
+  tab. Closing returns focus to its doorway; revealed answers reuse the one
+  delegated `[data-kanji-tree]` route.
+- A formula must have exactly two distinct, single-glyph direct labelled
+  KanjiVG components, and its sorted pair must resolve to one dictionary kanji.
+  Never ask an ambiguous formula or imply the components are an etymology.
+- Today’s Brew is deterministic by local date and normally selects one target
+  from each JLPT level N5 through N1. Distractors are dictionary kanji, and the
+  correct target must always remain among the four choices.
+- Challenge position, choices, answers, and score are session-only. Add no
+  storage key, profile field, or content-bearing usage event for the lab.
+- Use only `data/kanji-families.json` to prepare questions. Loading the lab must
+  not fetch `data/kanjivg.json`; that artifact remains lazy behind Radical Tree.
+- Visual feedback must include text and symbols in addition to color. Preserve
+  44px phone controls, number-key answers, bounded arrow navigation, Escape,
+  focus restoration, and a still `prefers-reduced-motion` path.
 
 ## Kanji family study conventions
 

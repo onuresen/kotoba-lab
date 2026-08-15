@@ -27,6 +27,10 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
   an on’yomi, kun’yomi, canonical radical, or direct visual component. On large
   screens the library expands into a denser five-card workspace.
+- **Radical Alchemy:** enter a daily five-formula challenge from the Kanji
+  library, combine two direct visual components, choose the resulting kanji,
+  and reveal dictionary details plus the exact KanjiVG evidence. Each brew
+  spans N5–N1, stays session-only, and hands every answer to Radical Tree.
 - **Family study:** turn any selected kanji family into a focused reveal
   session with progress, previous/next and keyboard navigation, shuffle and
   restart, known-state controls, and direct Radical Tree access.
@@ -103,9 +107,9 @@ application usable when those fonts are unavailable.
 ## Future idea garden
 
 The project keeps its imaginative long-term directions in
-[IDEA_GARDEN.md](IDEA_GARDEN.md). The first exploration track is Radical
-Alchemy, Kanji Genealogy, Japanese Detective Board, and Kanji Constellation
-Atlas; these are staged experiments, not committed release promises.
+[IDEA_GARDEN.md](IDEA_GARDEN.md). Radical Alchemy and Kanji Constellation Atlas
+have begun as bounded experiments; Kanji Genealogy and Japanese Detective
+Board remain ideas rather than release promises.
 
 ## Run locally
 
@@ -160,6 +164,7 @@ palettes/                 Kotoba Lab color palette
 js/                      application modules and tests
 js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 js/kanji-atlas.js        bounded component constellation graph, layout, and UI
+js/kanji-alchemy.js      deterministic component recipes and session state
 js/backup.js             versioned full-profile export, inspection, and merge
 js/profile-dashboard.js  local data metrics and category-reset helpers
 js/usage-journal.js      opt-in, payload-free local activity counters

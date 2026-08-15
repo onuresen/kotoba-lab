@@ -20,6 +20,14 @@ component coloring, KanjiVG, and existing family-study interactions.
 First experiment: one daily five-question `component + component → kanji`
 challenge with explainable answers and direct Radical Tree handoff.
 
+Group A is implemented in v10.18.0 as a doorway inside the Kanji library. The
+date-seeded Today’s Brew selects one unambiguous direct-component formula from
+each JLPT level, offers four kanji choices, and explains every reveal from the
+committed compact KanjiVG index. The alchemy circle and ingredient vessels are
+code-native, responsive, and reduced-motion safe. Scores and position remain
+session-only, the full stroke artifact stays lazy until Radical Tree opens,
+and the wording describes visual structure rather than historical etymology.
+
 ### 2. Kanji Genealogy
 
 Show an explainable lineage from component → kanji → word → sentence, with
