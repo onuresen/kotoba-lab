@@ -1699,9 +1699,12 @@ p.hint { margin: 8px 0 0; }
   border-color: var(--accent-glow);
   box-shadow: var(--shadow-sm), inset 0 1px 0 var(--paper-glow);
 }
-.head-action-icon { font-family: var(--font-display); font-size: 17px; line-height: 1; }
+/* Mirrors .tab-icon: desktop shows the text label only, phones show the glyph.
+   Never show both, so the control reads like the tabs at every width. */
+.head-action-icon { display: none; font-family: var(--font-display); font-size: 17px; line-height: 1; }
 
 @media (max-width: 780px) {
+  .head-action-icon { display: block; font-size: 21px; }
   .head-action-label { display: none; }
   .head-action { padding-inline: 12px; }
 }

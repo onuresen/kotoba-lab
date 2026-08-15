@@ -45,12 +45,13 @@
         <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" id="tab-due" hidden></span></button>
         <button class="tab" data-tab="mywords"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
       </nav>
-      <!-- Profile & Data is deliberately not a tab: it never enters the mobile
-           bottom bar, which stays at six columns. aria-label is required because
-           the glyph is aria-hidden and the text label is display:none on phones. -->
-      <button type="button" class="head-action" data-tab="profile" aria-label="Data">
-        <span class="head-action-icon" aria-hidden="true">守</span>
-        <span class="head-action-label">Data</span>
+      <!-- Settings is deliberately not a tab: it never enters the mobile bottom
+           bar, which stays at six columns. Icon and label swap the same way the
+           tabs do — text on desktop, glyph on phones — so aria-label carries the
+           name at the width where the label is hidden. -->
+      <button type="button" class="head-action" data-tab="profile" aria-label="Settings">
+        <span class="head-action-icon" aria-hidden="true">設</span>
+        <span class="head-action-label">Settings</span>
       </button>
     </div>
   </div>
@@ -384,7 +385,7 @@
   </section>
 
   <!-- MY WORDS -->
-  <section class="panel" data-panel="mywords" data-layout="wide" id="mywords-panel">
+  <section class="panel" data-panel="mywords" id="mywords-panel">
     <div class="card">
       <div class="ui-section-header">
         <span class="ui-section-title">Known</span>
@@ -447,7 +448,7 @@
     </div>
   </section>
 
-  <section class="panel" data-panel="profile" data-layout="wide" id="profile-panel">
+  <section class="panel" data-panel="profile" id="profile-panel">
     <div class="card profile-data-card">
       <div class="ui-section-header">
         <span class="ui-section-title">Profile &amp; Data</span>

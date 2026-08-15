@@ -94,7 +94,7 @@
   installable to an Android home screen.
 - Profile & Data is ✓ its own panel: application-level data management left the
   My Words study tab and now lives at `[data-panel="profile"]`, reached from a
-  守 Data control in the header. It deliberately has no slot in the bottom tab
+  Settings control in the header. It deliberately has no slot in the bottom tab
   bar, so the mobile bar stays at six columns. My Words keeps Known, Saved deck,
   and Portable Study Packs.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
@@ -236,9 +236,15 @@
 - Keep `--layout-reading`, `--layout-data`, and `--layout-visual` as the shared
   width contract. Do not scatter new panel-specific desktop widths through the
   stylesheet.
+- A panel goes wide only when its content genuinely needs the room: a dense
+  browsing grid or a spatial canvas. Kanji uses the data width; Relations
+  overrides that shared limit with the visual width. Everything else — Analyze,
+  Read, Review, My Words, and Settings — stays at the reading measure, because
+  reading columns, card lists, and tables are all more legible narrow.
 - Only panels explicitly marked `data-layout="wide"` may escape the reading
-  measure. Kanji and My Words use the data width; Relations overrides that
-  shared limit with the visual width. Analyze, Read, and Review stay narrow.
+  measure, and there are exactly two. Do not add a third without a content
+  reason that survives the test above; "it has a table" is not one, since
+  Analyze holds the same table markup at the reading measure.
 - Wide workspaces begin above the 1080 px reading measure and must not create
   page overflow. Tablet and phone behavior remains governed by the existing
   responsive rules rather than separate narrow-screen width overrides.
@@ -275,7 +281,7 @@
 ## Mobile interface conventions
 
 - At 780px and below, keep the six primary tabs in the fixed bottom bar and
-  leave the sticky header for compact branding plus the 守 Data control. Respect
+  leave the sticky header for compact branding plus the Settings control. Respect
   safe-area insets and reserve enough main-content padding that the bar never
   covers actions.
 - Profile & Data is a headed panel, not a tab. It is reached from the header
