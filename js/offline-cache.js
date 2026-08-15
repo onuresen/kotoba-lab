@@ -33,6 +33,7 @@ const JS_MODULES = Object.freeze([
   'js/kanji-study.js',
   'js/kanjitree.js',
   'js/kanjivg.js',
+  'js/milestones.js',
   'js/offline-cache.js',
   'js/profile-dashboard.js',
   'js/read.js',
