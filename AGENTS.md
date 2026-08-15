@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.21.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.22.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -92,6 +92,11 @@
   Profile & Data. Updates are version-stamped and offered through an explicit
   reload prompt so no ephemeral session is destroyed. The application is
   installable to an Android home screen.
+- Profile & Data is ✓ its own panel: application-level data management left the
+  My Words study tab and now lives at `[data-panel="profile"]`, reached from a
+  守 Data control in the header. It deliberately has no slot in the bottom tab
+  bar, so the mobile bar stays at six columns. My Words keeps Known, Saved deck,
+  and Portable Study Packs.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -175,6 +180,9 @@
   caches on activate, apply the imported strategies on fetch, and accept only
   `SKIP_WAITING`. Holds no path list of its own.
 - `manifest.webmanifest` — installable metadata; every path relative.
+- `index.html` `[data-panel="profile"]` — Profile & Data panel: summary,
+  dashboard, reset, usage journal, friction radar, report, offline availability,
+  backup actions, and import preview. Reached only from the header control.
 - `assets/icons/` — 192/512 any-purpose and 512 full-bleed maskable icons.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
@@ -266,9 +274,20 @@
 
 ## Mobile interface conventions
 
-- At 780px and below, keep the five primary tabs in the fixed bottom bar and
-  leave the sticky header for compact branding. Respect safe-area insets and
-  reserve enough main-content padding that the bar never covers actions.
+- At 780px and below, keep the six primary tabs in the fixed bottom bar and
+  leave the sticky header for compact branding plus the 守 Data control. Respect
+  safe-area insets and reserve enough main-content padding that the bar never
+  covers actions.
+- Profile & Data is a headed panel, not a tab. It is reached from the header
+  control and must never gain a bottom-bar slot; the bar stays at six columns.
+  Its button carries `data-tab` but never the `.tab` class, and `switchTab()`
+  selects `[data-tab]` so the header control receives `is-active` and
+  `aria-current` through the same path as the real tabs. The control needs an
+  explicit `aria-label` because its glyph is `aria-hidden` and its text label is
+  `display: none` on phones.
+- Anything that changes cards or known state must refresh both `renderMyWords()`
+  and `renderProfilePanel()`. They read the same stores but render separately,
+  and a missed call shows a stale count rather than failing visibly.
 - Tab changes return phone layouts to the top of the new workspace and keep
   `aria-current` synchronized with the active panel.
 - Sample passages swipe horizontally on phones. Primary touch controls should

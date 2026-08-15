@@ -69,10 +69,17 @@ test('only GET requests are ever intercepted', () => {
 });
 
 test('activate discards stale version caches and keeps the current one', async () => {
+  // Derived from package.json rather than hardcoded: naming a literal version
+  // here makes the test fail on every release even though the worker is correct.
+  const version = JSON.parse(readFileSync(`${root}package.json`, 'utf8')).version;
+  const current = `kotoba-lab:v${version}`;
+  const stale = ['kotoba-lab:v0.0.1', 'kotoba-lab:v9.9.9', 'unrelated-cache'];
+
   deletedCaches = [];
-  cacheKeys = ['kotoba-lab:v10.19.0', 'kotoba-lab:v10.20.0', 'kotoba-lab:v10.21.0', 'unrelated-cache'];
+  cacheKeys = [...stale, current];
   await new Promise((resolve) => handlers.activate({ waitUntil: (p) => p.then(resolve) }));
-  assert.deepEqual(deletedCaches.sort(), ['kotoba-lab:v10.19.0', 'kotoba-lab:v10.20.0', 'unrelated-cache']);
+  assert.deepEqual(deletedCaches.sort(), [...stale].sort());
+  assert.equal(deletedCaches.includes(current), false);
 });
 
 test('the worker accepts only the SKIP_WAITING message', () => {

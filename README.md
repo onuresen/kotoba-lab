@@ -84,7 +84,8 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Adaptive workspace width:** data-heavy Kanji, Relations, and My Words views
   use the available desktop space, while Analyze, Read, and Review retain a
   focused reading measure. Tablet and phone layouts keep their existing flow.
-- **Profile & Data:** export the complete local study profile as versioned JSON,
+- **Profile & Data:** a dedicated panel, opened with 守 Data in the header, that
+  exports the complete local study profile as versioned JSON,
   inspect an import before it writes anything, then merge safely or explicitly
   replace local cards, schedules, known items, and review history. A local-data
   dashboard separates new/due/scheduled cards, known collections, review

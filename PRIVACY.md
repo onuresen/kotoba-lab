@@ -10,8 +10,8 @@ analytics, advertising, application backend, or cloud synchronization.
 - Saved cards, review scheduling, known words, known kanji, and review history
   are stored in your browser's `localStorage`.
 - Saved cards may include the sentence in which a word was encountered.
-- Clearing site data removes this local state. Use **Profile & Data** in
-  **My Words** if you want to retain or move it.
+- Clearing site data removes this local state. Use **Profile & Data**, opened
+  with 守 Data in the header, if you want to retain or move it.
 - Full profile exports include saved sentence context because it belongs to
   saved cards. Portable study packs contain kanji dictionary metadata only and
   exclude schedules, known state, review history, pasted text, and sentences.
