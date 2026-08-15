@@ -779,7 +779,10 @@ function onInfoAction(e) {
 // Call after any known/saved-state mutation: re-tints the reading view,
 // refreshes the coverage meter (from already-computed stats, no re-tokenize),
 // and refreshes the My Words tab.
-function refreshKnownEverywhere() {
+// skipKanjiBrowser is for the one case where the grid is already correct:
+// toggling a card's own known button. Rebuilding all 60 cards replays their
+// staggered entrance animation, which reads as the whole page flashing.
+function refreshKnownEverywhere({ skipKanjiBrowser = false } = {}) {
   if (current) {
     applyKnownClasses($('#reading'), isKnown);
     renderCoverage(current.kStats, current.wStats);
@@ -790,7 +793,7 @@ function refreshKnownEverywhere() {
   }
   renderMyWords();
   renderProfilePanel();
-  renderKanjiBrowser();
+  if (!skipKanjiBrowser) renderKanjiBrowser();
   refreshReview();
   kanjiMap?.update();
   relationsMap?.update();
@@ -885,7 +888,7 @@ function kanjiCard(item) {
     <span class="kanji-card-copy">
       <strong>${esc(item.meaning || 'Meaning unavailable')}</strong>
       <span class="kanji-card-reading">${esc(reading || 'No readings listed')}</span>
-      <span class="kanji-card-meta">${item.strokes} strokes${known ? ' · ✓ Known' : ''}</span>
+      <span class="kanji-card-meta" data-strokes="${item.strokes}">${item.strokes} strokes${known ? ' · ✓ Known' : ''}</span>
     </span>
     <span class="badge" data-status="${item.jlpt == null ? 'archive' : 'reference'}">${level}</span>
   </button><div class="kanji-card-actions"><button type="button" class="kanji-card-known" data-kanji-known="${esc(item.char)}" title="${known ? `Unmark ${esc(item.char)} as known` : `Mark ${esc(item.char)} as known — updates your coverage meter and Words you can now read`}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(item.char)} as known"><span aria-hidden="true">✓</span> Known</button><button type="button" class="kanji-card-map" data-kanji-map="${esc(item.char)}" title="Open the Relationship Map for ${esc(item.char)}" aria-label="Open relationship map for ${esc(item.char)}"><span aria-hidden="true">↗</span> Map</button></div></div>`;
@@ -1825,6 +1828,23 @@ function renderReadableCompounds() {
   host.innerHTML = words.map(wordRowMarkup).join('');
 }
 
+// Updates just the card that was toggled. Mirrors the known-state parts of the
+// card template above; if that markup changes, change this with it.
+function patchKanjiCardKnown(button, char) {
+  const wrap = button.closest('.kanji-card-wrap');
+  if (!wrap) return;
+  const known = knownKanji.has(char);
+  button.setAttribute('aria-pressed', String(known));
+  button.setAttribute('aria-label', `${known ? 'Unmark' : 'Mark'} ${char} as known`);
+  button.setAttribute('title', known
+    ? `Unmark ${char} as known`
+    : `Mark ${char} as known — updates your coverage meter and Words you can now read`);
+  const card = wrap.querySelector('.kanji-card');
+  if (card) card.dataset.known = String(known);
+  const meta = wrap.querySelector('.kanji-card-meta');
+  if (meta) meta.textContent = `${meta.dataset.strokes} strokes${known ? ' · ✓ Known' : ''}`;
+}
+
 // Vocabulary lookup: the counterpart to the Kanji library's search, so a word
 // is reachable without waiting for it to turn up in pasted text.
 function renderWordLookup() {
@@ -2399,7 +2419,11 @@ function wireUi() {
       if (target && [...target].length === 1) {
         knownKanji.toggle(target);
         usageJournal.record('known.change');
-        refreshKnownEverywhere();
+        // A known-state filter decides which cards belong in the results, so it
+        // still needs the full rebuild. Otherwise the grid is already right.
+        const filtered = $('#kanji-known')?.value !== 'all';
+        if (!filtered) patchKanjiCardKnown(knownToggle, target);
+        refreshKnownEverywhere({ skipKanjiBrowser: !filtered });
       }
       return;
     }

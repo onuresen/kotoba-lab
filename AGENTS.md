@@ -388,6 +388,13 @@
   hiragana/katakana and punctuation-insensitive readings.
 - Filters add no persisted preferences. Known/unknown uses the existing
   `kotoba-lab:known-kanji` set.
+- Toggling a card's own known button patches that card in place and passes
+  `skipKanjiBrowser` to `refreshKnownEverywhere()`. Rebuilding the grid replays
+  the staggered entrance animation on every card, which reads as the page
+  flashing — unbearable when marking several kanji in a row. `patchKanjiCardKnown()`
+  mirrors the known-state parts of the card template, so the two change together.
+  When a known-state filter is active the grid must still rebuild, because the
+  filter decides which cards belong in the results at all.
 - `buildKanjiFamilies()` owns family membership. Exact strokes are
   single-membership; on’yomi and kun’yomi are multi-membership, so one kanji
   may appear in several reading families.
