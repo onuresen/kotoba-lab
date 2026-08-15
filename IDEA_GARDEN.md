@@ -36,6 +36,15 @@ ink bloom, seal stamping, and completion sparkle add restrained feedback while
 the reduced-motion path is completely still. No meaning, component, kanji, or
 control is baked into the generated backdrop.
 
+Group C is implemented in v10.20.0 as Expanded Recipe Studies. Missing
+Ingredient asks for one concealed direct component, Reverse Brewing asks for
+the complete two-component formula, and Transformation Chain follows a result
+only when that kanji becomes a direct ingredient in the next verified recipe.
+All modes support an unknown-only target filter, answer-level known controls,
+and the same explicit KanjiVG evidence. A session-only recipe trail can open as
+an ordinary temporary reveal-card study pass; it disappears when the learner
+leaves and adds no score, streak, storage key, or profile field.
+
 ### 2. Kanji Genealogy
 
 Show an explainable lineage from component → kanji → word → sentence, with

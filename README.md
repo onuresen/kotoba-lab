@@ -27,10 +27,12 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
   an on’yomi, kun’yomi, canonical radical, or direct visual component. On large
   screens the library expands into a denser five-card workspace.
-- **Radical Alchemy:** enter a daily five-formula challenge from the Kanji
-  library, combine two direct visual components, choose the resulting kanji,
-  and reveal dictionary details plus the exact KanjiVG evidence. Each brew
-  spans N5–N1, stays session-only, and hands every answer to Radical Tree. A
+- **Radical Alchemy:** enter the laboratory from the Kanji library and practice
+  result brewing, missing ingredients, reverse recipes, or short transformation
+  chains. Every formula comes from an unambiguous pair of direct KanjiVG
+  components and can be filtered to unknown kanji. The session-only recipe trail
+  can become a temporary reveal-card study pass; known-state and Radical Tree
+  controls remain available on each answer. A
   text-free illustrated workbench, crisp SVG laboratory symbols, ingredient
   bubbles, ink blooms, seal reveals, and a still reduced-motion path give the
   lab its own visual identity without putting study information inside images.

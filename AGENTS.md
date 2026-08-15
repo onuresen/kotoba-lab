@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.19.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.20.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -78,6 +78,12 @@
   vessel pours, ink bloom, seal stamping, and completion sparkle remain
   restrained and become fully static under reduced motion. Study meaning and
   controls stay in accessible HTML rather than the generated image.
+- Radical Alchemy Group C is ✓ Done: result, missing-ingredient, reverse, and
+  short transformation-chain modes all derive from the same unambiguous direct
+  component recipes. An all/unknown target filter, answer-level known controls,
+  and a session-only recipe trail support different study intentions. The trail
+  can open in the existing temporary reveal-card workspace and adds no score,
+  streak, profile field, or storage key.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -297,6 +303,14 @@
 - Keep functional Alchemy symbols in `alchemy-icons.svg` with `currentColor`
   strokes. Do not replace ingredient glyphs, results, or controls with raster
   artwork. Any added motion must be included in the reduced-motion shutdown.
+- Missing Ingredient may hide only one of the verified pair; Reverse Brewing
+  must offer complete verified pairs. A transformation chain is valid only when
+  each result glyph is one of the next recipe's two direct components.
+- Known filtering limits question targets, not the evidence-safe distractor
+  pool. Do not silently remove a current question after its known state changes.
+- Recipe history lives only on the open Alchemy session. Its temporary study
+  handoff deduplicates brewed target kanji and reuses `createKanjiStudySession`;
+  leaving the lab or study must not write history or scores anywhere.
 
 ## Kanji family study conventions
 

@@ -65,7 +65,7 @@ import {
 import {
   alchemyProgress,
   answerAlchemyQuestion,
-  buildDailyAlchemyChallenge,
+  buildAlchemyChallenge,
   createAlchemySession,
   currentAlchemyQuestion,
   moveAlchemyQuestion,
@@ -86,7 +86,7 @@ delete window.__kotobaBootFallback;
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.19.0';
+const APP_VERSION = '10.20.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -908,6 +908,7 @@ function renderKanjiStudy(focusAction = '') {
   const contrast = kanjiStudySession.kind === 'contrast';
   const mix = kanjiStudySession.kind === 'mix';
   const atlasStudy = kanjiStudySession.mode === 'atlas';
+  const alchemyStudy = kanjiStudySession.mode === 'alchemy';
   const phoneticAnswer = phonetic ? kanjiStudySession.answers.get(item.char) : null;
   const contrastPrompt = contrast ? contrastQuestion(kanjiStudySession) : null;
   const contrastAnswer = contrast ? kanjiStudySession.answers.get(item.char) : null;
@@ -917,7 +918,7 @@ function renderKanjiStudy(focusAction = '') {
   const feedbackState = answerResult === true ? 'correct' : answerResult === false ? 'incorrect' : 'neutral';
   workspace.innerHTML = `
     <div class="kanji-study-head">
-      <div><span class="eyebrow">${mix ? 'Family Mix Challenge' : contrast ? 'Contrast Lab' : phonetic ? 'Phonetic Component Lab' : atlasStudy ? 'Constellation study' : 'Family study'}</span><h3>${esc(kanjiStudySession.label)}</h3></div>
+      <div><span class="eyebrow">${mix ? 'Family Mix Challenge' : contrast ? 'Contrast Lab' : phonetic ? 'Phonetic Component Lab' : atlasStudy ? 'Constellation study' : alchemyStudy ? 'Alchemy study' : 'Family study'}</span><h3>${esc(kanjiStudySession.label)}</h3></div>
       <button type="button" class="btn btn-ghost" data-kanji-study-action="close">Close study</button>
     </div>
     <div class="kanji-study-status">
@@ -976,7 +977,7 @@ function renderKanjiStudy(focusAction = '') {
       <button type="button" class="btn btn-ghost" data-kanji-study-action="shuffle">Shuffle & restart</button>
       ${atlasStudy ? '<button type="button" class="btn btn-ghost" data-kanji-study-action="return-atlas">Return to Atlas</button>' : ''}
     </div>
-    <p class="hint kanji-study-keys">${mix ? 'Interleaved, balanced questions · Ambiguous multi-family members are excluded.' : contrast ? 'Meaning and uniquely identifying on’yomi clues alternate when the set supports them.' : phonetic ? `Signal confidence: ${kanjiStudySession.confidence}% in this filtered family · Pattern evidence, not an etymology claim.` : atlasStudy ? 'Temporary unknown-star pass · Keyboard: ←/→ move · Space reveals · Return to the same Atlas when ready.' : 'Keyboard: ←/→ move · Space reveals.'}</p>`;
+    <p class="hint kanji-study-keys">${mix ? 'Interleaved, balanced questions · Ambiguous multi-family members are excluded.' : contrast ? 'Meaning and uniquely identifying on’yomi clues alternate when the set supports them.' : phonetic ? `Signal confidence: ${kanjiStudySession.confidence}% in this filtered family · Pattern evidence, not an etymology claim.` : atlasStudy ? 'Temporary unknown-star pass · Keyboard: ←/→ move · Space reveals · Return to the same Atlas when ready.' : alchemyStudy ? 'Temporary recipe-trail pass · Keyboard: ←/→ move · Space reveals · nothing is saved.' : 'Keyboard: ←/→ move · Space reveals.'}</p>`;
   if (focusAction) (focusAction === 'contrast-choice' || focusAction === 'mix-choice'
     ? workspace.querySelector(focusAction === 'mix-choice' ? '[data-kanji-mix-choice]' : '[data-kanji-study-choice]')
     : workspace.querySelector(`[data-kanji-study-action="${focusAction}"]`))?.focus();
@@ -1112,6 +1113,36 @@ function setKanjiAlchemyVisibility(open) {
   $('#kanji-more').hidden = true;
 }
 
+const ALCHEMY_MODE_LABELS = Object.freeze({
+  result: 'Today’s Brew', missing: 'Missing Ingredient', reverse: 'Reverse Brewing', chain: 'Transformation Chain',
+});
+
+function alchemyChoiceValue(choice) {
+  return String(choice?.value ?? choice?.char ?? '');
+}
+
+function alchemyQuestionPresentation(question, answer) {
+  const revealed = !!answer;
+  if (question.mode === 'missing') {
+    const ingredients = question.ingredients.map((ingredient, index) => index === question.missingIndex && !revealed ? '？' : ingredient);
+    return { ingredients, core: question.target.char, label: 'Supply the missing ingredient', prompt: `Which component completes ${ingredients[0]} ＋ ${ingredients[1]} → ${question.target.char}?` };
+  }
+  if (question.mode === 'reverse') {
+    return { ingredients: revealed ? question.ingredients : ['？', '？'], core: question.target.char, label: 'Choose the recipe', prompt: `Which pair does KanjiVG list directly inside ${question.target.char}?` };
+  }
+  return {
+    ingredients: question.ingredients,
+    core: revealed ? question.target.char : '？',
+    label: question.mode === 'chain' ? `Chain step ${question.chain.position} of ${question.chain.total}` : 'Choose the result',
+    prompt: question.mode === 'chain' ? 'Which kanji continues this visual transformation?' : 'Which kanji contains both visual components?',
+  };
+}
+
+function renderAlchemyHistory(history) {
+  if (!history.length) return '';
+  return `<div class="alchemy-history"><div><span class="label">Session recipe trail</span><span>${history.length} attempt${history.length === 1 ? '' : 's'} · disappears when you leave</span></div><ol aria-label="Session recipe history">${history.slice(-8).map((entry) => `<li data-correct="${entry.correct}"><span>${esc(entry.ingredients.join('＋'))}</span><strong>${esc(entry.target.char)}</strong><i aria-hidden="true">${entry.correct ? '✓' : '×'}</i></li>`).join('')}</ol></div>`;
+}
+
 function renderKanjiAlchemy(focusTarget = '') {
   const workspace = $('#kanji-alchemy-workspace');
   if (!workspace || !kanjiAlchemyOpen) return;
@@ -1127,44 +1158,62 @@ function renderKanjiAlchemy(focusTarget = '') {
   const level = levelName(question.target.jlpt);
   const selected = answer?.choice || '';
   const completion = progress.complete && kanjiAlchemySession.index === progress.total - 1;
-  const choiceState = (char) => !answer ? 'ready' : char === question.target.char ? 'correct' : char === selected ? 'incorrect' : 'dimmed';
+  const presentation = alchemyQuestionPresentation(question, answer);
+  const isKnownTarget = knownKanji.has(question.target.char);
+  const choiceState = (value) => !answer ? 'ready' : value === question.answer ? 'correct' : value === selected ? 'incorrect' : 'dimmed';
   workspace.innerHTML = `
     <div class="alchemy-head">
       <div><span class="eyebrow">Radical Alchemy · ${esc(kanjiAlchemySession.date)}</span><h3>${alchemyIcon('book', 'alchemy-head-icon')}${esc(kanjiAlchemySession.title)}</h3></div>
       <button type="button" class="btn btn-ghost" data-alchemy-action="close">Leave lab</button>
     </div>
+    <div class="alchemy-modebar" role="toolbar" aria-label="Alchemy study modes">
+      <div class="alchemy-modes">${Object.entries(ALCHEMY_MODE_LABELS).map(([mode, label]) => `<button type="button" class="btn ${kanjiAlchemySession.mode === mode ? 'btn-primary' : 'btn-ghost'}" data-alchemy-mode="${mode}" aria-pressed="${kanjiAlchemySession.mode === mode}">${esc(label)}</button>`).join('')}</div>
+      <button type="button" class="btn btn-ghost alchemy-filter" data-alchemy-action="filter" aria-pressed="${kanjiAlchemySession.knownFilter === 'unknown'}">${kanjiAlchemySession.knownFilter === 'unknown' ? 'Unknown only' : 'All kanji'}</button>
+    </div>
     <div class="alchemy-status">
       <span>Formula ${progress.current} of ${progress.total}</span>
       <span>${progress.correct} correct · ${progress.answered} brewed</span>
     </div>
-    <div class="alchemy-progress" data-complete="${progress.complete}" role="progressbar" aria-label="Today’s Brew progress" aria-valuemin="0" aria-valuemax="${progress.total}" aria-valuenow="${progress.answered}"><span style="width:${Math.round(progress.answered / progress.total * 100)}%"></span></div>
-    ${completion ? `<div class="alchemy-complete">${alchemyIcon('spark', 'alchemy-complete-icon')}<div><strong>Brew complete — ${progress.correct} / ${progress.total}</strong><p>You can inspect any formula again or reset today’s brew. Nothing was saved.</p></div></div>` : ''}
-    <div class="alchemy-stage" data-revealed="${!!answer}" data-result="${answer ? (answer.correct ? 'correct' : 'incorrect') : 'waiting'}">
-      <div class="alchemy-apparatus" aria-label="Ingredient ${esc(question.ingredients[0])} plus ingredient ${esc(question.ingredients[1])}">
-        <div class="alchemy-vessel alchemy-vessel-left">${alchemyIcon('flask', 'alchemy-vessel-icon')}<span class="label">Ingredient I</span><strong>${esc(question.ingredients[0])}</strong><span class="alchemy-bubbles" aria-hidden="true"><i></i><i></i><i></i></span></div>
-        <div class="alchemy-circle" aria-hidden="true">${alchemyIcon('circle', 'alchemy-circle-icon')}<span class="alchemy-ring"></span><span class="alchemy-core">${answer ? esc(question.target.char) : '？'}</span></div>
-        <div class="alchemy-vessel alchemy-vessel-right">${alchemyIcon('flask', 'alchemy-vessel-icon')}<span class="label">Ingredient II</span><strong>${esc(question.ingredients[1])}</strong><span class="alchemy-bubbles" aria-hidden="true"><i></i><i></i><i></i></span></div>
-        <span class="alchemy-plus alchemy-plus-left" aria-hidden="true">＋</span><span class="alchemy-plus alchemy-plus-right" aria-hidden="true">＋</span>
+    <div class="alchemy-progress" data-complete="${progress.complete}" role="progressbar" aria-label="${esc(kanjiAlchemySession.title)} progress" aria-valuemin="0" aria-valuemax="${progress.total}" aria-valuenow="${progress.answered}"><span style="width:${Math.round(progress.answered / progress.total * 100)}%"></span></div>
+    ${question.chain ? `<div class="alchemy-chain" aria-label="Transformation chain">${question.chain.glyphs.map((glyph, index) => `<span data-current="${index + 1 === question.chain.position}">${esc(glyph)}</span>${index < question.chain.glyphs.length - 1 ? '<i aria-hidden="true">→</i>' : ''}`).join('')}</div>` : ''}
+    ${completion ? `<div class="alchemy-complete">${alchemyIcon('spark', 'alchemy-complete-icon')}<div><strong>Brew complete — ${progress.correct} / ${progress.total}</strong><p>Inspect formulas, study your trail, or begin another mode. No score is saved.</p></div></div>` : ''}
+    <div class="alchemy-stage" data-mode="${question.mode}" data-revealed="${!!answer}" data-result="${answer ? (answer.correct ? 'correct' : 'incorrect') : 'waiting'}">
+      <div class="alchemy-apparatus" aria-label="${esc(presentation.ingredients[0])} plus ${esc(presentation.ingredients[1])} produces ${esc(presentation.core)}">
+        <div class="alchemy-vessel alchemy-vessel-left">${alchemyIcon('flask', 'alchemy-vessel-icon')}<span class="label">Ingredient I</span><strong>${esc(presentation.ingredients[0])}</strong><span class="alchemy-bubbles" aria-hidden="true"><i></i><i></i><i></i></span></div>
+        <div class="alchemy-circle" aria-hidden="true">${alchemyIcon('circle', 'alchemy-circle-icon')}<span class="alchemy-ring"></span><span class="alchemy-core">${esc(presentation.core)}</span></div>
+        <div class="alchemy-vessel alchemy-vessel-right">${alchemyIcon('flask', 'alchemy-vessel-icon')}<span class="label">Ingredient II</span><strong>${esc(presentation.ingredients[1])}</strong><span class="alchemy-bubbles" aria-hidden="true"><i></i><i></i><i></i></span></div>
+        <span class="alchemy-plus alchemy-plus-left" aria-hidden="true">＋</span><span class="alchemy-plus alchemy-plus-right" aria-hidden="true">→</span>
       </div>
       <div class="alchemy-question">
-        <div><span class="label">Choose the result</span><h4>Which kanji contains both visual components?</h4></div>
-        <div class="alchemy-choices" role="group" aria-label="Kanji choices">
-          ${question.choices.map((choice, index) => `<button type="button" class="alchemy-choice jlpt-${levelSlug(choice.jlpt)}" data-alchemy-choice="${esc(choice.char)}" data-state="${choiceState(choice.char)}" ${answer ? 'disabled' : ''}><span class="alchemy-choice-key">${index + 1}</span><strong>${esc(choice.char)}</strong><span>${esc(choice.meaning || 'Meaning unavailable')}</span></button>`).join('')}
+        <div><span class="label">${esc(presentation.label)}</span><h4>${esc(presentation.prompt)}</h4></div>
+        <div class="alchemy-choices" role="group" aria-label="Formula choices">
+          ${question.choices.map((choice, index) => { const value = alchemyChoiceValue(choice); return `<button type="button" class="alchemy-choice ${question.mode === 'reverse' ? 'is-formula' : ''} jlpt-${levelSlug(choice.jlpt)}" data-alchemy-choice="${esc(value)}" data-state="${choiceState(value)}" ${answer ? 'disabled' : ''}><span class="alchemy-choice-key">${index + 1}</span><strong>${esc(choice.glyph || value)}</strong><span>${esc(choice.label || 'Visual component')}</span></button>`; }).join('')}
         </div>
         ${answer ? `<div class="alchemy-reveal" data-correct="${answer.correct}">
-          <div class="alchemy-verdict">${alchemyIcon(answer.correct ? 'seal' : 'crucible', 'alchemy-verdict-icon')}<div><span class="label">Transmutation result</span><strong>${answer.correct ? 'Formula balanced' : `Not quite — the result is ${esc(question.target.char)}`}</strong></div></div>
+          <div class="alchemy-verdict">${alchemyIcon(answer.correct ? 'seal' : 'crucible', 'alchemy-verdict-icon')}<div><span class="label">Transmutation result</span><strong>${answer.correct ? 'Formula balanced' : `Not quite — ${esc(question.ingredients.join(' ＋ '))} forms ${esc(question.target.char)}`}</strong></div></div>
           <div class="alchemy-recipe"><span class="alchemy-recipe-glyph jlpt-${levelSlug(question.target.jlpt)}">${esc(question.target.char)}</span><div><strong>${esc(question.target.meaning)}</strong><p>${question.target.strokes} strokes · ${esc(level)}</p><p>On’yomi ${esc(question.target.on || '—')} · Kun’yomi ${esc(question.target.kun || '—')}</p></div></div>
           <p class="alchemy-evidence">KanjiVG lists <strong>${esc(question.ingredients[0])}</strong> and <strong>${esc(question.ingredients[1])}</strong> as the two direct labelled components of <strong>${esc(question.target.char)}</strong>. This describes visual structure, not historical etymology.</p>
-        </div>` : '<p class="hint alchemy-hint">Select with the buttons or keys 1–4. Every formula uses an unambiguous two-component pair from the committed KanjiVG index.</p>'}
+        </div>` : '<p class="hint alchemy-hint">Select with the buttons or keys 1–4. Every answer comes from an unambiguous two-component pair in the committed KanjiVG index.</p>'}
       </div>
     </div>
     <div class="alchemy-actions">
       <button type="button" class="btn btn-ghost" data-alchemy-action="previous" ${kanjiAlchemySession.index === 0 ? 'disabled' : ''}>← Previous</button>
-      ${answer ? `<button type="button" class="btn btn-ghost" data-kanji-tree="${esc(question.target.char)}">Open Radical Tree</button>` : ''}
+      ${answer ? `<button type="button" class="btn btn-ghost" data-alchemy-action="known">${isKnownTarget ? '✓ Known' : 'Mark known'}</button><button type="button" class="btn btn-ghost" data-kanji-tree="${esc(question.target.char)}">Open Radical Tree</button>` : ''}
       ${completion ? '<button type="button" class="btn btn-primary" data-alchemy-action="restart">Brew again</button>' : `<button type="button" class="btn btn-primary" data-alchemy-action="next" ${!answer || kanjiAlchemySession.index === progress.total - 1 ? 'disabled' : ''}>Next formula →</button>`}
-    </div>`;
+    </div>
+    ${renderAlchemyHistory(kanjiAlchemySession.history)}
+    <div class="alchemy-study-handoff"><div><span class="label">Turn the trail into recall</span><p>Open the kanji you brewed in the existing temporary reveal-card workspace.</p></div><button type="button" class="btn btn-ghost" data-alchemy-action="study-history" ${kanjiAlchemySession.history.length ? '' : 'disabled'}>Study recipe trail</button></div>`;
   if (focusTarget === 'choice') workspace.querySelector('[data-alchemy-choice]')?.focus({ preventScroll: true });
-  else if (focusTarget) workspace.querySelector(`[data-alchemy-action="${focusTarget}"]`)?.focus({ preventScroll: true });
+  else if (focusTarget) workspace.querySelector(`[data-alchemy-action="${focusTarget}"], [data-alchemy-mode="${focusTarget}"]`)?.focus({ preventScroll: true });
+}
+
+function startAlchemyChallenge(mode, knownFilter, history = []) {
+  const challenge = buildAlchemyChallenge(kanjiCatalog, kanjiStructureIndex, {
+    mode, knownFilter, knownChars: knownKanji.all(),
+  });
+  if (!challenge) return false;
+  kanjiAlchemySession = createAlchemySession(challenge, history);
+  return !!kanjiAlchemySession;
 }
 
 async function openKanjiAlchemy(trigger) {
@@ -1180,9 +1229,7 @@ async function openKanjiAlchemy(trigger) {
   try {
     const structureIndex = await loadKanjiStructureIndex();
     if (!kanjiAlchemyOpen) return;
-    const challenge = buildDailyAlchemyChallenge(kanjiCatalog, structureIndex);
-    kanjiAlchemySession = createAlchemySession(challenge);
-    if (!kanjiAlchemySession) throw new Error('Not enough unambiguous component recipes were found.');
+    if (!startAlchemyChallenge('result', 'all')) throw new Error('Not enough unambiguous component recipes were found.');
     renderKanjiAlchemy('choice');
   } catch (error) {
     console.error(error);
@@ -1209,6 +1256,16 @@ function onKanjiAlchemyAction(event) {
     renderKanjiAlchemy(progress.complete ? 'restart' : 'next');
     return;
   }
+  const modeButton = event.target.closest('[data-alchemy-mode]');
+  if (modeButton && kanjiAlchemySession) {
+    const history = kanjiAlchemySession.history;
+    if (!startAlchemyChallenge(modeButton.dataset.alchemyMode, kanjiAlchemySession.knownFilter, history)) {
+      toast('No evidence-safe recipes match that mode and filter yet.', 'error');
+      return;
+    }
+    renderKanjiAlchemy('choice');
+    return;
+  }
   const button = event.target.closest('[data-alchemy-action]');
   if (!button || !kanjiAlchemyOpen) return;
   const action = button.dataset.alchemyAction;
@@ -1220,6 +1277,33 @@ function onKanjiAlchemyAction(event) {
   } else if (action === 'restart') {
     kanjiAlchemySession = restartAlchemySession(kanjiAlchemySession);
     renderKanjiAlchemy('choice');
+  } else if (action === 'filter') {
+    const history = kanjiAlchemySession.history;
+    const knownFilter = kanjiAlchemySession.knownFilter === 'unknown' ? 'all' : 'unknown';
+    if (!startAlchemyChallenge(kanjiAlchemySession.mode, knownFilter, history)) {
+      toast('No transformation chain matches the unknown-only filter. Try All kanji.', 'error');
+      return;
+    }
+    renderKanjiAlchemy('choice');
+  } else if (action === 'known') {
+    const question = currentAlchemyQuestion(kanjiAlchemySession);
+    const known = knownKanji.toggle(question.target.char);
+    usageJournal.record('known.change');
+    refreshKnownEverywhere();
+    renderKanjiAlchemy('known');
+    toast(known ? 'Marked known.' : 'Unmarked.', 'success');
+  } else if (action === 'study-history') {
+    const seen = new Set();
+    const rows = kanjiAlchemySession.history.map((entry) => entry.target).filter((item) => !seen.has(item.char) && seen.add(item.char));
+    const session = createKanjiStudySession({ key: 'alchemy-history', label: 'Alchemy recipe trail', rows }, 'alchemy');
+    if (!session) return;
+    kanjiAlchemyOpen = false;
+    kanjiAlchemySession = null;
+    kanjiAlchemyReturnFocus = null;
+    setKanjiAlchemyVisibility(false);
+    kanjiStudySession = session;
+    renderKanjiStudy('reveal');
+    revealKanjiWorkspace();
   }
 }
 
@@ -1229,7 +1313,7 @@ function onKanjiAlchemyKey(event) {
     const choice = currentAlchemyQuestion(kanjiAlchemySession).choices[Number(event.key) - 1];
     if (!choice) return;
     event.preventDefault();
-    kanjiAlchemySession = answerAlchemyQuestion(kanjiAlchemySession, choice.char);
+    kanjiAlchemySession = answerAlchemyQuestion(kanjiAlchemySession, alchemyChoiceValue(choice));
     const progress = alchemyProgress(kanjiAlchemySession);
     renderKanjiAlchemy(progress.complete ? 'restart' : 'next');
   } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
