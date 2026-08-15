@@ -4,8 +4,8 @@
 const FEATURE_GROUPS = Object.freeze([
   { key: 'analyze', label: 'Analyze', glyph: '析', events: ['tab.analyze', 'analyze.run'] },
   { key: 'read', label: 'Read', glyph: '読', events: ['tab.read', 'known.change'] },
-  { key: 'kanji', label: 'Kanji', glyph: '漢', events: ['tab.kanji', 'tree.open', 'study.family', 'study.pack'] },
-  { key: 'relations', label: 'Relations', glyph: '縁', events: ['tab.relations', 'relations.open'] },
+  { key: 'kanji', label: 'Kanji', glyph: '漢', events: ['tab.kanji', 'tree.open', 'study.family', 'study.pack', 'study.atlas'] },
+  { key: 'relations', label: 'Relations', glyph: '縁', events: ['tab.relations', 'relations.open', 'atlas.open'] },
   { key: 'review', label: 'Review', glyph: '復', events: ['tab.review', 'review.answer'] },
   { key: 'data', label: 'Data', glyph: '守', events: ['tab.mywords', 'profile.export', 'pack.export', 'report.export'] },
 ]);
@@ -57,13 +57,13 @@ export function buildUsageInsights(summary = {}, profile = {}) {
     });
   }
 
-  const exploration = countOf(events, 'tree.open') + countOf(events, 'relations.open');
-  const practice = countOf(events, 'study.family') + countOf(events, 'study.pack');
+  const exploration = countOf(events, 'tree.open') + countOf(events, 'relations.open') + countOf(events, 'atlas.open');
+  const practice = countOf(events, 'study.family') + countOf(events, 'study.pack') + countOf(events, 'study.atlas');
   if (exploration >= 6 && practice === 0) {
     signals.push({
       id: 'explore-to-study', tone: 'gentle', title: 'Exploration is not becoming practice yet',
-      body: 'Radical Tree and Relations get attention, but no family or pack study session is recorded. One explored family could become a short drill.',
-      actionTab: 'kanji', actionLabel: 'Choose a Kanji family',
+      body: 'Radical Tree, Relations, or the Atlas get attention, but no family, pack, or constellation study session is recorded. One explored family could become a short drill.',
+      actionTab: 'relations', actionLabel: 'Open Relations',
     });
   }
 

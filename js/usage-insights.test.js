@@ -42,6 +42,15 @@ test('repeated relationship exploration without study suggests a family drill', 
   assert.equal(result.signals.some((item) => item.id === 'explore-to-study'), true);
 });
 
+test('Atlas exploration and its study handoff feed the same friction signal', () => {
+  const stalled = buildUsageInsights(summary({ 'atlas.open': 6 }));
+  assert.equal(stalled.signals.some((item) => item.id === 'explore-to-study'), true);
+  const practicing = buildUsageInsights(summary({ 'atlas.open': 6, 'study.atlas': 1 }));
+  assert.equal(practicing.signals.some((item) => item.id === 'explore-to-study'), false);
+  assert.equal(practicing.featureMix.find((feature) => feature.key === 'relations').count, 6);
+  assert.equal(practicing.featureMix.find((feature) => feature.key === 'kanji').count, 1);
+});
+
 test('balanced activity produces a neutral positive result', () => {
   const result = buildUsageInsights(summary({
     'analyze.run': 2, 'tab.read': 2, 'tree.open': 2, 'study.family': 1, 'review.answer': 2,

@@ -53,6 +53,15 @@ test('the fixed report export event is allowed without accepting report content'
   assert.deepEqual(journal.summary().events, { 'report.export': 1 });
 });
 
+test('Atlas events are fixed coarse counters and reject embedded study details', () => {
+  const journal = createUsageJournal({ storage: fakeStorage(), now: () => NOW });
+  journal.setEnabled(true);
+  assert.equal(journal.record('atlas.open'), true);
+  assert.equal(journal.record('study.atlas'), true);
+  assert.equal(journal.record('study.atlas.青'), false);
+  assert.deepEqual(journal.summary().events, { 'atlas.open': 1, 'study.atlas': 1 });
+});
+
 test('state survives reload, can pause without deletion, and can be reset', () => {
   const storage = fakeStorage();
   const first = createUsageJournal({ storage, now: () => NOW });

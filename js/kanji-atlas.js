@@ -156,6 +156,57 @@ export function buildConstellationReadingRoutes(index, stars, options = {}) {
   return routes;
 }
 
+export function buildAtlasStudyFamily(constellation, isKnown = () => false) {
+  const rows = (constellation?.stars || []).filter((star) => !isKnown(star.char));
+  if (!constellation?.component || !rows.length) return null;
+  return {
+    key: `atlas:${constellation.component}`,
+    label: `${constellation.component} constellation · unknown stars`,
+    rows,
+    totalRows: rows.length,
+  };
+}
+
+export function buildAtlasChallenges(index, constellation, routes = []) {
+  const stars = constellation?.stars || [];
+  if (!index?.attributes || !constellation?.component || stars.length < 3) return [];
+  const challenges = [];
+  const distractors = [...new Set(stars.flatMap((star) => index.attributes.get(star.char)?.component || []))]
+    .filter((value) => value !== constellation.component)
+    .sort((a, b) => a.localeCompare(b, 'ja'));
+  if (distractors.length) {
+    const context = stars.slice(0, 3).map((star) => star.char);
+    challenges.push({
+      id: `component:${constellation.component}`,
+      kind: 'component',
+      prompt: `${context.join('・')} all share which direct visual component?`,
+      options: [constellation.component, ...distractors.slice(0, 2)].sort((a, b) => a.localeCompare(b, 'ja')),
+      answer: constellation.component,
+      explanation: `KanjiVG lists ${constellation.component} as a direct component in every visible star.`,
+    });
+  }
+  const seenReadings = new Set();
+  for (const route of routes) {
+    const id = `${route.kind}:${route.key}`;
+    if (seenReadings.has(id)) continue;
+    seenReadings.add(id);
+    const matches = stars.filter((star) => (index.attributes.get(star.char)?.[route.kind] || []).includes(route.key));
+    const exceptions = stars.filter((star) => !(index.attributes.get(star.char)?.[route.kind] || []).includes(route.key));
+    if (matches.length < 2 || !exceptions.length) continue;
+    const options = [...matches.slice(0, 2), exceptions[0]].sort(familyOrder).map((star) => star.char);
+    challenges.push({
+      id,
+      kind: 'reading-exception',
+      prompt: `Which kanji does not list ${route.label}?`,
+      options,
+      answer: exceptions[0].char,
+      explanation: `${matches.slice(0, 2).map((star) => star.char).join(' and ')} list ${route.label}; ${exceptions[0].char} is the exception in this set.`,
+    });
+    if (challenges.length >= 6) break;
+  }
+  return challenges;
+}
+
 function levelLabel(level) {
   return Number(level) >= 1 && Number(level) <= 5 ? `N${level}` : '—';
 }
@@ -179,6 +230,20 @@ function detailMarkup(item, { root, known, canToggleKnown, canOpenTree, routes =
   </article>`;
 }
 
+function challengeMarkup(challenge, { position = 0, total = 0, choice = '' } = {}) {
+  if (!challenge) return '<div class="ka-detail-empty"><span>✦</span><p>No quick challenge is available in this sky yet.</p></div>';
+  const answered = Boolean(choice);
+  const correct = choice === challenge.answer;
+  return `<article class="ka-challenge" data-answered="${answered}" data-correct="${correct}">
+    <header><div><span class="label">ATLAS QUICK CHALLENGE</span><h3>${challenge.kind === 'component' ? 'Find the shared component' : 'Spot the reading exception'}</h3></div><button type="button" class="btn btn-ghost" data-ka-action="challenge-close" aria-label="Close Atlas challenge">×</button></header>
+    <p class="ka-challenge-count">Challenge ${position + 1} of ${total}</p>
+    <p class="ka-challenge-prompt">${esc(challenge.prompt)}</p>
+    <div class="ka-challenge-options" role="group" aria-label="Challenge choices">${challenge.options.map((option) => `<button type="button" class="btn" data-ka-challenge-choice="${esc(option)}" data-selected="${choice === option}" data-answer="${answered && option === challenge.answer}" ${answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div>
+    ${answered ? `<div class="ka-challenge-result" role="status"><strong>${correct ? 'Correct — route found.' : `Not quite — the answer is ${esc(challenge.answer)}.`}</strong><p>${esc(challenge.explanation)}</p></div>` : '<p class="hint">Nothing is scored or stored. Follow the visible evidence and make a choice.</p>'}
+    <button type="button" class="btn ${answered ? 'btn-primary' : 'btn-ghost'}" data-ka-action="challenge-next" ${answered ? '' : 'disabled'}>${answered ? 'Next challenge →' : 'Choose an answer'}</button>
+  </article>`;
+}
+
 export function createKanjiAtlasView({
   mount,
   index,
@@ -188,6 +253,8 @@ export function createKanjiAtlasView({
   onOpenRelations = () => {},
   onOpenTree = null,
   onNewRoot = () => {},
+  onStartStudy = null,
+  onExportPack = null,
   onRender = () => {},
 } = {}) {
   if (typeof document === 'undefined') throw new Error('createKanjiAtlasView requires a document.');
@@ -205,6 +272,7 @@ export function createKanjiAtlasView({
       </div>
     </header>
     <div class="ka-overview" aria-live="polite"></div>
+    <div class="ka-study-bar" aria-live="polite"></div>
     <div class="ka-explorer"><aside class="ka-detail" aria-live="polite"></aside><div class="ka-viewport"><div class="ka-stage"></div></div></div>
     <p class="ka-caption hint">Solid spokes mean “contains this direct visual component.” Dashed routes mean a shared dictionary reading. Illuminated stars are kanji already marked known.</p>
   </section>`;
@@ -212,6 +280,7 @@ export function createKanjiAtlasView({
   const title = shell.querySelector('.ka-title');
   const picker = shell.querySelector('[data-ka-component]');
   const overview = shell.querySelector('.ka-overview');
+  const studyBar = shell.querySelector('.ka-study-bar');
   const viewport = shell.querySelector('.ka-viewport');
   const stage = shell.querySelector('.ka-stage');
   const detail = shell.querySelector('.ka-detail');
@@ -223,6 +292,9 @@ export function createKanjiAtlasView({
   let selected = '';
   let zoom = 1;
   let showRoutes = true;
+  let challengeOpen = false;
+  let challengeIndex = 0;
+  let challengeChoice = '';
   let graph = null;
 
   function selectedItem() {
@@ -231,6 +303,14 @@ export function createKanjiAtlasView({
   }
 
   function renderDetail() {
+    if (challengeOpen) {
+      const challenges = graph?.challenges || [];
+      challengeIndex = challenges.length ? challengeIndex % challenges.length : 0;
+      detail.innerHTML = challengeMarkup(challenges[challengeIndex], {
+        position: challengeIndex, total: challenges.length, choice: challengeChoice,
+      });
+      return;
+    }
     const item = selectedItem();
     selected = item?.char || '';
     const routes = showRoutes ? (graph?.routes || []).filter((route) => route.from === selected || route.to === selected) : [];
@@ -277,6 +357,7 @@ export function createKanjiAtlasView({
       picker.replaceChildren();
       picker.disabled = true;
       overview.innerHTML = '<span>No shared direct-component family is available.</span>';
+      studyBar.replaceChildren();
       stage.innerHTML = '<div class="ka-empty"><strong>No shared component sky yet</strong><span>Try another kanji in Neighborhood or Two-hop network.</span></div>';
       detail.innerHTML = detailMarkup(null);
       onRender(null);
@@ -290,9 +371,16 @@ export function createKanjiAtlasView({
     if (!graph.stars.some((star) => star.char === selected)) selected = graph.stars[0]?.char || '';
     const layout = layoutComponentConstellation(graph);
     graph.routes = buildConstellationReadingRoutes(index, graph.stars);
+    graph.studyFamily = buildAtlasStudyFamily(graph, isKnown);
+    graph.challenges = buildAtlasChallenges(index, graph, graph.routes);
     const knownCount = graph.stars.filter((star) => isKnown(star.char)).length;
     title.textContent = `${component} — component constellation`;
     overview.innerHTML = `<span><b>${graph.stars.length}</b> visible stars</span><span><b>${knownCount}</b> illuminated</span><span><b>${graph.routes.length}</b> reading routes</span><span><b>${graph.total}</b> in this component family</span>${graph.truncated ? '<span>Bounded for clarity</span>' : ''}`;
+    const studyCount = graph.studyFamily?.rows.length || 0;
+    studyBar.innerHTML = `<div><button type="button" class="btn btn-primary" data-ka-action="study" ${studyCount && typeof onStartStudy === 'function' ? '' : 'disabled'}>${studyCount ? `Study ${studyCount} unknown` : 'All visible stars known'}</button>
+      <button type="button" class="btn btn-ghost" data-ka-action="export" ${typeof onExportPack === 'function' ? '' : 'disabled'}>Export constellation</button>
+      <button type="button" class="btn btn-ghost" data-ka-action="challenge" ${graph.challenges.length ? '' : 'disabled'}>Quick challenge</button></div>
+      <p>Temporary practice · exports contain dictionary fields only · challenge answers are not stored.</p>`;
     const byChar = new Map(layout.map((star) => [star.char, star]));
     const lines = layout.map((star) => `<line x1="50" y1="50" x2="${star.x}" y2="${star.y}" data-char="${esc(star.char)}" data-known="${isKnown(star.char)}" data-selected="${star.char === selected}" />`).join('');
     const readingRoutes = graph.routes.map((route) => {
@@ -319,15 +407,19 @@ export function createKanjiAtlasView({
     return true;
   }
 
-  function open(char) {
+  function open(char, { preserveComponent = false } = {}) {
     if (!char || !index.byChar.has(char)) return false;
+    const preserve = preserveComponent && char === root;
     root = char;
-    component = '';
-    selected = char;
-    return render();
+    if (!preserve) component = '';
+    if (!preserve) selected = char;
+    challengeOpen = false;
+    challengeIndex = 0;
+    challengeChoice = '';
+    return render({ preserveScroll: preserve, preserveSelection: preserve });
   }
 
-  picker.addEventListener('change', () => { component = picker.value; selected = root; render(); });
+  picker.addEventListener('change', () => { component = picker.value; selected = root; challengeOpen = false; challengeIndex = 0; challengeChoice = ''; render(); });
   phoneQuery.addEventListener?.('change', () => applyZoom({ preserveCenter: false }));
   shell.addEventListener('focusin', (event) => {
     const star = event.target.closest('[data-ka-char]');
@@ -335,7 +427,13 @@ export function createKanjiAtlasView({
   });
   shell.addEventListener('click', (event) => {
     const star = event.target.closest('[data-ka-char]');
-    if (star) { selected = star.dataset.kaChar; renderDetail(); return; }
+    if (star) { selected = star.dataset.kaChar; challengeOpen = false; renderDetail(); return; }
+    const challengeChoiceButton = event.target.closest('[data-ka-challenge-choice]');
+    if (challengeChoiceButton && challengeOpen && !challengeChoice) {
+      challengeChoice = challengeChoiceButton.dataset.kaChallengeChoice;
+      renderDetail();
+      return;
+    }
     const action = event.target.closest('[data-ka-action]')?.dataset.kaAction;
     const control = event.target.closest('[data-ka-control]')?.dataset.kaControl;
     if (control) {
@@ -352,7 +450,37 @@ export function createKanjiAtlasView({
       return;
     }
     const item = selectedItem();
-    if (!action || !item) return;
+    if (!action) return;
+    if (action === 'study' && graph?.studyFamily && typeof onStartStudy === 'function') {
+      onStartStudy(graph.studyFamily);
+      return;
+    }
+    if (action === 'export' && graph && typeof onExportPack === 'function') {
+      onExportPack({ title: `${component} constellation`, source: 'atlas', items: graph.stars });
+      return;
+    }
+    if (action === 'challenge') {
+      challengeOpen = true;
+      challengeChoice = '';
+      renderDetail();
+      detail.querySelector('[data-ka-challenge-choice]')?.focus();
+      return;
+    }
+    if (action === 'challenge-close') {
+      challengeOpen = false;
+      challengeChoice = '';
+      renderDetail();
+      studyBar.querySelector('[data-ka-action="challenge"]')?.focus();
+      return;
+    }
+    if (action === 'challenge-next' && challengeChoice && graph?.challenges?.length) {
+      challengeIndex = (challengeIndex + 1) % graph.challenges.length;
+      challengeChoice = '';
+      renderDetail();
+      detail.querySelector('[data-ka-challenge-choice]')?.focus();
+      return;
+    }
+    if (!item) return;
     if (action === 'known' && typeof toggleKnown === 'function') {
       const known = toggleKnown(item.char);
       render({ preserveScroll: true, preserveSelection: true });

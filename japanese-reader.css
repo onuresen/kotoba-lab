@@ -729,6 +729,9 @@ kbd {
 .ka-overview { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; padding: 10px 16px; background: var(--surface-sunken); border-bottom: 1px solid var(--border); }
 .ka-overview span { padding: 5px 9px; color: var(--text2); font-size: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill); }
 .ka-overview b { color: var(--accent2-text); font-family: var(--font-mono); }
+.ka-study-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 16px; background: color-mix(in srgb, var(--accent2) 5%, var(--surface)); border-bottom: 1px solid var(--border); }
+.ka-study-bar > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.ka-study-bar p { max-width: 390px; margin: 0; color: var(--text3); font-size: 10px; line-height: 1.45; text-align: right; }
 .ka-explorer { display: grid; grid-template-columns: minmax(0, 1fr) 286px; min-height: 640px; }
 .ka-viewport { min-width: 0; grid-column: 1; grid-row: 1; overflow-x: auto; overflow-y: hidden; background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent2) 8%, var(--surface-raised)) 0, var(--surface-warm) 44%, var(--surface-sunken) 100%); scrollbar-width: thin; }
 .ka-stage { position: relative; width: 980px; height: 640px; margin: 0 auto; }
@@ -784,6 +787,21 @@ kbd {
 .ka-detail-empty { min-height: 300px; display: grid; place-content: center; gap: 8px; color: var(--text3); text-align: center; }
 .ka-detail-empty span { color: var(--accent2-text); font-family: var(--font-display); font-size: 42px; }
 .ka-detail-empty p { max-width: 190px; margin: 0; font-size: 12px; }
+.ka-challenge { display: flex; flex-direction: column; gap: 14px; }
+.ka-challenge header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ka-challenge header h3 { margin: 5px 0 0; font-family: var(--font-display); font-size: 18px; }
+.ka-challenge header .btn { min-width: 38px; padding-inline: 10px; }
+.ka-challenge-count { margin: 0; color: var(--text3); font: 600 9px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+.ka-challenge-prompt { margin: 0; color: var(--text); font-family: var(--font-display); font-size: 18px; line-height: 1.45; }
+.ka-challenge-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.ka-challenge-options .btn { min-width: 0; min-height: 48px; padding: 8px; font-family: var(--font-display); font-size: 22px; }
+.ka-challenge-options .btn[data-answer="true"] { color: var(--success); background: color-mix(in srgb, var(--success) 11%, var(--surface)); border-color: color-mix(in srgb, var(--success) 44%, var(--border)); opacity: 1; }
+.ka-challenge-options .btn[data-selected="true"][data-answer="false"] { color: var(--danger); background: color-mix(in srgb, var(--danger) 9%, var(--surface)); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); opacity: 1; }
+.ka-challenge-result { padding: 11px; color: var(--text2); background: var(--surface); border-left: 3px solid var(--success); border-radius: var(--r-sm); }
+.ka-challenge[data-correct="false"] .ka-challenge-result { border-left-color: var(--accent); }
+.ka-challenge-result strong { color: var(--text); font-size: 12px; }
+.ka-challenge-result p { margin: 5px 0 0; font-size: 10px; line-height: 1.5; }
+.ka-challenge > .btn { min-height: 44px; }
 .ka-caption { margin: 0; padding: 10px 16px; text-align: center; background: var(--surface); border-top: 1px solid var(--border); }
 .ka-empty { position: absolute; inset: 0; display: grid; place-content: center; gap: 6px; color: var(--text2); text-align: center; }
 .ka-empty strong { font-family: var(--font-display); font-size: 20px; }
@@ -1122,6 +1140,11 @@ body.krm-open { overflow: hidden; }
   .ka-overview { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .ka-overview::-webkit-scrollbar { display: none; }
   .ka-overview span { flex: 0 0 auto; }
+  .ka-study-bar { align-items: stretch; flex-direction: column; gap: 7px; padding: 10px 12px; }
+  .ka-study-bar > div { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .ka-study-bar .btn { min-height: 44px; white-space: normal; }
+  .ka-study-bar .btn:first-child { grid-column: 1 / -1; }
+  .ka-study-bar p { max-width: none; text-align: left; }
   .ka-explorer { display: flex; min-height: 0; flex-direction: column; }
   .ka-detail { position: sticky; top: 62px; z-index: 4; order: 0; padding: 12px; overflow: visible; background: color-mix(in srgb, var(--surface2) 94%, transparent); border: 0; border-bottom: 1px solid var(--border); box-shadow: var(--shadow-md); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   .ka-detail-card { gap: 9px; }
@@ -1138,6 +1161,11 @@ body.krm-open { overflow: hidden; }
   .ka-detail-evidence { display: none; }
   .ka-detail-actions { grid-template-columns: 1fr 1fr; gap: 6px; }
   .ka-detail-actions .btn { min-height: 44px; padding-inline: 7px; white-space: normal; }
+  .ka-challenge { gap: 10px; }
+  .ka-challenge header h3 { font-size: 16px; }
+  .ka-challenge header .btn { min-height: 44px; }
+  .ka-challenge-prompt { font-size: 16px; }
+  .ka-challenge-options .btn { min-height: 48px; }
   .ka-viewport { overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
   .ka-stage { width: 840px; height: 580px; }
   .ka-sky { width: 840px; height: 580px; }

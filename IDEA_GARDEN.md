@@ -71,6 +71,16 @@ Small route-travel, center-breathing, and known-star-twinkle cues add life
 without moving the deterministic star layout, and all motion is disabled for
 reduced-motion preferences. The Atlas still adds no profile or storage field.
 
+Group D is implemented in v10.15.0 as the study loop. Unknown visible stars can
+open as a temporary constellation study session with an explicit route back to
+the same Atlas. Every visible star can also be exported through the existing
+private-data-free study-pack format. Small, unscored challenges ask for the
+shared direct component or an exact dictionary-reading exception and explain
+the evidence after each choice. The opt-in journal adds only fixed
+`atlas.open` and `study.atlas` counts, allowing the existing friction radar and
+aggregate report to recognize exploration-to-practice handoffs without storing
+kanji, components, readings, choices, or a new profile field.
+
 ## Remaining creative seeds
 
 All of these remain worth revisiting after the first exploration track produces

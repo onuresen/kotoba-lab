@@ -61,6 +61,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   selected component while bounded dashed routes expose shared on’yomi and
   kun’yomi; routes can be hidden and the sky zooms from 80–120%. Subtle motion
   brings the map to life and switches off for reduced-motion preferences.
+  Study the currently unknown stars in a temporary session, return directly to
+  the same sky, export its visible kanji as a private-data-free study pack, or
+  try short shared-component and reading-exception challenges with no score.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
 - **Profile & Data:** export the complete local study profile as versioned JSON,
@@ -76,7 +79,7 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   report can be previewed, copied, or downloaded when you want to discuss those
   patterns without sharing the raw journal or study content.
 - **Portable Study Packs:** export kanji from the current text, a selected
-  family, or a Relations network without personal progress; imported packs open
+  family, a Relations network, or the visible Atlas without personal progress; imported packs open
   directly as temporary Kanji study sessions.
 - **Text import:** open plain-text and Aozora Bunko files, including Shift-JIS
   decoding and common markup cleanup.

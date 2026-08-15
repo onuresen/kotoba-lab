@@ -9,7 +9,7 @@ const SIGNAL_COPY = Object.freeze({
   collecting: ['Still learning your rhythm', 'More ordinary use is needed before the pattern is meaningful.'],
   'review-ready': ['A review queue is waiting', 'Due cards exist, but no review answers appear in the journal window.'],
   'analysis-handoff': ['Analysis may be the stopping point', 'Analyze is used much more often than Read.'],
-  'explore-to-study': ['Exploration is not becoming practice yet', 'Tree and relationship exploration has not yet led into a family or pack study session.'],
+  'explore-to-study': ['Exploration is not becoming practice yet', 'Tree, relationship, and Atlas exploration has not yet led into a family, pack, or constellation study session.'],
   'brief-sessions': ['Sessions are staying brief', 'Recent use resembles quick reference more than longer study.'],
   'clear-path': ['No strong friction pattern yet', 'The aggregate feature mix does not show an obvious stalled handoff.'],
 });

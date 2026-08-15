@@ -5,7 +5,7 @@ export const USAGE_STORAGE_KEY = 'kotoba-lab:usage-journal';
 export const USAGE_JOURNAL_VERSION = 1;
 export const USAGE_EVENTS = Object.freeze([
   'tab.analyze', 'tab.read', 'tab.kanji', 'tab.relations', 'tab.review', 'tab.mywords',
-  'analyze.run', 'tree.open', 'relations.open', 'study.family', 'study.pack',
+  'analyze.run', 'tree.open', 'relations.open', 'atlas.open', 'study.family', 'study.pack', 'study.atlas',
   'review.answer', 'profile.export', 'pack.export', 'known.change',
   'report.export',
 ]);

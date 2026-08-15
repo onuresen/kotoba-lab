@@ -76,7 +76,7 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const APP_VERSION = '10.14.0';
+const APP_VERSION = '10.15.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -415,7 +415,7 @@ async function loadRelationsWorkspace() {
   return relationsPromise;
 }
 
-async function setRelationsView(view, { focus = true } = {}) {
+async function setRelationsView(view, { focus = true, preserveAtlas = false } = {}) {
   relationsView = ['network', 'atlas'].includes(view) ? view : 'map';
   const map = await loadRelationsWorkspace();
   const mapHost = $('#relations-map-host');
@@ -459,6 +459,23 @@ async function setRelationsView(view, { focus = true } = {}) {
         renderRelationsSearch();
         $('#relations-status').textContent = `${char} is now the Atlas root inside the ${detail.component} direct-component constellation.`;
       },
+      onStartStudy: (family) => {
+        stopKanjiStudy();
+        kanjiBrowseActiveFamily = family;
+        kanjiStudySession = createKanjiStudySession(family, 'atlas');
+        if (!kanjiStudySession) return;
+        usageJournal.record('study.atlas');
+        switchTab('kanji');
+        renderKanjiStudy('reveal');
+        revealKanjiWorkspace();
+        toast(`Studying ${family.rows.length} unknown stars from the ${family.key.replace('atlas:', '')} constellation.`, 'success');
+      },
+      onExportPack: ({ title, source, items }) => {
+        const content = serializeStudyPack({ title, source, items }, Date.now(), { appVersion: APP_VERSION });
+        download(studyPackFilename(title), content, 'application/json');
+        usageJournal.record('pack.export');
+        toast(`Exported ${items.length} visible stars as a private-data-free study pack.`, 'success');
+      },
       onRender: (graph) => {
         if (!graph) {
           $('#relations-status').textContent = 'This kanji has no shared direct-component family in the compact index.';
@@ -481,7 +498,8 @@ async function setRelationsView(view, { focus = true } = {}) {
     relationsNetwork.open(char);
     $('#relations-status').textContent = `Exploring ${char} across two relationship hops. Expand a direct branch for more context.`;
   } else if (relationsView === 'atlas') {
-    relationsAtlas.open(char);
+    usageJournal.record('atlas.open');
+    relationsAtlas.open(char, { preserveComponent: preserveAtlas });
   } else {
     map.open(char, null);
     $('#relations-status').textContent = `Exploring ${char}. Select a connected kanji to make it the new center.`;
@@ -871,6 +889,7 @@ function renderKanjiStudy(focusAction = '') {
   const phonetic = kanjiStudySession.kind === 'phonetic';
   const contrast = kanjiStudySession.kind === 'contrast';
   const mix = kanjiStudySession.kind === 'mix';
+  const atlasStudy = kanjiStudySession.mode === 'atlas';
   const phoneticAnswer = phonetic ? kanjiStudySession.answers.get(item.char) : null;
   const contrastPrompt = contrast ? contrastQuestion(kanjiStudySession) : null;
   const contrastAnswer = contrast ? kanjiStudySession.answers.get(item.char) : null;
@@ -880,7 +899,7 @@ function renderKanjiStudy(focusAction = '') {
   const feedbackState = answerResult === true ? 'correct' : answerResult === false ? 'incorrect' : 'neutral';
   workspace.innerHTML = `
     <div class="kanji-study-head">
-      <div><span class="eyebrow">${mix ? 'Family Mix Challenge' : contrast ? 'Contrast Lab' : phonetic ? 'Phonetic Component Lab' : 'Family study'}</span><h3>${esc(kanjiStudySession.label)}</h3></div>
+      <div><span class="eyebrow">${mix ? 'Family Mix Challenge' : contrast ? 'Contrast Lab' : phonetic ? 'Phonetic Component Lab' : atlasStudy ? 'Constellation study' : 'Family study'}</span><h3>${esc(kanjiStudySession.label)}</h3></div>
       <button type="button" class="btn btn-ghost" data-kanji-study-action="close">Close study</button>
     </div>
     <div class="kanji-study-status">
@@ -937,8 +956,9 @@ function renderKanjiStudy(focusAction = '') {
       <button type="button" class="btn btn-ghost" data-kanji-tree="${esc(item.char)}">Open Radical Tree</button>
       <button type="button" class="btn btn-ghost" data-kanji-map="${esc(item.char)}">Relationship Map</button>` : ''}
       <button type="button" class="btn btn-ghost" data-kanji-study-action="shuffle">Shuffle & restart</button>
+      ${atlasStudy ? '<button type="button" class="btn btn-ghost" data-kanji-study-action="return-atlas">Return to Atlas</button>' : ''}
     </div>
-    <p class="hint kanji-study-keys">${mix ? 'Interleaved, balanced questions · Ambiguous multi-family members are excluded.' : contrast ? 'Meaning and uniquely identifying on’yomi clues alternate when the set supports them.' : phonetic ? `Signal confidence: ${kanjiStudySession.confidence}% in this filtered family · Pattern evidence, not an etymology claim.` : 'Keyboard: ←/→ move · Space reveals.'}</p>`;
+    <p class="hint kanji-study-keys">${mix ? 'Interleaved, balanced questions · Ambiguous multi-family members are excluded.' : contrast ? 'Meaning and uniquely identifying on’yomi clues alternate when the set supports them.' : phonetic ? `Signal confidence: ${kanjiStudySession.confidence}% in this filtered family · Pattern evidence, not an etymology claim.` : atlasStudy ? 'Temporary unknown-star pass · Keyboard: ←/→ move · Space reveals · Return to the same Atlas when ready.' : 'Keyboard: ←/→ move · Space reveals.'}</p>`;
   if (focusAction) (focusAction === 'contrast-choice' || focusAction === 'mix-choice'
     ? workspace.querySelector(focusAction === 'mix-choice' ? '[data-kanji-mix-choice]' : '[data-kanji-study-choice]')
     : workspace.querySelector(`[data-kanji-study-action="${focusAction}"]`))?.focus();
@@ -1003,6 +1023,16 @@ function onKanjiStudyAction(event) {
     stopKanjiStudy();
     renderKanjiBrowser();
     $('#kanji-study-start').focus();
+    return;
+  }
+  if (action === 'return-atlas' && kanjiStudySession.mode === 'atlas') {
+    stopKanjiStudy();
+    renderKanjiStudy();
+    switchTab('relations');
+    setRelationsView('atlas', { preserveAtlas: true }).catch((error) => {
+      console.error(error);
+      toast('Could not reopen the Atlas — try the Relations tab.', 'error');
+    });
     return;
   }
   if (action === 'previous' || action === 'next') {

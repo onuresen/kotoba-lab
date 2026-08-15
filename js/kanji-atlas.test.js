@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  buildAtlasChallenges,
+  buildAtlasStudyFamily,
   buildComponentConstellation,
   buildConstellationReadingRoutes,
   componentConstellationChoices,
@@ -67,6 +69,31 @@ test('reading routes are visible-only, deterministic, explainable, and bounded',
   assert.ok(first.every((route) => stars.some((star) => star.char === route.from) && stars.some((star) => star.char === route.to)));
   assert.equal(new Set(first.map((route) => [route.from, route.to].sort().join(':'))).size, first.length);
   assert.deepEqual(buildConstellationReadingRoutes(index, stars.slice(0, 1)), []);
+});
+
+test('Atlas study snapshots only unknown visible stars without persistence metadata', () => {
+  const graph = buildComponentConstellation(fixture(), '青', { rootChar: '晴' });
+  const family = buildAtlasStudyFamily(graph, (char) => char === '晴' || char === '清');
+  assert.equal(family.key, 'atlas:青');
+  assert.equal(family.label, '青 constellation · unknown stars');
+  assert.deepEqual(family.rows.map((row) => row.char), ['情', '静']);
+  assert.equal('progress' in family, false);
+  assert.equal(buildAtlasStudyFamily(graph, () => true), null);
+});
+
+test('Atlas challenges explain the shared component and a real reading exception', () => {
+  const index = fixture();
+  const graph = buildComponentConstellation(index, '青', { rootChar: '晴' });
+  const routes = buildConstellationReadingRoutes(index, graph.stars);
+  const challenges = buildAtlasChallenges(index, graph, routes);
+  const component = challenges.find((challenge) => challenge.kind === 'component');
+  const exception = challenges.find((challenge) => challenge.kind === 'reading-exception');
+  assert.equal(component.answer, '青');
+  assert.ok(component.options.includes('青'));
+  assert.equal(exception.answer, '情');
+  assert.match(exception.prompt, /セイ on’yomi/);
+  assert.ok(exception.options.includes('情'));
+  assert.deepEqual(buildAtlasChallenges(null, graph, routes), []);
 });
 
 test('the full 24-star layout does not overlap desktop cards', () => {

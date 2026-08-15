@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.14.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.15.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -44,7 +44,7 @@
   The optional bounded two-hop view balances structural and reading branches,
   supports branch expansion, root changes, zoom/reset, Radical Tree doorways,
   and clustered mobile swipe lanes without replacing the one-hop default.
-- Kanji Constellation Atlas Groups A–C are ✓ Done: an experimental third Relations
+- Kanji Constellation Atlas Groups A–D are ✓ Done: an experimental third Relations
   view projects one selected direct-component family into a deterministic,
   bounded 24-star sky. Existing known-kanji state illuminates stars, unfamiliar
   stars stay quiet, and each star returns to its normal one-hop neighborhood.
@@ -55,6 +55,10 @@
   sit beside bounded dashed reading routes; learners can hide those routes and
   zoom the sky from 80–120%. Gentle route, center, and known-star motion makes
   the sky feel alive while the reduced-motion path remains completely still.
+  The final study loop opens unknown visible stars as a temporary constellation
+  session, returns directly to the same Atlas, exports all visible stars through
+  the existing private-data-free pack format, and offers ephemeral component
+  and reading-exception challenges. Opt-in usage counts stay payload-free.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -131,8 +135,8 @@
   reverse index; lazy-loaded only for structural family views.
 - `data/kanjivg.manifest.json` — pinned input and artifact checksums used by CI.
 - `js/app.js` — retryable lazy loader plus delegated doorway integration.
-- `js/kanji-atlas.js` — pure bounded component-family graph/layout helpers plus
-  the ephemeral Constellation explorer, star detail, and doorway interactions.
+- `js/kanji-atlas.js` — pure bounded component-family graph/layout, reading-route,
+  unknown-study, and challenge helpers plus the ephemeral Atlas interactions.
 - `japanese-reader.css` — app-specific styles, including Tree and Relationship
   Map overlays and their responsive layouts.
 - `README.md` — concise public overview, local setup, architecture, and license
@@ -312,6 +316,17 @@
 - Motion may breathe the center, twinkle known stars, or travel along route
   dashes, but it must not move star positions. Disable all Atlas animation and
   transition effects under `prefers-reduced-motion: reduce`.
+- Study only the unknown stars in the current bounded sky and snapshot them
+  through the existing ephemeral family-session engine. Keep Return to Atlas
+  explicit; revealing, order, challenge choice, and challenge progress add no
+  persistence. Known-state changes still use the one approved kanji key.
+- Atlas packs contain every visible star and reuse the versioned study-pack
+  sanitizer, so extra layout, root, known, challenge, and route fields cannot
+  escape. Quick challenges are derived only from the selected direct component
+  and exact normalized dictionary readings; show explanations and no score.
+- The optional journal may count only fixed `atlas.open` and `study.atlas`
+  events. Never put a kanji, component, reading, challenge choice, pack title,
+  or other payload in an event name or stored journal field.
 
 ## Phonetic Component Lab conventions
 

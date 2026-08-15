@@ -24,7 +24,7 @@ analytics, advertising, application backend, or cloud synchronization.
   reset from **Profile & Data**.
 - When enabled, it stores daily totals for sessions, visible active minutes,
   and a fixed list of coarse actions such as opening a tab, Radical Tree,
-  Relations view, study session, export, or answering a review card.
+  Relations or Atlas view, study session, export, or answering a review card.
 - It never stores pasted text, words, kanji, searches, filenames, answers,
   grades, or individual-action timestamps. Its oldest daily totals are removed
   after 90 days.

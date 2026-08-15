@@ -45,3 +45,9 @@ test('report filename is stable and date-only', () => {
   assert.equal(usageReportFilename(input.generatedAt), 'kotoba-lab-usage-report-2026-08-14.md');
   assert.equal(usageReportFilename('not-a-date'), 'kotoba-lab-usage-report-undated.md');
 });
+
+test('the fixed exploration signal copy includes the Atlas study handoff', () => {
+  const report = buildUsageReport({ insights: { signals: [{ id: 'explore-to-study' }] } });
+  assert.match(report, /Atlas exploration/);
+  assert.match(report, /constellation study session/);
+});
