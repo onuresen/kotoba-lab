@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildReadableCompounds, isReadableCompound, wordsContaining } from './compound-words.js';
+import { buildReadableCompounds, isReadableCompound, wordsContaining, unlockedBy } from './compound-words.js';
 
 const vocab = [
   { w: '学生', r: 'がくせい', lvl: 5, g: 'student' },
@@ -86,4 +86,41 @@ test('wordsContaining bounds its result and rejects non-single characters', () =
   assert.deepEqual(wordsContaining(rows, '学校'), []);
   assert.deepEqual(wordsContaining(rows, ''), []);
   assert.deepEqual(wordsContaining(null, '学'), []);
+});
+
+const unlockVocab = [
+  { w: '学校', r: 'がっこう', lvl: 5, g: 'school' },
+  { w: '高校', r: 'こうこう', lvl: 4, g: 'high school' },
+  { w: '校長', r: 'こうちょう', lvl: null, g: 'principal' },
+  { w: '学生', r: 'がくせい', lvl: 5, g: 'student' },
+  { w: '学ぶ', r: 'まなぶ', lvl: 5, g: 'to study' },
+];
+
+test('unlocking reports only the words this kanji completed', () => {
+  // 校 has just been marked; 学 and 高 were already known, 長 was not.
+  const known = ['学', '高', '校'];
+  const result = unlockedBy(unlockVocab, '校', (c) => known.includes(c));
+  // 学校 and 高校 become readable. 校長 does not (長 unknown). 学生 and 学ぶ
+  // do not contain 校 at all, and 学ぶ is mixed script regardless.
+  assert.deepEqual(result.words.map((w) => w.w), ['学校', '高校']);
+  assert.equal(result.total, 2);
+});
+
+test('unlocking is bounded but reports the honest total', () => {
+  const known = ['学', '高', '校', '長'];
+  const result = unlockedBy(unlockVocab, '校', (c) => known.includes(c), 2);
+  assert.equal(result.total, 3);
+  assert.equal(result.words.length, 2);
+});
+
+test('a kanji that completes nothing unlocks nothing', () => {
+  const result = unlockedBy(unlockVocab, '校', (c) => c === '校');
+  assert.deepEqual(result, { total: 0, words: [] });
+});
+
+test('unlockedBy rejects malformed input rather than throwing', () => {
+  assert.deepEqual(unlockedBy(unlockVocab, '', () => true), { total: 0, words: [] });
+  assert.deepEqual(unlockedBy(unlockVocab, '学校', () => true), { total: 0, words: [] });
+  assert.deepEqual(unlockedBy(unlockVocab, '校', null), { total: 0, words: [] });
+  assert.deepEqual(unlockedBy(null, '校', () => true), { total: 0, words: [] });
 });

@@ -91,6 +91,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   in kanji you have marked known — what those kanji combine into, rather than
   what they break down from. Ranked easiest-first, and every kanji opens its
   Radical Tree. Save any of them straight into the review deck.
+- **Unlock feedback:** marking a kanji known tells you which compound words that
+  just made readable, so the most consequential action in the app finally says
+  what it bought you.
 - **Word lookup:** search all 10,808 committed vocabulary entries by word,
   reading, or English meaning, filter by JLPT level or by whether every kanji in
   the word is one you already know, and save any result straight into review.

@@ -62,6 +62,36 @@ export function wordsContaining(vocab, char, limit = 6) {
   return cap ? matches.slice(0, cap) : [];
 }
 
+// What marking one kanji known just made readable. Call this *after* the toggle,
+// so isKnown() already reports the new character as known: the unlocked set is
+// simply every compound containing it whose other kanji were known already.
+//
+// This is a real consequence read out of committed data, not a score — which is
+// the only kind of reward this project wants to hand out.
+export function unlockedBy(vocab, char, isKnown, limit = 3) {
+  const target = String(char || '');
+  if ([...target].length !== 1 || typeof isKnown !== 'function') return { total: 0, words: [] };
+  const cap = Math.max(0, Number(limit) || 0);
+  const seen = new Set();
+  const matches = [];
+
+  for (const entry of Array.isArray(vocab) ? vocab : []) {
+    const word = entry?.w;
+    if (!word || seen.has(word) || !word.includes(target)) continue;
+    if (!isReadableCompound(word, isKnown)) continue;
+    seen.add(word);
+    matches.push({
+      w: word,
+      r: entry.r || '',
+      g: entry.g || '',
+      lvl: Number.isFinite(entry.lvl) ? entry.lvl : null,
+    });
+  }
+
+  matches.sort(compare);
+  return { total: matches.length, words: matches.slice(0, cap) };
+}
+
 export function buildReadableCompounds(vocab, isKnown, limit = 24) {
   if (typeof isKnown !== 'function') return { total: 0, words: [] };
   const cap = Math.max(0, Number(limit) || 0);

@@ -122,6 +122,9 @@
   were fully browsable while words were reachable only through pasted text.
   Results share one row shape with the compound card, so both save into the
   review deck the same way.
+- Unlock feedback is ✓ Done: marking a kanji known now names the compounds it
+  just made readable — "✓ 校 known — unlocks 学校、校長、高校 and 2 more" — from
+  every path that marks one. Marking from a Kanji card had been silent.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -451,6 +454,17 @@
   leaving the lab or study must not write history or scores anywhere.
 
 ## Vocabulary conventions
+
+- Reward the learner with real consequences, never invented ones. `unlockedBy()`
+  reports the compounds a newly known kanji actually completed, read out of
+  committed dictionary data. Do not add points, levels, or streak pressure; the
+  idea garden rejects guilt-heavy mechanics deliberately.
+- `knownToast()` is the single message for every path that marks a kanji known —
+  Kanji cards, the Radical Tree, and the Read info panel. Add new paths to it
+  rather than writing another toast, or the feedback drifts apart.
+- `unlockedBy()` must be called after the toggle, so the character already counts
+  as known and the unlocked set is simply the compounds containing it whose other
+  kanji were known already.
 
 - Keep vocabulary search pure in `js/word-browser.js`, mirroring the split
   between `kanji-browser.js` and its DOM renderer in `app.js`.

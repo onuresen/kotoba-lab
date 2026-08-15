@@ -26,7 +26,7 @@ import {
 import { isKanji } from './script.js';
 import { cacheNameFor } from './offline-cache.js';
 import { parseRoute, routeToHash } from './routing.js';
-import { buildReadableCompounds, wordsContaining, isReadableCompound } from './compound-words.js';
+import { buildReadableCompounds, wordsContaining, isReadableCompound, unlockedBy } from './compound-words.js';
 import { searchWords } from './word-browser.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
@@ -185,10 +185,10 @@ async function boot() {
       kanjiInfo: (ch) => jlpt.kanjiInfo(ch),
       isKnown: (ch) => knownKanji.has(ch),
       toggleKnown: (ch) => knownKanji.toggle(ch),
-      onKnownChange: (_ch, known) => {
+      onKnownChange: (ch, known) => {
         usageJournal.record('known.change');
-        toast(known ? 'Marked known.' : 'Unmarked.', 'success');
         refreshKnownEverywhere();
+        knownToast(ch, known);
       },
       onOpenRelationships: (ch, trigger) => openKanjiMap(ch, trigger),
       wordsFor: (ch) => wordsContaining(vocabList, ch, 6),
@@ -755,7 +755,8 @@ function onInfoAction(e) {
     const key = lastSel.type === 'kanji' ? lastSel.ch : lastSel.surface;
     const now = isK.toggle(key);
     usageJournal.record('known.change');
-    toast(now ? 'Marked known.' : 'Unmarked.', 'success');
+    if (lastSel.type === 'kanji') knownToast(key, now);
+    else toast(now ? 'Marked known.' : 'Unmarked.', 'success');
   } else if (saveEl && lastSel.type === 'word') {
     // The sentence is only recoverable here, while the text that produced this
     // token is still the one on screen — so it is captured at save time, not
@@ -2210,6 +2211,18 @@ function switchTab(name, push = true) {
   }
   currentTab = name;
 }
+// Marking a kanji known is the most consequential action in the app and used to
+// be the quietest. Say what it actually bought: the words it just made readable.
+// Call after the toggle, so the character already counts as known.
+function knownToast(char, known) {
+  if (!known) { toast(`${char} unmarked.`, 'success'); return; }
+  const { total, words } = unlockedBy(vocabList, char, (c) => knownKanji.has(c), 3);
+  if (!total) { toast(`✓ ${char} marked known.`, 'success'); return; }
+  const shown = words.map((word) => word.w).join('、');
+  const rest = total - words.length;
+  toast(`✓ ${char} known — unlocks ${shown}${rest > 0 ? ` and ${rest} more` : ''}`, 'success');
+}
+
 let toastTimer;
 function toast(msg, kind) {
   const el = $('#toast');
@@ -2424,6 +2437,7 @@ function wireUi() {
         const filtered = $('#kanji-known')?.value !== 'all';
         if (!filtered) patchKanjiCardKnown(knownToggle, target);
         refreshKnownEverywhere({ skipKanjiBrowser: !filtered });
+        knownToast(target, knownKanji.has(target));
       }
       return;
     }
