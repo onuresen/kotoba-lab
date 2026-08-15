@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.20.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.21.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -84,6 +84,14 @@
   and a session-only recipe trail support different study intentions. The trail
   can open in the existing temporary reveal-card workspace and adds no score,
   streak, profile field, or storage key.
+- Offline PWA support is ✓ Done: a pure `js/offline-cache.js` policy module owns
+  the precache list, tier assignment, and per-type strategies while `sw.js` stays
+  a thin Cache API shell. Tier 1 precaches the whole default application
+  including the stroke artifact, so Radical Tree works offline unconditionally;
+  only the opt-in kuromoji tokenizer is held back behind a deliberate download in
+  Profile & Data. Updates are version-stamped and offered through an explicit
+  reload prompt so no ephemeral session is destroyed. The application is
+  installable to an Android home screen.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -161,6 +169,13 @@
   output labels are whitelisted and arbitrary caller prose is never emitted.
 - `js/study-pack.js` — pure portable kanji-pack schema, sanitization, filenames,
   and conversion into an ephemeral family-study snapshot; no DOM/storage.
+- `js/offline-cache.js` — pure precache list, tier assignment, per-type strategy
+  selection, and version-stamped cache naming; no DOM, fetch, or Cache API.
+- `sw.js` — thin service worker: precache on install, discard stale version
+  caches on activate, apply the imported strategies on fetch, and accept only
+  `SKIP_WAITING`. Holds no path list of its own.
+- `manifest.webmanifest` — installable metadata; every path relative.
+- `assets/icons/` — 192/512 any-purpose and 512 full-bleed maskable icons.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
 - `data/kanji-families.json` — committed compact radical/direct-component
@@ -219,6 +234,35 @@
 - Wide workspaces begin above the 1080 px reading measure and must not create
   page overflow. Tablet and phone behavior remains governed by the existing
   responsive rules rather than separate narrow-screen width overrides.
+
+## Offline and installation conventions
+
+- `sw.js` and `manifest.webmanifest` must stay at the repository root. A service
+  worker's scope is its own directory, and Pages serves the project from
+  `/kotoba-lab/`.
+- All precache paths stay relative. An absolute `/data/...` path resolves outside
+  the project subpath in production.
+- Keep policy in `js/offline-cache.js` and I/O in `sw.js`. The worker must hold
+  no path list of its own.
+- **Any release that changes a cached file must bump `APP_VERSION`.** The cache
+  is named `kotoba-lab:v${APP_VERSION}` and stale caches are deleted on activate,
+  so a forgotten bump ships a permanently stale install. `APP_VERSION` appears in
+  `js/app.js`, `sw.js`, and `package.json`; `js/sw-routing.test.js` fails if the
+  three drift apart.
+- Registration failure is silent. An unsupported browser, insecure context, or
+  disabled worker must leave the application exactly as it behaves today and must
+  never touch `#boot-warning` or the dictionary-failure banner.
+- Never auto-reload on update. Offer the reload and let the learner choose, so an
+  open Alchemy, Atlas, or study session is never destroyed.
+- Cache Storage holds application files only. It is not study data, adds no
+  localStorage key, and must never be written into a profile backup or study
+  pack.
+- Offline availability is derived by querying the cache at render time. Do not
+  persist a "downloaded" flag.
+- A service worker cannot be exercised by `node --test`, and Electron-based
+  review browsers cannot register one at all. `js/sw-routing.test.js` loads the
+  real worker with stubbed globals to cover routing, lifecycle, and messaging;
+  genuine Cache API behavior still requires manual QA in a real browser.
 
 ## Mobile interface conventions
 
@@ -515,7 +559,9 @@ the copied/downloaded snapshot is built so it never counts itself.
   to all four profile stores and clearing/disabling the usage journal; do not
   rely on a single browser confirmation dialog.
 - Keep `APP_VERSION` in `js/app.js` synchronized with `package.json` when the
-  profile format or public data-management UI ships.
+  profile format or public data-management UI ships. Since the offline cache is
+  named from it, `sw.js` must carry the same value and every release that changes
+  a cached file must bump all three.
 
 ## Verification
 
@@ -540,3 +586,13 @@ explode/drill/back, `Esc` focus restoration,
 known-state propagation, atomic/missing entries, reduced motion, and clean
 offline-first-load failure. The only module script in `index.html` remains
 `js/app.js`; its imports define load order.
+
+Offline QA needs a real browser, because a service worker cannot be driven by
+`node --test` and Electron-based review browsers refuse to register one at all.
+Cover installing to an Android home screen (sharp launcher icon, standalone
+window, maskable icon surviving a circular crop), launching in airplane mode,
+Radical Tree opening offline on an install that never opened it while online,
+the kuromoji download before and after, an update prompt appearing on an
+`APP_VERSION` bump without auto-reloading, an interrupted precache leaving the
+previous version working, and silent degradation in a browser without module
+service worker support.

@@ -103,11 +103,19 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   decoding and common markup cleanup.
 - **Two tokenizers:** use the fast embedded-dictionary tokenizer or opt into the
   more precise vendored kuromoji tokenizer.
+- **Installable and offline:** install Kotoba Lab to a phone home screen and open
+  it with no connection. The application, dictionaries, and stroke data are
+  stored locally after the first visit, so Radical Tree works offline whether or
+  not you opened it beforehand. The optional precise tokenizer is a separate
+  deliberate download in Profile & Data, and a new version never reloads the page
+  out from under an open study session.
 
 The application and its language data are committed to this repository. It
-does not call an AI service or send pasted text to a backend. The page requests
-web fonts from Google Fonts when online; system-font fallbacks keep the
-application usable when those fonts are unavailable.
+does not call an AI service or send pasted text to a backend. Web fonts are
+requested from Google Fonts on the first online load and served from the local
+cache afterwards, so an installed copy makes fewer requests than an uninstalled
+one; system-font fallbacks keep the application usable when those fonts are
+unavailable.
 
 ## Future idea garden
 
@@ -178,6 +186,10 @@ js/usage-journal.js      opt-in, payload-free local activity counters
 js/usage-insights.js     pure feature mix and cautious friction prompts
 js/usage-report.js       privacy-safe aggregate Markdown snapshot
 js/study-pack.js         private-data-free portable kanji pack format
+js/offline-cache.js      pure precache list, tiers, and cache-strategy policy
+sw.js                    thin service worker: precache, strategies, updates
+manifest.webmanifest     installable metadata
+assets/icons/            installable application icons
 data/                    dictionaries, samples, KanjiVG data, attribution
 tools/                   reproducible data-generation tools
 vendor/kuromoji/         vendored tokenizer and dictionary

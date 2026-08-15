@@ -39,6 +39,21 @@ analytics, advertising, application backend, or cloud synchronization.
   timing, last-review dates, and study content. The report stays local unless
   you choose to copy, share, or upload it.
 
+## Offline storage
+
+- Kotoba Lab installs a service worker so it can open without a connection. The
+  worker stores **application files only**: HTML, styles, scripts, icons, and the
+  committed dictionary data.
+- It never stores pasted text, saved words, review history, or known-kanji state.
+  Cache Storage is a separate browser feature from `localStorage` and is excluded
+  from profile backups and portable study packs by construction.
+- **Profile & Data** reports what is currently stored for offline use. The
+  optional precise tokenizer is downloaded only when you ask for it.
+- Because fonts are cached after the first online load, an installed copy makes
+  *fewer* requests to Google Fonts than an uninstalled one, not more.
+- Clearing site data removes this cache. The application then re-downloads its
+  files on the next online visit.
+
 ## Network requests
 
 The hosted application downloads its HTML, styles, scripts, dictionaries, and
