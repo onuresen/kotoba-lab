@@ -86,7 +86,7 @@ delete window.__kotobaBootFallback;
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.20.0';
+const APP_VERSION = '10.21.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -2301,4 +2301,59 @@ async function onImportFile(e) {
   }
 }
 
+// ---- offline support --------------------------------------------------------
+// Registration is entirely optional. An unsupported browser, an insecure
+// context, or disabled workers must leave the application behaving exactly as
+// it does without a worker — no banner, no console noise, and no interaction
+// with the #boot-warning fallback.
+
+function promptForUpdate(worker) {
+  // The toast helper supports only 'success' and 'error'; an update notice is
+  // neither, so it uses the neutral default.
+  toast('New version ready · reload to update');
+  const bar = $('#sw-update');
+  if (!bar) return;
+  bar.hidden = false;
+  $('#sw-update-reload').onclick = () => {
+    worker.postMessage({ type: 'SKIP_WAITING' });
+  };
+}
+
+function registerOfflineWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('sw.js', { type: 'module' });
+
+      // Ask Android not to evict the cache under storage pressure. A refusal
+      // changes nothing and is never surfaced.
+      if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().catch(() => {});
+      }
+
+      registration.addEventListener('updatefound', () => {
+        const installing = registration.installing;
+        if (!installing) return;
+        installing.addEventListener('statechange', () => {
+          // Reaching "installed" while a worker already controls the page means
+          // an update, not a first install.
+          if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+            promptForUpdate(installing);
+          }
+        });
+      });
+
+      let reloading = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloading) return;
+        reloading = true;
+        window.location.reload();
+      });
+    } catch {
+      // Offline support is a bonus, never a requirement.
+    }
+  });
+}
+
 boot();
+registerOfflineWorker();
