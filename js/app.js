@@ -865,7 +865,7 @@ function kanjiCard(item) {
       <span class="kanji-card-meta">${item.strokes} strokes${known ? ' · ✓ Known' : ''}</span>
     </span>
     <span class="badge" data-status="${item.jlpt == null ? 'archive' : 'reference'}">${level}</span>
-  </button><button type="button" class="kanji-card-map" data-kanji-map="${esc(item.char)}" aria-label="Open relationship map for ${esc(item.char)}"><span aria-hidden="true">↗</span> Map</button></div>`;
+  </button><div class="kanji-card-actions"><button type="button" class="kanji-card-known" data-kanji-known="${esc(item.char)}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(item.char)} as known"><span aria-hidden="true">✓</span> Known</button><button type="button" class="kanji-card-map" data-kanji-map="${esc(item.char)}" aria-label="Open relationship map for ${esc(item.char)}"><span aria-hidden="true">↗</span> Map</button></div></div>`;
 }
 
 function renderFamilyMixSetup(workspace) {
@@ -2308,6 +2308,17 @@ function wireUi() {
   document.addEventListener('keydown', onKanjiAlchemyKey);
   // One delegated path covers dynamic Read, Review, and My Words markup.
   document.addEventListener('click', (event) => {
+    // Batch marking from the Kanji library: toggle without opening the card.
+    const knownToggle = event.target.closest?.('[data-kanji-known]');
+    if (knownToggle) {
+      const target = knownToggle.dataset.kanjiKnown;
+      if (target && [...target].length === 1) {
+        knownKanji.toggle(target);
+        usageJournal.record('known.change');
+        refreshKnownEverywhere();
+      }
+      return;
+    }
     const mapDoorway = event.target.closest?.('[data-kanji-map]');
     if (mapDoorway && !mapDoorway.closest('.krm-overlay')) {
       openKanjiMap(mapDoorway.dataset.kanjiMap, mapDoorway);

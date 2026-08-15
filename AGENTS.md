@@ -353,6 +353,11 @@
 
 - The Kanji tab is text-independent and uses the already-loaded
   `data/kanjidic.json`; do not make KanjiVG a prerequisite for browsing.
+- Each result card carries two actions in its corner: a `[data-kanji-known]`
+  toggle for marking without opening the card, and the Relationship Map doorway.
+  The toggle reuses `kotoba-lab:known-kanji` and the shared refresh path, and
+  carries `aria-pressed` plus a Mark/Unmark label because its text does not
+  change between states.
 - Keep catalog logic pure in `kanji-browser.js`. The DOM renderer stays in
   `app.js`, with bounded result rendering and one delegated
   `[data-kanji-tree]` doorway per card.

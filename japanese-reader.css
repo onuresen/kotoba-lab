@@ -686,8 +686,27 @@ kbd {
 .kanji-card-copy strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 13px; line-height: 1.35; }
 .kanji-card-reading { overflow: hidden; color: var(--text2); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .kanji-card-meta { color: var(--text3); font-family: var(--font-mono); font-size: 10px; }
+/* Both card actions share the corner, so batch marking never means opening
+   each kanji first. */
+.kanji-card-actions { position: absolute; right: 10px; bottom: 9px; display: flex; gap: 6px; }
+
+.kanji-card-known {
+  min-height: 30px; padding: 4px 9px;
+  color: var(--text2); font: 600 11px/1 var(--font-body); cursor: pointer;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border); border-radius: var(--r-pill);
+  transition: transform .18s var(--ease), border-color .18s var(--ease), background .18s var(--ease), color .18s var(--ease);
+}
+.kanji-card-known:hover, .kanji-card-known:focus-visible { transform: translateY(-2px); border-color: var(--border-strong); color: var(--text); }
+.kanji-card-known:active { transform: translateY(0) scale(.97); }
+.kanji-card-known[aria-pressed="true"] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border-color: var(--accent-glow);
+}
+
 .kanji-card-map {
-  position: absolute; right: 10px; bottom: 9px; min-height: 30px; padding: 4px 9px;
+  min-height: 30px; padding: 4px 9px;
   color: var(--accent2-text); font: 600 11px/1 var(--font-body); cursor: pointer;
   background: color-mix(in srgb, var(--accent2-dim) 62%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--accent2) 28%, var(--border)); border-radius: var(--r-pill);
@@ -1598,9 +1617,11 @@ p.hint { margin: 8px 0 0; }
   .kanji-card:active, .srs-kchar:hover, .srs-kchar:active,
   .known-chip:hover, .known-chip:active, .kanji-contrast-choice:hover,
   .kanji-contrast-choice:active, .kt-component-open:hover,
-  .kt-component-open:focus-visible, .kt-component-open:active {
+  .kt-component-open:focus-visible, .kt-component-open:active,
+  .kanji-card-known:hover, .kanji-card-known:focus-visible, .kanji-card-known:active {
     transform: none !important;
   }
+  .kanji-card-known { transition: none; }
   .srs-stage[data-feedback]::after { display: none; }
   .alchemy-bubbles, .alchemy-stage::after { display: none; }
 }
