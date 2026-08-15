@@ -91,6 +91,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   in kanji you have marked known — what those kanji combine into, rather than
   what they break down from. Ranked easiest-first, and every kanji opens its
   Radical Tree. Save any of them straight into the review deck.
+- **Milestones:** Profile & Data shows the reading milestones you have actually
+  passed — kanji known, words readable, days reviewed — worked out from your
+  local data each time it renders, with nothing recorded or awarded.
 - **Unlock feedback:** marking a kanji known tells you which compound words that
   just made readable, so the most consequential action in the app finally says
   what it bought you.

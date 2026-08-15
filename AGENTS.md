@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.24.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.25.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -125,6 +125,10 @@
 - Unlock feedback is ✓ Done: marking a kanji known now names the compounds it
   just made readable — "✓ 校 known — unlocks 学校、校長、高校 and 2 more" — from
   every path that marks one. Marking from a Kanji card had been silent.
+- Milestones are ✓ Done: Profile & Data lists the capability thresholds already
+  passed — kanji known, words readable, words known, cards saved, days reviewed —
+  derived from the four profile stores at render time. No ledger, no badges, no
+  sixth storage key, and no new surface.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -223,6 +227,8 @@
   reverse index; lazy-loaded only for structural family views.
 - `data/kanjivg.manifest.json` — pinned input and artifact checksums used by CI.
 - `js/app.js` — retryable lazy loader plus delegated doorway integration.
+- `js/milestones.js` — pure capability thresholds derived from profile counts;
+  no DOM, storage, or fetch, and no persisted earned state.
 - `js/kanji-atlas.js` — pure bounded component-family graph/layout, reading-route,
   unknown-study, and challenge helpers plus the ephemeral Atlas interactions.
 - `japanese-reader.css` — app-specific styles, including Tree and Relationship
@@ -459,6 +465,17 @@
   reports the compounds a newly known kanji actually completed, read out of
   committed dictionary data. Do not add points, levels, or streak pressure; the
   idea garden rejects guilt-heavy mechanics deliberately.
+- Milestones are derived, never recorded. `buildMilestones()` recomputes from
+  current profile numbers, so there is no earned-badge state to store, migrate,
+  or resynchronise after a profile import.
+- Show only milestones already passed, plus at most one nearby next step. Never
+  render locked slots, badge grids, tier progress, or percentages: an empty slot
+  turns "what you can read" into "what you have not done", which is the
+  guilt-heavy shape `IDEA_GARDEN.md` rejects.
+- Milestones live inside Profile & Data as content. They must not become their
+  own tab or panel — a dedicated page fails the "would the solo user open this
+  weekly?" test, and the same call was already made in a sibling project by
+  relabelling its Achievements tool to Profile.
 - `knownToast()` is the single message for every path that marks a kanji known —
   Kanji cards, the Radical Tree, and the Read info panel. Add new paths to it
   rather than writing another toast, or the feedback drifts apart.
