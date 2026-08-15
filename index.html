@@ -406,7 +406,7 @@
         <span class="hint" id="mw-deck-count"></span>
         <button id="mw-clear-deck" class="btn btn-ghost btn-danger-ghost">Clear</button>
       </div>
-      <p class="hint">Saved with "☆ Save" while reading. <strong>Next</strong> is when each card comes back in the <a href="#" class="go-review">Review</a> tab. Review-history totals are managed separately in Profile &amp; Data.</p>
+      <p class="hint">Saved with "☆ Save" while reading. <strong>Next</strong> is when each card comes back in the <a href="#" class="go-review">Review</a> tab. Review-history totals are managed separately in <a href="#" class="go-profile">Profile &amp; Data</a>.</p>
       <div class="table-scroll">
         <table class="freq"><thead><tr><th>Word</th><th>Meaning &amp; sentence</th><th>JLPT</th><th>Next</th><th></th></tr></thead>
         <tbody id="mw-deck-tbody"></tbody></table>
@@ -418,6 +418,36 @@
       <p class="hint">Fields: <code>word · reading · meaning · JLPT level · sentence</code> (tab-separated). Good for Anki — but it drops each card's schedule, so it isn't a backup. Use the backup below for that.</p>
     </div>
 
+
+    <div class="card study-pack-card">
+      <div class="ui-section-header">
+        <span class="ui-section-title">Portable Study Packs</span>
+        <span class="ui-section-line"></span>
+        <span class="hint">Share kanji, not personal progress</span>
+      </div>
+      <p class="hint">Turn the current text, a selected Kanji family, or the open Relations network into a lightweight pack. Packs include dictionary metadata only—never schedules, known state, review history, pasted text, or saved sentences.</p>
+      <div class="study-pack-builder">
+        <label class="label">Source
+          <select id="study-pack-source" class="select"><option value="text">Kanji from current text</option><option value="family">Selected Kanji family</option><option value="relations">Current Relations network</option></select>
+        </label>
+        <label class="label">Pack title<input id="study-pack-title" class="input" type="text" maxlength="80" placeholder="My kanji study pack"></label>
+      </div>
+      <p id="study-pack-source-status" class="study-pack-source-status hint"></p>
+      <div class="profile-actions">
+        <button type="button" id="study-pack-download" class="btn btn-primary">Download study pack</button>
+        <label class="file-btn btn">Open a study pack<input type="file" id="study-pack-file" accept=".json,application/json" hidden></label>
+      </div>
+      <section id="study-pack-preview" class="profile-import-preview" hidden aria-live="polite">
+        <div class="profile-preview-head"><div><span class="label">STUDY PACK</span><h3 id="study-pack-preview-title">Kanji study pack</h3></div><button type="button" id="study-pack-cancel" class="btn btn-ghost">Cancel</button></div>
+        <p id="study-pack-preview-meta" class="hint"></p>
+        <div id="study-pack-glyphs" class="study-pack-glyphs" lang="ja"></div>
+        <div class="profile-import-actions"><button type="button" id="study-pack-start" class="btn btn-primary">Study this pack</button></div>
+        <p class="hint">The session opens in Kanji and lasts only until you close or reload it. Marking individual kanji known still uses your normal local profile.</p>
+      </section>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="profile" data-layout="wide" id="profile-panel">
     <div class="card profile-data-card">
       <div class="ui-section-header">
         <span class="ui-section-title">Profile &amp; Data</span>
@@ -497,36 +527,6 @@
       </section>
       <p class="hint">Importing never changes anything until you approve the preview. The recommended merge is repeat-safe: importing the same profile twice does not duplicate progress.</p>
     </div>
-
-    <div class="card study-pack-card">
-      <div class="ui-section-header">
-        <span class="ui-section-title">Portable Study Packs</span>
-        <span class="ui-section-line"></span>
-        <span class="hint">Share kanji, not personal progress</span>
-      </div>
-      <p class="hint">Turn the current text, a selected Kanji family, or the open Relations network into a lightweight pack. Packs include dictionary metadata only—never schedules, known state, review history, pasted text, or saved sentences.</p>
-      <div class="study-pack-builder">
-        <label class="label">Source
-          <select id="study-pack-source" class="select"><option value="text">Kanji from current text</option><option value="family">Selected Kanji family</option><option value="relations">Current Relations network</option></select>
-        </label>
-        <label class="label">Pack title<input id="study-pack-title" class="input" type="text" maxlength="80" placeholder="My kanji study pack"></label>
-      </div>
-      <p id="study-pack-source-status" class="study-pack-source-status hint"></p>
-      <div class="profile-actions">
-        <button type="button" id="study-pack-download" class="btn btn-primary">Download study pack</button>
-        <label class="file-btn btn">Open a study pack<input type="file" id="study-pack-file" accept=".json,application/json" hidden></label>
-      </div>
-      <section id="study-pack-preview" class="profile-import-preview" hidden aria-live="polite">
-        <div class="profile-preview-head"><div><span class="label">STUDY PACK</span><h3 id="study-pack-preview-title">Kanji study pack</h3></div><button type="button" id="study-pack-cancel" class="btn btn-ghost">Cancel</button></div>
-        <p id="study-pack-preview-meta" class="hint"></p>
-        <div id="study-pack-glyphs" class="study-pack-glyphs" lang="ja"></div>
-        <div class="profile-import-actions"><button type="button" id="study-pack-start" class="btn btn-primary">Study this pack</button></div>
-        <p class="hint">The session opens in Kanji and lasts only until you close or reload it. Marking individual kanji known still uses your normal local profile.</p>
-      </section>
-    </div>
-  </section>
-
-  <section class="panel" data-panel="profile" data-layout="wide" id="profile-panel">
   </section>
 </main>
 

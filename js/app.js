@@ -208,6 +208,7 @@ async function boot() {
   wireUi();
   renderKanjiBrowser();
   renderMyWords();
+  renderProfilePanel();
   refreshReview();
   if (samples[0]) { $('#input').value = samples[0].text; run({ recordUsage: false }); }
   usageJournal.startSession();
@@ -763,6 +764,7 @@ function refreshKnownEverywhere() {
     renderTextJourney();
   }
   renderMyWords();
+  renderProfilePanel();
   renderKanjiBrowser();
   refreshReview();
   kanjiMap?.update();
@@ -1603,6 +1605,7 @@ function answer(grade) {
   reviewTransitionTimer = setTimeout(() => {
     refreshReview();
     renderMyWords();
+    renderProfilePanel();
   }, transitionMs);
 }
 
@@ -1738,6 +1741,20 @@ function downloadUsageReport() {
   recordUsageReportExport('Downloaded privacy-safe usage report.');
 }
 
+// Profile & Data lives in its own panel, so it renders independently of the
+// My Words study collection. Both read the same stores, so anything that
+// changes cards or known state must refresh both.
+function renderProfilePanel() {
+  const rows = deck.all();
+  const days = Object.keys(reviewLog.all()).length;
+  $('#mw-backup-count').textContent =
+    `${rows.length} cards · ${knownWords.count() + knownKanji.count()} known · ${days} day${days === 1 ? '' : 's'} of history`;
+  const profileState = currentState();
+  $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(profileState));
+  renderProfileDashboard(profileState);
+  renderUsageJournal(profileState);
+}
+
 function renderMyWords() {
   $('#mw-known-count').textContent = `${knownWords.count()} words · ${knownKanji.count()} kanji`;
   $('#mw-known-words').innerHTML = knownWords.all().length
@@ -1749,13 +1766,6 @@ function renderMyWords() {
 
   const rows = deck.all();
   $('#mw-deck-count').textContent = `${rows.length} card${rows.length === 1 ? '' : 's'}`;
-  const days = Object.keys(reviewLog.all()).length;
-  $('#mw-backup-count').textContent =
-    `${rows.length} cards · ${knownWords.count() + knownKanji.count()} known · ${days} day${days === 1 ? '' : 's'} of history`;
-  const profileState = currentState();
-  $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(profileState));
-  renderProfileDashboard(profileState);
-  renderUsageJournal(profileState);
   $('#mw-deck-tbody').innerHTML = rows.length
     ? rows.map((r) => `
       <tr>
@@ -1783,6 +1793,8 @@ function onMyWordsClick(e) {
   }
   const goReview = e.target.closest('.go-review');
   if (goReview) { e.preventDefault(); switchTab('review'); return; }
+  const goProfile = e.target.closest('.go-profile');
+  if (goProfile) { e.preventDefault(); switchTab('profile'); return; }
   const knownRemove = e.target.closest('.known-rm');
   if (knownRemove) {
     const set = knownRemove.dataset.kind === 'word' ? knownWords : knownKanji;
@@ -1792,7 +1804,7 @@ function onMyWordsClick(e) {
     return;
   }
   const rm = e.target.closest('.deck-rm');
-  if (rm) { deck.remove(rm.dataset.key); renderMyWords(); refreshReview(); }
+  if (rm) { deck.remove(rm.dataset.key); renderMyWords(); renderProfilePanel(); refreshReview(); }
 }
 
 function exportDeck(dl) {
@@ -2060,6 +2072,7 @@ function switchTab(name) {
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();
   if (name === 'mywords') renderMyWords();
+  if (name === 'profile') renderProfilePanel();
   if (name === 'relations') {
     renderRelationsSeeds();
     loadRelationsWorkspace().catch((error) => console.error(error));
@@ -2234,6 +2247,7 @@ function wireUi() {
     deck.clear();
     sessionCount = 0;
     renderMyWords();
+    renderProfilePanel();
     refreshReview();
   });
   $('#review-panel').addEventListener('click', onReviewClick);
