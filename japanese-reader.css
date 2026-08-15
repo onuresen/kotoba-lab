@@ -1674,3 +1674,38 @@ p.hint { margin: 8px 0 0; }
   .offline-row { flex-direction: column; align-items: flex-start; }
   .offline-row .btn { width: 100%; }
 }
+
+/* ---- header data control ---------------------------------------------------- */
+/* Profile & Data is reached from here rather than the tab bar, so the mobile
+   bottom bar stays at six columns. */
+.head-nav { display: flex; align-items: center; gap: 12px; }
+
+.head-action {
+  display: flex; align-items: center; gap: 7px;
+  min-height: 44px; padding: 8px 14px;
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  color: var(--text2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: color 0.18s var(--ease), background 0.18s var(--ease), border-color 0.18s var(--ease);
+}
+.head-action:hover { color: var(--text); border-color: var(--border-strong); }
+/* Mirrors .tab.is-active so the control reads as part of the same navigation. */
+.head-action.is-active {
+  color: var(--accent);
+  background: var(--surface-raised);
+  border-color: var(--accent-glow);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 var(--paper-glow);
+}
+.head-action-icon { font-family: var(--font-display); font-size: 17px; line-height: 1; }
+
+@media (max-width: 780px) {
+  .head-action-label { display: none; }
+  .head-action { padding-inline: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .head-action { transition: none; }
+}

@@ -36,14 +36,23 @@
         <p class="tagline">Japanese reading, kanji exploration, and study.</p>
       </div>
     </div>
-    <nav class="tabs" aria-label="Main navigation">
-      <button class="tab is-active" data-tab="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
-      <button class="tab" data-tab="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
-      <button class="tab" data-tab="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
-      <button class="tab" data-tab="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
-      <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" id="tab-due" hidden></span></button>
-      <button class="tab" data-tab="mywords"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
-    </nav>
+    <div class="head-nav">
+      <nav class="tabs" aria-label="Main navigation">
+        <button class="tab is-active" data-tab="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
+        <button class="tab" data-tab="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
+        <button class="tab" data-tab="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
+        <button class="tab" data-tab="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
+        <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" id="tab-due" hidden></span></button>
+        <button class="tab" data-tab="mywords"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
+      </nav>
+      <!-- Profile & Data is deliberately not a tab: it never enters the mobile
+           bottom bar, which stays at six columns. aria-label is required because
+           the glyph is aria-hidden and the text label is display:none on phones. -->
+      <button type="button" class="head-action" data-tab="profile" aria-label="Data">
+        <span class="head-action-icon" aria-hidden="true">守</span>
+        <span class="head-action-label">Data</span>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -515,6 +524,9 @@
         <p class="hint">The session opens in Kanji and lasts only until you close or reload it. Marking individual kanji known still uses your normal local profile.</p>
       </section>
     </div>
+  </section>
+
+  <section class="panel" data-panel="profile" data-layout="wide" id="profile-panel">
   </section>
 </main>
 

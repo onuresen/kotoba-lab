@@ -91,6 +91,7 @@ const APP_VERSION = '10.21.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
+  profile: 'tab.profile',
 });
 
 let jlpt, samples = [];
@@ -2042,7 +2043,9 @@ function showEmpty() {
 }
 function switchTab(name) {
   if (name !== 'relations') relationsAtlas?.setFocus(false);
-  document.querySelectorAll('.tab').forEach((t) => {
+  // [data-tab] rather than .tab so the header Data control shares the same
+  // active-state and aria-current path as the six bottom-bar tabs.
+  document.querySelectorAll('[data-tab]').forEach((t) => {
     const active = t.dataset.tab === name;
     t.classList.toggle('is-active', active);
     if (active) t.setAttribute('aria-current', 'page');
@@ -2052,7 +2055,7 @@ function switchTab(name) {
   usageJournal.record(TAB_USAGE_EVENTS[name]);
   // The shared Text box feeds Analyze and Read only. The other tabs are
   // independent workspaces and should open at their own content immediately.
-  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords';
+  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords' || name === 'profile';
   // cards come due while you're on another tab — recheck on arrival
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();
@@ -2088,7 +2091,7 @@ function wireUi() {
     $('#input').value = samples[Number(b.dataset.i)].text; run();
   });
   $('#clear').addEventListener('click', () => { $('#input').value = ''; run(); $('#input').focus(); });
-  document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+  document.querySelectorAll('[data-tab]').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
   $('#info-close').addEventListener('click', () => setInfoSheet(false));
   $('#info-scrim').addEventListener('click', () => setInfoSheet(false));
   document.addEventListener('keydown', (event) => {
