@@ -463,6 +463,14 @@
           <button type="button" id="usage-journal-clear" class="btn btn-ghost" disabled>Reset journal</button>
         </div>
       </section>
+      <section class="offline-store" aria-labelledby="offline-store-title">
+        <div class="usage-journal-head">
+          <div><span class="label">INSTALLABLE · WORKS OFFLINE</span><h3 id="offline-store-title">Offline availability</h3></div>
+          <span id="offline-store-status" class="badge" data-status="archive">Checking…</span>
+        </div>
+        <p class="hint">Kotoba Lab stores its own application files so it opens without a connection. This is separate from your study data and is never included in a profile backup.</p>
+        <div id="offline-rows" class="offline-rows"></div>
+      </section>
       <div class="profile-actions">
         <button id="mw-backup-download" class="btn btn-primary">Download profile (.json)</button>
         <label class="file-btn btn">Choose profile to import<input type="file" id="mw-backup-file" accept=".json,application/json" hidden></label>

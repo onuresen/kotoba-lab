@@ -1652,3 +1652,25 @@ p.hint { margin: 8px 0 0; }
 @media (prefers-reduced-motion: reduce) {
   .sw-update { animation: none; }
 }
+
+/* ---- offline availability rows ---------------------------------------------- */
+.offline-rows { display: grid; gap: 8px; margin-top: 12px; }
+
+.offline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  padding: 12px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.offline-row > div { display: grid; gap: 2px; }
+.offline-row .hint { margin: 0; }
+.offline-row .btn { min-height: 44px; white-space: nowrap; }
+
+@media (max-width: 480px) {
+  .offline-row { flex-direction: column; align-items: flex-start; }
+  .offline-row .btn { width: 100%; }
+}

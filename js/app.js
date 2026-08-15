@@ -24,6 +24,7 @@ import {
   revealJourneyStep,
 } from './text-journey.js';
 import { isKanji } from './script.js';
+import { cacheNameFor } from './offline-cache.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
 import { createKanjiNetworkView } from './kanji-network.js';
@@ -2355,5 +2356,89 @@ function registerOfflineWorker() {
   });
 }
 
+// The browser build plus every dictionary shard kuromoji fetches at runtime.
+// cache.addAll needs concrete URLs, so these are listed explicitly.
+const KUROMOJI_FILES = [
+  './vendor/kuromoji/kuromoji.js',
+  './vendor/kuromoji/dict/base.dat.gz',
+  './vendor/kuromoji/dict/cc.dat.gz',
+  './vendor/kuromoji/dict/check.dat.gz',
+  './vendor/kuromoji/dict/tid.dat.gz',
+  './vendor/kuromoji/dict/tid_map.dat.gz',
+  './vendor/kuromoji/dict/tid_pos.dat.gz',
+  './vendor/kuromoji/dict/unk.dat.gz',
+  './vendor/kuromoji/dict/unk_char.dat.gz',
+  './vendor/kuromoji/dict/unk_compat.dat.gz',
+  './vendor/kuromoji/dict/unk_invoke.dat.gz',
+  './vendor/kuromoji/dict/unk_map.dat.gz',
+  './vendor/kuromoji/dict/unk_pos.dat.gz',
+];
+
+const OFFLINE_CORE_SAMPLE = ['./index.html', './data/kanjidic.json', './data/kanjivg.json'];
+
+async function cachedCount(paths) {
+  if (!('caches' in window)) return 0;
+  try {
+    const cache = await caches.open(cacheNameFor(APP_VERSION));
+    const found = await Promise.all(paths.map((path) => cache.match(path)));
+    return found.filter(Boolean).length;
+  } catch {
+    return 0;
+  }
+}
+
+// Availability is read from the cache every time rather than stored, so there
+// is no "downloaded" flag to go stale and no sixth localStorage key.
+async function renderOfflineStatus() {
+  const host = $('#offline-rows');
+  const badge = $('#offline-store-status');
+  if (!host || !badge) return;
+
+  if (!('caches' in window) || !('serviceWorker' in navigator)) {
+    badge.textContent = 'Unavailable';
+    badge.dataset.status = 'archive';
+    host.innerHTML = '<p class="hint">This browser does not store files for offline use. Kotoba Lab still works normally with a connection.</p>';
+    return;
+  }
+
+  const core = await cachedCount(OFFLINE_CORE_SAMPLE);
+  const kuromoji = await cachedCount(KUROMOJI_FILES);
+  const coreReady = core === OFFLINE_CORE_SAMPLE.length;
+  const kuromojiReady = kuromoji === KUROMOJI_FILES.length;
+
+  badge.textContent = coreReady ? 'Available offline' : 'Preparing…';
+  badge.dataset.status = coreReady ? 'stable' : 'archive';
+
+  host.innerHTML = `
+    <div class="offline-row">
+      <div><strong>App, dictionaries and stroke data</strong><span class="hint">8.5 MB · includes Radical Tree strokes</span></div>
+      <span class="badge" data-status="${coreReady ? 'stable' : 'archive'}">${coreReady ? '✓ Available offline' : 'Preparing…'}</span>
+    </div>
+    <div class="offline-row">
+      <div><strong>Precise tokenizer (optional)</strong><span class="hint">18 MB · only needed for the kuromoji tokenizer</span></div>
+      ${kuromojiReady
+        ? '<span class="badge" data-status="stable">✓ Available offline</span>'
+        : '<button type="button" id="offline-get-kuromoji" class="btn">Download</button>'}
+    </div>`;
+
+  const button = $('#offline-get-kuromoji');
+  if (button) button.onclick = () => downloadKuromoji(button);
+}
+
+async function downloadKuromoji(button) {
+  button.disabled = true;
+  button.textContent = 'Downloading…';
+  try {
+    const cache = await caches.open(cacheNameFor(APP_VERSION));
+    await cache.addAll(KUROMOJI_FILES);
+    toast('Tokenizer available offline', 'success');
+  } catch (error) {
+    const quota = error && error.name === 'QuotaExceededError';
+    toast(quota ? 'Not enough storage for the 18 MB tokenizer' : 'Download failed — try again online', 'error');
+  }
+  renderOfflineStatus();
+}
+
 boot();
 registerOfflineWorker();
+renderOfflineStatus();
