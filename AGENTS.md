@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.30.1 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.31.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -183,6 +183,12 @@
   cards are grouped into one section per category instead of one flat list
   interleaved by raw threshold — five distinct kinds of progress, not a
   repeating two-color pattern that read as duplicated.
+- Radical Alchemy is ✓ its own tab: it left the Kanji library doorway for
+  `data-panel="alchemy"` (`renderAlchemyTab()`), reversing the rule recorded
+  in Radical Alchemy conventions. Reachable everywhere the same way
+  Achievements is — a head-action on phone/tablet, a colored `.rail-link` on
+  desktop. No open/close state machine anymore: it renders on tab arrival and
+  preserves an in-progress session across a revisit instead of restarting it.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -516,9 +522,24 @@
 
 ## Radical Alchemy conventions
 
-- Keep Alchemy inside the Kanji library rather than adding another primary
-  tab. Closing returns focus to its doorway; revealed answers reuse the one
-  delegated `[data-kanji-tree]` route.
+- Alchemy is its own tab (`data-panel="alchemy"`, `renderAlchemyTab()`), not a
+  doorway inside the Kanji library. **This reverses the original rule below
+  on 2026-08-16, by explicit owner sign-off** — kept for the reasoning, not
+  as current guidance:
+  > Keep Alchemy inside the Kanji library rather than adding another primary
+  > tab. Closing returns focus to its doorway; revealed answers reuse the one
+  > delegated `[data-kanji-tree]` route.
+
+  Same reversal, same day, same reason as the Achievements rule in Vocabulary
+  conventions below: one focus per destination instead of a feature tucked
+  inside an unrelated tab.
+  There is no more open/close state machine — `renderAlchemyTab()` renders
+  on arrival and re-renders (never restarts) an in-progress session on
+  revisit, the same pattern `refreshReview()`/`renderKanjiBrowser()` already
+  use. Revealed answers still reuse the one delegated `[data-kanji-tree]`
+  route, unchanged. "Study recipe trail" hands off into the Kanji tab's own
+  `#kanji-study-workspace`, which stayed there rather than being duplicated —
+  the handoff calls `switchTab('kanji')` before opening it.
 - A formula must have exactly two distinct, single-glyph direct labelled
   KanjiVG components, and its sorted pair must resolve to one dictionary kanji.
   Never ask an ambiguous formula or imply the components are an etymology.

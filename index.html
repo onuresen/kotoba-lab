@@ -50,10 +50,15 @@
         <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" data-badge="review-due" hidden></span></button>
         <button class="tab" data-tab="mywords"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
       </nav>
-      <!-- Achievements and Settings are deliberately not .tab: neither takes a
-           mobile bottom-bar slot, which stays at six columns. Icon and label
-           swap the same way the tabs do — text on desktop, glyph on phones —
-           so aria-label carries the name at the width where the label hides. -->
+      <!-- Alchemy, Achievements, and Settings are deliberately not .tab: none
+           takes a mobile bottom-bar slot, which stays at six columns. Icon and
+           label swap the same way the tabs do — text on desktop, glyph on
+           phones — so aria-label carries the name at the width where the
+           label hides. -->
+      <button type="button" class="head-action" data-tab="alchemy" title="Radical Alchemy — combine components to discover kanji" aria-label="Radical Alchemy">
+        <span class="head-action-icon" aria-hidden="true">錬</span>
+        <span class="head-action-label">Alchemy</span>
+      </button>
       <button type="button" class="head-action" data-tab="achievements" title="Achievements — the reading milestones you've actually passed" aria-label="Achievements">
         <span class="head-action-icon" aria-hidden="true">証</span>
         <span class="head-action-label">Achievements</span>
@@ -82,6 +87,7 @@
     <button class="tab rail-link is-active" data-tab="analyze" data-nav-color="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
     <button class="tab rail-link" data-tab="read" data-nav-color="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
     <button class="tab rail-link" data-tab="kanji" data-nav-color="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
+    <button class="tab rail-link" data-tab="alchemy" data-nav-color="alchemy"><span class="tab-icon" aria-hidden="true">錬</span><span class="tab-label">Alchemy</span></button>
     <button class="tab rail-link" data-tab="relations" data-nav-color="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
     <button class="tab rail-link" data-tab="review" data-nav-color="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" data-badge="review-due" hidden></span></button>
     <button class="tab rail-link" data-tab="mywords" data-nav-color="words"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
@@ -238,16 +244,6 @@
         </label>
       </div>
 
-      <button type="button" id="kanji-alchemy-open" class="kanji-alchemy-doorway">
-        <span class="kanji-alchemy-seal" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="assets/alchemy/alchemy-icons.svg#seal"></use></svg><i>錬</i></span>
-        <span class="kanji-alchemy-doorway-copy">
-          <span class="label">Daily component challenge</span>
-          <strong>Radical Alchemy</strong>
-          <small>Combine two real visual components and discover the kanji they form.</small>
-        </span>
-        <span class="kanji-alchemy-enter">Enter lab <span aria-hidden="true">→</span></span>
-      </button>
-
       <div class="kanji-filter-block">
         <span class="label">JLPT level</span>
         <div class="kanji-levels" role="group" aria-label="Filter by JLPT level">
@@ -319,7 +315,6 @@
       </div>
     </div>
 
-    <section id="kanji-alchemy-workspace" class="card kanji-alchemy-workspace" hidden aria-live="polite"></section>
     <section id="kanji-study-workspace" class="card kanji-study-workspace" hidden aria-live="polite"></section>
 
     <div id="kanji-results-head" class="kanji-results-head">
@@ -328,6 +323,11 @@
     </div>
     <div id="kanji-results"></div>
     <button type="button" id="kanji-more" class="btn btn-ghost kanji-more" hidden>Show more</button>
+  </section>
+
+  <!-- RADICAL ALCHEMY -->
+  <section class="panel" data-panel="alchemy" data-layout="wide" id="alchemy-panel">
+    <section id="kanji-alchemy-workspace" class="card kanji-alchemy-workspace" aria-live="polite"></section>
   </section>
 
   <!-- RELATIONS -->
