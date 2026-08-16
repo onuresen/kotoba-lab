@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.30.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.32.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -174,6 +174,32 @@
   button (Achievements, next to Settings) and that button collapsing to
   icon-only starting at 1080px instead of 780px, so the pill tab row plus two
   head-actions still fit above phone width.
+- Two fixes to the above, both from real testing feedback: (1) wide panels
+  (Kanji, Relations) and the Atlas's immersive focus width were still sized
+  off `100vw`, which doesn't know the rail exists — `main.wrap` now drops its
+  own `max-width` at 1081px+ and each `.panel` centers itself independently
+  (`max-width` + `margin-inline: auto`), so a wide panel's width is relative
+  to `main`'s already-rail-aware box, never the raw viewport. (2) Achievement
+  cards are grouped into one section per category instead of one flat list
+  interleaved by raw threshold — five distinct kinds of progress, not a
+  repeating two-color pattern that read as duplicated.
+- Radical Alchemy is ✓ its own tab: it left the Kanji library doorway for
+  `data-panel="alchemy"` (`renderAlchemyTab()`), reversing the rule recorded
+  in Radical Alchemy conventions. Reachable everywhere the same way
+  Achievements is — a head-action on phone/tablet, a colored `.rail-link` on
+  desktop. No open/close state machine anymore: it renders on tab arrival and
+  preserves an in-progress session across a revisit instead of restarting it.
+- My Words split into Words and Deck is ✓ Done: known-words/kanji chips,
+  readable compounds, and word lookup moved to a new `data-panel="words"` tab
+  (`renderWords()`); the saved deck table and Portable Study Packs stayed at
+  `data-panel="mywords"` under a "Deck" label (`renderMyWords()`, now deck-only
+  — see the Persistent state rule above for who must refresh what). Words took
+  the bottom-bar slot the old My Words tab had, since it's the more frequently
+  visited of the two; Deck moved to a head-action alongside Alchemy,
+  Achievements, and Settings. Four head-actions plus the brand needed a
+  tighter `.head-nav` gap and `.head-action` padding at ≤1080px to keep fitting
+  the narrowest phone widths without clipping — see the icon-only block in
+  japanese-reader.css.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -415,20 +441,25 @@
 ## Mobile interface conventions
 
 - At 1080px and below, keep the six primary tabs in the fixed bottom bar and
-  leave the sticky header for compact branding plus the Achievements and
-  Settings head-action controls. Respect safe-area insets and reserve enough
-  main-content padding that the bar never covers actions.
-- Profile & Data and Achievements are headed panels, not bottom-bar tabs. Both
-  are reached from head-action controls in the header and must never gain a
-  bottom-bar slot; the bar stays at six columns regardless of how many
-  destinations the desktop side rail carries. Their buttons carry `data-tab`
-  but never the `.tab` class, and `switchTab()` selects `[data-tab]` so the
-  header controls receive `is-active` and `aria-current` through the same path
-  as the real tabs. Each needs an explicit `aria-label` because its glyph is
-  `aria-hidden` and its text label is `display: none` on phones.
+  leave the sticky header for compact branding plus the Alchemy, Deck,
+  Achievements, and Settings head-action controls. Respect safe-area insets
+  and reserve enough main-content padding that the bar never covers actions.
+  Four head-actions plus the brand need the tighter `.head-nav`/`.head-action`
+  spacing in the ≤1080px block, not the roomier desktop rail spacing, to keep
+  fitting the narrowest phone widths — check actual narrow-phone screenshots
+  (≤360px), not just a mid-size phone, before adding a fifth.
+- Profile & Data, Alchemy, Deck, and Achievements are headed panels, not
+  bottom-bar tabs. Each is reached from a head-action control in the header
+  and must never gain a bottom-bar slot; the bar stays at six columns
+  regardless of how many destinations the desktop side rail carries. Their
+  buttons carry `data-tab` but never the `.tab` class, and `switchTab()`
+  selects `[data-tab]` so the header controls receive `is-active` and
+  `aria-current` through the same path as the real tabs. Each needs an
+  explicit `aria-label` because its glyph is `aria-hidden` and its text label
+  is `display: none` on phones.
 - 1081px+ is the desktop side rail (`.side-rail` in japanese-reader.css): it
-  replaces the header outright and lists every destination — including
-  Achievements and Settings — as an equally-weighted row with its own color
+  replaces the header outright and lists every destination — including the
+  four head-action-only ones — as an equally-weighted row with its own color
   from the `--nav-*` token set in `palettes/washi-sumi.css`. Each rail link
   duplicates a `data-tab` already present in the header; add a destination to
   both nav copies, never just one, or it's reachable on one width but not the
@@ -436,9 +467,14 @@
   due badge today) must key off a shared `[data-badge="..."]` attribute rather
   than an element `id`, since more than one nav copy of that destination can
   be mounted at once — see `renderReviewStats()`.
-- Anything that changes cards or known state must refresh both `renderMyWords()`
-  and `renderProfilePanel()`. They read the same stores but render separately,
-  and a missed call shows a stale count rather than failing visibly.
+- Anything that changes cards or known state must refresh every render
+  function that owns a piece of it: `renderWords()` (known chips, readable
+  compounds, lookup), `renderMyWords()` (saved deck, study packs), and
+  `renderProfilePanel()`. All three read the same stores but render
+  separately, and a missed call shows a stale count rather than failing
+  visibly — `refreshKnownEverywhere()` is the one place that already calls
+  all of them, so prefer routing a new known-state mutation through it
+  rather than hand-picking which renders to call.
 - Tab changes return phone layouts to the top of the new workspace and keep
   `aria-current` synchronized with the active panel.
 - Sample passages swipe horizontally on phones. Primary touch controls should
@@ -507,9 +543,24 @@
 
 ## Radical Alchemy conventions
 
-- Keep Alchemy inside the Kanji library rather than adding another primary
-  tab. Closing returns focus to its doorway; revealed answers reuse the one
-  delegated `[data-kanji-tree]` route.
+- Alchemy is its own tab (`data-panel="alchemy"`, `renderAlchemyTab()`), not a
+  doorway inside the Kanji library. **This reverses the original rule below
+  on 2026-08-16, by explicit owner sign-off** — kept for the reasoning, not
+  as current guidance:
+  > Keep Alchemy inside the Kanji library rather than adding another primary
+  > tab. Closing returns focus to its doorway; revealed answers reuse the one
+  > delegated `[data-kanji-tree]` route.
+
+  Same reversal, same day, same reason as the Achievements rule in Vocabulary
+  conventions below: one focus per destination instead of a feature tucked
+  inside an unrelated tab.
+  There is no more open/close state machine — `renderAlchemyTab()` renders
+  on arrival and re-renders (never restarts) an in-progress session on
+  revisit, the same pattern `refreshReview()`/`renderKanjiBrowser()` already
+  use. Revealed answers still reuse the one delegated `[data-kanji-tree]`
+  route, unchanged. "Study recipe trail" hands off into the Kanji tab's own
+  `#kanji-study-workspace`, which stayed there rather than being duplicated —
+  the handoff calls `switchTab('kanji')` before opening it.
 - A formula must have exactly two distinct, single-glyph direct labelled
   KanjiVG components, and its sorted pair must resolve to one dictionary kanji.
   Never ask an ambiguous formula or imply the components are an etymology.

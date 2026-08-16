@@ -104,11 +104,12 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.30.0';
+const APP_VERSION = '10.32.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
-  profile: 'tab.profile', achievements: 'tab.achievements',
+  profile: 'tab.profile', achievements: 'tab.achievements', alchemy: 'tab.alchemy',
+  words: 'tab.words',
 });
 
 let jlpt, samples = [];
@@ -139,9 +140,7 @@ let kanjiBrowseFamily = '';
 let kanjiBrowseActiveFamily = null;
 let kanjiBrowseFamilies = [];
 let kanjiStudySession = null;
-let kanjiAlchemyOpen = false;
 let kanjiAlchemySession = null;
-let kanjiAlchemyReturnFocus = null;
 let textJourney = null;
 let textJourneySession = null;
 let usageReportPreviewOpen = false;
@@ -226,6 +225,7 @@ async function boot() {
   renderSampleChips();
   wireUi();
   renderKanjiBrowser();
+  renderWords();
   renderMyWords();
   renderProfilePanel();
   refreshReview();
@@ -807,6 +807,7 @@ function refreshKnownEverywhere({ skipKanjiBrowser = false } = {}) {
     }
     renderTextJourney();
   }
+  renderWords();
   renderMyWords();
   renderProfilePanel();
   if (!skipKanjiBrowser) renderKanjiBrowser();
@@ -1152,15 +1153,6 @@ function onKanjiStudyKey(event) {
   }
 }
 
-function setKanjiAlchemyVisibility(open) {
-  $('#kanji-alchemy-workspace').hidden = !open;
-  $('#kanji-panel .kanji-toolbar').hidden = open;
-  $('#kanji-study-workspace').hidden = true;
-  $('#kanji-results-head').hidden = open;
-  $('#kanji-results').hidden = open;
-  $('#kanji-more').hidden = true;
-}
-
 const ALCHEMY_MODE_LABELS = Object.freeze({
   result: 'Today’s Brew', missing: 'Missing Ingredient', reverse: 'Reverse Brewing', chain: 'Transformation Chain',
 });
@@ -1193,8 +1185,7 @@ function renderAlchemyHistory(history) {
 
 function renderKanjiAlchemy(focusTarget = '') {
   const workspace = $('#kanji-alchemy-workspace');
-  if (!workspace || !kanjiAlchemyOpen) return;
-  setKanjiAlchemyVisibility(true);
+  if (!workspace) return;
   if (!kanjiAlchemySession) {
     workspace.innerHTML = `<div class="alchemy-loading" role="status"><span class="alchemy-loading-seal">${alchemyIcon('crucible')}<i aria-hidden="true">錬</i></span><div><span class="eyebrow">Radical Alchemy</span><h3>Preparing today’s ingredients…</h3><p class="hint">Reading the compact component index. The full stroke-path file stays asleep until you open a Radical Tree.</p></div></div>`;
     return;
@@ -1212,7 +1203,6 @@ function renderKanjiAlchemy(focusTarget = '') {
   workspace.innerHTML = `
     <div class="alchemy-head">
       <div><span class="eyebrow">Radical Alchemy · ${esc(kanjiAlchemySession.date)}</span><h3>${alchemyIcon('book', 'alchemy-head-icon')}${esc(kanjiAlchemySession.title)}</h3></div>
-      <button type="button" class="btn btn-ghost" data-alchemy-action="close">Leave lab</button>
     </div>
     <div class="alchemy-modebar" role="toolbar" aria-label="Alchemy study modes">
       <div class="alchemy-modes">${Object.entries(ALCHEMY_MODE_LABELS).map(([mode, label]) => `<button type="button" class="btn ${kanjiAlchemySession.mode === mode ? 'btn-primary' : 'btn-ghost'}" data-alchemy-mode="${mode}" aria-pressed="${kanjiAlchemySession.mode === mode}">${esc(label)}</button>`).join('')}</div>
@@ -1264,36 +1254,23 @@ function startAlchemyChallenge(mode, knownFilter, history = []) {
   return !!kanjiAlchemySession;
 }
 
-async function openKanjiAlchemy(trigger) {
+// Called from switchTab on every arrival, like renderKanjiBrowser()/
+// refreshReview(). A session already in progress just re-renders (so
+// switching tabs and coming back never loses your place); the async load
+// only runs on the first-ever visit of the session.
+async function renderAlchemyTab() {
   stopKanjiStudy();
-  kanjiAlchemyOpen = true;
-  kanjiAlchemySession = null;
-  kanjiAlchemyReturnFocus = trigger || $('#kanji-alchemy-open');
+  if (kanjiAlchemySession) { renderKanjiAlchemy(); return; }
   renderKanjiAlchemy();
-  requestAnimationFrame(() => $('#kanji-alchemy-workspace').scrollIntoView({
-    block: 'start',
-    behavior: window.matchMedia('(max-width: 780px)').matches ? 'smooth' : 'auto',
-  }));
   try {
-    const structureIndex = await loadKanjiStructureIndex();
-    if (!kanjiAlchemyOpen) return;
+    await loadKanjiStructureIndex();
+    if (!$('#alchemy-panel')?.classList.contains('is-active')) return; // left before it finished
     if (!startAlchemyChallenge('result', 'all')) throw new Error('Not enough unambiguous component recipes were found.');
     renderKanjiAlchemy('choice');
   } catch (error) {
     console.error(error);
-    closeKanjiAlchemy();
     toast('Could not prepare Radical Alchemy. Please try again.', 'error');
   }
-}
-
-function closeKanjiAlchemy() {
-  const returnFocus = kanjiAlchemyReturnFocus;
-  kanjiAlchemyOpen = false;
-  kanjiAlchemySession = null;
-  kanjiAlchemyReturnFocus = null;
-  setKanjiAlchemyVisibility(false);
-  renderKanjiBrowser();
-  requestAnimationFrame(() => returnFocus?.focus());
 }
 
 function onKanjiAlchemyAction(event) {
@@ -1315,10 +1292,8 @@ function onKanjiAlchemyAction(event) {
     return;
   }
   const button = event.target.closest('[data-alchemy-action]');
-  if (!button || !kanjiAlchemyOpen) return;
+  if (!button || !kanjiAlchemySession) return;
   const action = button.dataset.alchemyAction;
-  if (action === 'close') { closeKanjiAlchemy(); return; }
-  if (!kanjiAlchemySession) return;
   if (action === 'previous' || action === 'next') {
     kanjiAlchemySession = moveAlchemyQuestion(kanjiAlchemySession, action === 'previous' ? -1 : 1);
     renderKanjiAlchemy(kanjiAlchemySession.answers[kanjiAlchemySession.index] ? action : 'choice');
@@ -1345,10 +1320,9 @@ function onKanjiAlchemyAction(event) {
     const rows = kanjiAlchemySession.history.map((entry) => entry.target).filter((item) => !seen.has(item.char) && seen.add(item.char));
     const session = createKanjiStudySession({ key: 'alchemy-history', label: 'Alchemy recipe trail', rows }, 'alchemy');
     if (!session) return;
-    kanjiAlchemyOpen = false;
-    kanjiAlchemySession = null;
-    kanjiAlchemyReturnFocus = null;
-    setKanjiAlchemyVisibility(false);
+    // The reveal-card workspace this hands off to lives in the Kanji tab, not
+    // here, so the trail is only useful once the learner actually arrives.
+    switchTab('kanji');
     kanjiStudySession = session;
     renderKanjiStudy('reveal');
     revealKanjiWorkspace();
@@ -1356,7 +1330,7 @@ function onKanjiAlchemyAction(event) {
 }
 
 function onKanjiAlchemyKey(event) {
-  if (!kanjiAlchemyOpen || !kanjiAlchemySession || !$('#kanji-panel').classList.contains('is-active') || event.target.closest('input, textarea, select') || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (!kanjiAlchemySession || !$('#alchemy-panel')?.classList.contains('is-active') || event.target.closest('input, textarea, select') || event.ctrlKey || event.metaKey || event.altKey) return;
   if (/^[1-4]$/.test(event.key) && !kanjiAlchemySession.answers[kanjiAlchemySession.index]) {
     const choice = currentAlchemyQuestion(kanjiAlchemySession).choices[Number(event.key) - 1];
     if (!choice) return;
@@ -1370,16 +1344,11 @@ function onKanjiAlchemyKey(event) {
     event.preventDefault();
     kanjiAlchemySession = moveAlchemyQuestion(kanjiAlchemySession, event.key === 'ArrowLeft' ? -1 : 1);
     renderKanjiAlchemy(kanjiAlchemySession.answers[kanjiAlchemySession.index] ? (event.key === 'ArrowLeft' ? 'previous' : 'next') : 'choice');
-  } else if (event.key === 'Escape' && !document.querySelector('.kt-overlay:not([hidden])')) {
-    event.preventDefault();
-    closeKanjiAlchemy();
   }
 }
 
 function renderKanjiBrowser() {
   if (!kanjiCatalog.length || !$('#kanji-results')) return;
-  if (kanjiAlchemyOpen) { renderKanjiAlchemy(); return; }
-  setKanjiAlchemyVisibility(false);
   const rows = filterKanji(kanjiCatalog, {
     query: $('#kanji-search').value,
     levels: [...kanjiBrowseLevels],
@@ -1815,6 +1784,17 @@ function downloadUsageReport() {
 const ACHIEVEMENT_ICON = Object.freeze({
   kanji: '漢', readable: '読', words: '語', cards: '札', review: '暦',
 });
+// Display order and section heading for each milestone category. Grouping
+// (rather than one flat list sorted by raw threshold) keeps same-category
+// cards together instead of interleaving two colors in a repeating pattern
+// that reads as duplicated rather than as five distinct kinds of progress.
+const ACHIEVEMENT_GROUPS = Object.freeze([
+  ['kanji', 'Kanji'],
+  ['readable', 'Words you can read'],
+  ['words', 'Words known'],
+  ['cards', 'Cards saved'],
+  ['review', 'Review streak'],
+]);
 
 function achievementCardMarkup(m) {
   const icon = ACHIEVEMENT_ICON[m.category] || '証';
@@ -1849,9 +1829,23 @@ function renderAchievements() {
     return;
   }
 
+  const byCategory = new Map();
+  for (const m of passed) {
+    if (!byCategory.has(m.category)) byCategory.set(m.category, []);
+    byCategory.get(m.category).push(m);
+  }
+  const groups = ACHIEVEMENT_GROUPS
+    .filter(([category]) => byCategory.has(category))
+    .map(([category, title]) => `
+      <section class="achievement-group">
+        <h3 class="achievement-group-title">${esc(title)}</h3>
+        <div class="achievements-grid">${byCategory.get(category).map(achievementCardMarkup).join('')}</div>
+      </section>`)
+    .join('');
+
   const nextIcon = next ? (ACHIEVEMENT_ICON[next.category] || '証') : '';
   host.innerHTML = `
-    <div class="achievements-grid">${passed.map(achievementCardMarkup).join('')}</div>
+    ${groups}
     ${next ? `<p class="achievement-next">
         <span class="achievement-next-icon" aria-hidden="true">${nextIcon}</span>
         ${next.remaining.toLocaleString()} to ${esc(next.label)}
@@ -1914,16 +1908,16 @@ function renderReadableCompounds() {
     : '';
 
   // A word "unlocks" relative to what was last actually shown here — not the
-  // previous render, which commonly happens while this panel is hidden (My
-  // Words re-renders on every known-state change everywhere in the app, not
-  // just while it's the active tab). So the baseline only advances when the
-  // panel is visible; while hidden, newly-readable words keep accumulating
-  // in the diff until the learner actually looks.
+  // previous render, which commonly happens while this panel is hidden (Words
+  // re-renders on every known-state change everywhere in the app, not just
+  // while it's the active tab). So the baseline only advances when the panel
+  // is visible; while hidden, newly-readable words keep accumulating in the
+  // diff until the learner actually looks.
   const surfaces = new Set(words.map((w) => w.w));
   const justUnlocked = seenReadableWords
     ? new Set([...surfaces].filter((s) => !seenReadableWords.has(s)))
     : new Set();
-  const visible = $('#mywords-panel')?.classList.contains('is-active');
+  const visible = $('#words-panel')?.classList.contains('is-active');
   if (visible || seenReadableWords === null) seenReadableWords = surfaces;
 
   if (!words.length) {
@@ -1981,7 +1975,12 @@ function renderWordLookup() {
     : '<p class="hint">No vocabulary matches that search. Try a reading, or part of an English meaning.</p>';
 }
 
-function renderMyWords() {
+// Known words/kanji, words newly readable from them, and vocabulary lookup —
+// the "browse and manage what you know" half of what used to be one My Words
+// tab. Split from the deck (renderMyWords()) so each destination has one job;
+// see AGENTS.md for why. Both still read the same stores, so anything that
+// changes known state or the deck must refresh whichever of the two it touches.
+function renderWords() {
   $('#mw-known-count').textContent = `${knownWords.count()} words · ${knownKanji.count()} kanji`;
   $('#mw-known-words').innerHTML = knownWords.all().length
     ? knownWords.all().map((w) => `<span class="known-chip"><span class="known-chip-label">${esc(w)}</span><button type="button" class="known-rm" data-kind="word" data-key="${esc(w)}" title="Unmark ${esc(w)} as known" aria-label="Unmark known word ${esc(w)}">×</button></span>`).join('')
@@ -1992,7 +1991,12 @@ function renderMyWords() {
 
   renderReadableCompounds();
   renderWordLookup();
+}
 
+// The saved review deck and Portable Study Packs — the "your collection"
+// half. Deliberately does not touch known/readable/lookup state; see
+// renderWords() above for that half.
+function renderMyWords() {
   const rows = deck.all();
   $('#mw-deck-count').textContent = `${rows.length} card${rows.length === 1 ? '' : 's'}`;
   $('#mw-deck-tbody').innerHTML = rows.length
@@ -2305,13 +2309,15 @@ function switchTab(name, push = true) {
   usageJournal.record(TAB_USAGE_EVENTS[name]);
   // The shared Text box feeds Analyze and Read only. The other tabs are
   // independent workspaces and should open at their own content immediately.
-  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords' || name === 'profile' || name === 'achievements';
+  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords' || name === 'profile' || name === 'achievements' || name === 'alchemy' || name === 'words';
   // cards come due while you're on another tab — recheck on arrival
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();
+  if (name === 'words') renderWords();
   if (name === 'mywords') renderMyWords();
   if (name === 'profile') renderProfilePanel();
   if (name === 'achievements') renderAchievements();
+  if (name === 'alchemy') renderAlchemyTab();
   if (name === 'relations') {
     renderRelationsSeeds();
     loadRelationsWorkspace().catch((error) => console.error(error));
@@ -2456,11 +2462,14 @@ function wireUi() {
   $('#kanji-reset').addEventListener('click', resetKanjiBrowser);
   $('#kanji-study-start').addEventListener('click', startKanjiStudy);
   $('#kanji-mix-open').addEventListener('click', openFamilyMixSetup);
-  $('#kanji-alchemy-open').addEventListener('click', (event) => openKanjiAlchemy(event.currentTarget));
   $('#kanji-alchemy-workspace').addEventListener('click', onKanjiAlchemyAction);
   $('#kanji-study-workspace').addEventListener('click', onKanjiStudyAction);
   $('#text-journey').addEventListener('click', onTextJourneyAction);
   $('#info').addEventListener('click', onInfoAction);
+  // The Known-chip removal path lives in #words-panel now, deck-row removal
+  // and the go-review/go-profile links stay in #mywords-panel — one handler
+  // covers both, matched by class, same as switchTab() covers every nav copy.
+  $('#words-panel').addEventListener('click', onMyWordsClick);
   $('#mywords-panel').addEventListener('click', onMyWordsClick);
   $('#mw-copy').addEventListener('click', () => exportDeck(false));
   $('#mw-download').addEventListener('click', () => exportDeck(true));
@@ -2534,8 +2543,8 @@ function wireUi() {
           level: Number.isFinite(entry.lvl) ? entry.lvl : null, srs: newCard(),
         });
         toast(now ? 'Saved to deck — due for review now.' : 'Removed from deck.', 'success');
+        renderWords();
         renderMyWords();
-        renderWordLookup();
         renderProfilePanel();
         refreshReview();
       }

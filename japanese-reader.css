@@ -133,13 +133,22 @@ body {
   .rail-link[data-nav-color="analyze"]      { --nav-color: var(--nav-analyze); }
   .rail-link[data-nav-color="read"]         { --nav-color: var(--nav-read); }
   .rail-link[data-nav-color="kanji"]        { --nav-color: var(--nav-kanji); }
+  .rail-link[data-nav-color="alchemy"]      { --nav-color: var(--nav-alchemy); }
   .rail-link[data-nav-color="relations"]    { --nav-color: var(--nav-relations); }
   .rail-link[data-nav-color="review"]       { --nav-color: var(--nav-review); }
   .rail-link[data-nav-color="words"]        { --nav-color: var(--nav-words); }
+  .rail-link[data-nav-color="deck"]         { --nav-color: var(--nav-deck); }
   .rail-link[data-nav-color="achievements"] { --nav-color: var(--nav-achievements); }
   .rail-link[data-nav-color="settings"]     { --nav-color: var(--text3); }
 
-  main.wrap, footer.wrap.site-foot { margin-left: 232px; }
+  /* .wrap's own max-width (--layout-reading, 1080px) would otherwise still cap
+     main at the old page-centered width, leaving wide panels no extra room to
+     actually get wider — max-width:none here hands that job to .panel below,
+     which centers itself independently within main's now-full remaining
+     width instead of relying on main to already be the right size. */
+  main.wrap, footer.wrap.site-foot { margin-left: 232px; max-width: none; }
+  .panel { max-width: var(--layout-reading); margin-inline: auto; }
+  .panel[data-layout="wide"].is-active { max-width: var(--panel-wide-max, var(--layout-data)); }
 }
 
 main.wrap { padding-top: 20px; padding-bottom: 28px; display: flex; flex-direction: column; gap: 16px; }
@@ -147,12 +156,11 @@ main.wrap { padding-top: 20px; padding-bottom: 28px; display: flex; flex-directi
 /* ---- panels + grids -------------------------------------------------------- */
 .panel { display: none; flex-direction: column; gap: 16px; }
 .panel.is-active { display: flex; animation: panel-enter .32s var(--ease) both; }
-@media (min-width: 1081px) {
-  .panel[data-layout="wide"].is-active {
-    width: min(var(--panel-wide-max, var(--layout-data)), calc(100vw - 32px));
-    align-self: center;
-  }
-}
+/* The 1081px+ .panel max-width/margin-inline rules that used to live here (a
+   viewport-relative width capped to the reading measure) now live in the
+   side-rail block above, where main.wrap's own max-width is also handled —
+   the two have to change together or a wide panel ends up sized against a
+   main box that's still capped to the old page-centered width. */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid-read { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
 @media (max-width: 780px) { .grid-2, .grid-read { grid-template-columns: 1fr; } }
@@ -525,29 +533,6 @@ kbd {
 .kanji-intro h2 { margin: 3px 0 4px; font-family: var(--font-display); font-size: 25px; }
 .kanji-search { display: flex; flex-direction: column; gap: 6px; }
 .kanji-search .input { width: 100%; }
-.kanji-alchemy-doorway {
-  appearance: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px;
-  width: 100%; padding: 13px 15px; color: var(--text); text-align: left; cursor: pointer;
-  background: linear-gradient(120deg, var(--surface-warm), var(--accent2-dim), var(--surface-raised));
-  border: 1px solid color-mix(in srgb, var(--accent2) 34%, var(--border)); border-radius: var(--r-lg);
-  box-shadow: inset 0 1px 0 var(--paper-glow), var(--shadow-sm);
-  transition: transform .2s var(--ease), border-color .2s var(--ease), box-shadow .2s var(--ease);
-}
-.kanji-alchemy-doorway:hover, .kanji-alchemy-doorway:focus-visible { transform: translateY(-2px); border-color: var(--accent2); box-shadow: var(--shadow-md), 0 0 0 3px var(--accent2-dim); }
-.kanji-alchemy-doorway:active { transform: translateY(0) scale(.995); }
-.kanji-alchemy-seal {
-  position: relative; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%;
-  color: var(--on-accent); background: linear-gradient(145deg, var(--accent2), var(--accent2-text));
-  border: 1px solid color-mix(in srgb, var(--accent2-text) 42%, var(--border));
-  font-family: var(--font-display); font-size: 25px; box-shadow: inset 0 0 0 4px var(--accent2-dim), var(--shadow-sm);
-}
-.kanji-alchemy-seal svg { position: absolute; inset: 4px; width: 40px; height: 40px; opacity: .42; transition: transform .35s var(--ease); }
-.kanji-alchemy-seal i { position: relative; font-style: normal; }
-.kanji-alchemy-doorway:hover .kanji-alchemy-seal svg, .kanji-alchemy-doorway:focus-visible .kanji-alchemy-seal svg { transform: rotate(18deg) scale(1.06); }
-.kanji-alchemy-doorway-copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.kanji-alchemy-doorway-copy strong { font-family: var(--font-display); font-size: 18px; }
-.kanji-alchemy-doorway-copy small { overflow: hidden; color: var(--text2); text-overflow: ellipsis; white-space: nowrap; }
-.kanji-alchemy-enter { color: var(--accent2-text); font-weight: 700; white-space: nowrap; }
 .kanji-filter-block { display: flex; flex-direction: column; gap: 7px; }
 .kanji-levels { display: flex; flex-wrap: wrap; gap: 6px; }
 .kanji-level { padding: 5px 11px; }
@@ -790,9 +775,6 @@ kbd {
   .kanji-intro { grid-template-columns: 1fr; gap: 11px; }
   .kanji-intro h2 { margin-top: 1px; font-size: 22px; }
   .kanji-intro p { display: none; }
-  .kanji-alchemy-doorway { grid-template-columns: auto minmax(0, 1fr); min-height: 72px; padding: 10px 12px; }
-  .kanji-alchemy-seal { width: 44px; height: 44px; font-size: 23px; }
-  .kanji-alchemy-doorway-copy small, .kanji-alchemy-enter { display: none; }
   .kanji-search .input, .kanji-filter-row .select { min-height: 44px; }
   .kanji-filter-block { min-width: 0; gap: 5px; }
   .kanji-levels {
@@ -1087,7 +1069,9 @@ kbd {
 }
 
 @media (min-width: 1081px) {
-  .relations-panel.is-active[data-atlas-focus="true"] { width: calc(100vw - 24px); max-width: none; gap: 0; }
+  /* 100%, not 100vw — same reasoning as the wide-panel rule above: main.wrap's
+     own width already excludes the side rail at this breakpoint. */
+  .relations-panel.is-active[data-atlas-focus="true"] { width: calc(100% - 24px); max-width: none; gap: 0; }
   .relations-panel[data-atlas-focus="true"] > .relations-toolbar,
   .relations-panel[data-atlas-focus="true"] > .relations-status,
   .relations-panel[data-atlas-focus="true"] > .relations-view-switch { display: none; }
@@ -1558,9 +1542,9 @@ p.hint { margin: 8px 0 0; }
     position: sticky; background: var(--surface);
     backdrop-filter: none; -webkit-backdrop-filter: none;
   }
-  .head-inner { min-height: 60px; padding: 8px 16px; align-items: center; flex-direction: row; }
-  .brand { gap: 10px; }
-  .brand-mark { width: 40px; height: 40px; font-size: 25px; }
+  .head-inner { min-height: 60px; padding: 8px 16px; align-items: center; flex-direction: row; gap: 8px; }
+  .brand { gap: 10px; min-width: 0; }
+  .brand-mark { width: 40px; height: 40px; font-size: 25px; flex: 0 0 auto; }
   .brand h1 { font-size: 20px; }
   .tagline { display: none; }
 
@@ -1719,7 +1703,7 @@ p.hint { margin: 8px 0 0; }
   .srs-stage[data-review-state="complete"] .e-icon,
   .alchemy-complete, .alchemy-complete-icon, .alchemy-chain span[data-current="true"], .alchemy-ring, .alchemy-circle-icon, .alchemy-apparatus::after, .alchemy-vessel,
   .alchemy-bubbles i, .alchemy-stage::after, .alchemy-stage[data-revealed="true"] .alchemy-core,
-  .alchemy-reveal, .alchemy-verdict-icon, .alchemy-loading-seal, .kanji-alchemy-seal svg,
+  .alchemy-reveal, .alchemy-verdict-icon, .alchemy-loading-seal,
   .kanji-study-stage[data-revealed="true"] .kanji-study-answer,
   .kanji-study-progress[data-complete="true"] span,
   .info-actions .act-save[data-saved="true"], .info-actions .act-known[data-known="true"],
@@ -1731,12 +1715,12 @@ p.hint { margin: 8px 0 0; }
   .ka-reading-routes line, .ka-star[data-known="true"]::before, .ka-center::after { animation: none !important; }
   .krm-connectors line { animation: none !important; }
   .tab, .tab::after, .journey-stop, .kanji-card, .kanji-card-map, .krm-node, .srs-kchar, .known-chip,
-  .kanji-contrast-choice, .kanji-alchemy-doorway, .alchemy-choice, .alchemy-stage, .alchemy-progress span, .cov-fill, .kanji-study-progress span,
+  .kanji-contrast-choice, .alchemy-choice, .alchemy-stage, .alchemy-progress span, .cov-fill, .kanji-study-progress span,
   .kt-component-open, .srs-stage, .ka-sky, .ka-star, .rail-link .tab-icon {
     transition: none !important;
   }
   .tab:hover, .tab:active, .journey-stop:hover, .kanji-card:hover,
-  .kanji-alchemy-doorway:hover, .kanji-alchemy-doorway:active, .alchemy-choice:hover, .alchemy-choice:active,
+  .alchemy-choice:hover, .alchemy-choice:active,
   .kanji-card:active, .srs-kchar:hover, .srs-kchar:active,
   .known-chip:hover, .known-chip:active, .kanji-contrast-choice:hover,
   .kanji-contrast-choice:active, .kt-component-open:hover,
@@ -1847,14 +1831,16 @@ p.hint { margin: 8px 0 0; }
    Never show both, so the control reads like the tabs at every width. */
 .head-action-icon { display: none; font-family: var(--font-display); font-size: 17px; line-height: 1; }
 
-/* Two head-actions (Achievements + Settings) plus the tab pill row no longer
-   fit with text labels below the side-rail breakpoint, so they go icon-only
-   there — wider than the .tab-icon swap above, which only needs to clear
-   phone width. */
+/* Four head-actions (Alchemy, Deck, Achievements, Settings) plus the tab pill
+   row no longer fit with text labels below the side-rail breakpoint, so they
+   go icon-only there — wider than the .tab-icon swap above, which only needs
+   to clear phone width. Tighter gap/padding than the desktop rail buttons
+   get, so all four plus the brand still fit the narrowest phone widths. */
 @media (max-width: 1080px) {
   .head-action-icon { display: block; font-size: 21px; }
   .head-action-label { display: none; }
-  .head-action { padding-inline: 12px; }
+  .head-action { padding-inline: 8px; }
+  .head-nav { gap: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1992,33 +1978,62 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 /* ---- achievements ---------------------------------------------------------- */
 /* Passed capability only, still. No badges, no progress bars, no locked slots:
    an empty slot would turn "what you can read" into "what you have not done".
-   The only thing that changed from the old inline strip is that this now has
-   a page of its own to be colorful in — see AGENTS.md for why. */
-.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+   What changed from the old inline strip: this now has a page of its own to
+   be colorful in, and cards group by category (one section per kind of
+   progress) instead of one flat list interleaved by raw threshold — five
+   distinct kinds of proof, not a repeating two-tone pattern. */
+.achievement-group { margin-top: 20px; }
+.achievement-group:first-child { margin-top: 4px; }
+.achievement-group-title {
+  margin: 0 0 10px;
+  font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  color: var(--text2); text-transform: uppercase; letter-spacing: .05em;
+}
+.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
 
 .achievement-card {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 16px 10px; text-align: center;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 20px 12px 16px; text-align: center;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--cat-color, var(--accent2)) 9%, var(--surface-raised)), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--accent2)) 22%, var(--border));
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.achievement-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--cat-color, var(--accent2)) 18%, var(--ink-shadow));
 }
 .achievement-icon {
+  position: relative;
   display: grid; place-items: center;
-  width: 46px; height: 46px;
-  font-family: var(--font-display); font-size: 24px;
+  width: 56px; height: 56px;
+  font-family: var(--font-display); font-size: 28px; line-height: 1;
   color: var(--on-accent);
-  background: var(--cat-color, var(--accent2));
-  border-radius: var(--r-md);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--cat-color, var(--accent2)) 30%, transparent);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--cat-color, var(--accent2)) 85%, var(--on-accent)), var(--cat-color, var(--accent2)));
+  border-radius: 50%;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--cat-color, var(--accent2)) 38%, transparent), inset 0 1px 0 var(--paper-glow);
 }
-.achievement-label { font: 600 12px/1.35 var(--font-body); color: var(--text); }
+/* A thin free-floating ring around the medallion — the same "stamped seal"
+   language as .brand-mark's own inset border, so a passed milestone reads as
+   sealed/certified rather than as a generic colored icon. */
+.achievement-icon::after {
+  content: ''; position: absolute; inset: -5px;
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--accent2)) 32%, transparent);
+  border-radius: 50%;
+}
+.achievement-label { font: 700 12.5px/1.35 var(--font-body); color: var(--text); }
 
 .achievement-card[data-category="kanji"]    { --cat-color: var(--nav-kanji); }
 .achievement-card[data-category="readable"] { --cat-color: var(--nav-read); }
 .achievement-card[data-category="words"]    { --cat-color: var(--nav-words); }
 .achievement-card[data-category="cards"]    { --cat-color: var(--nav-review); }
 .achievement-card[data-category="review"]   { --cat-color: var(--accent2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .achievement-card { transition: none; }
+  .achievement-card:hover { transform: none; }
+}
 
 .achievement-next {
   display: flex; align-items: center; gap: 10px;
