@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.34.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.34.1 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -219,7 +219,11 @@
   Desktop layout conventions for why and what Relations kept. Owner feedback
   from four desktop screenshots was that the previous split made tab
   switching visibly snap the page narrower or wider depending on which panel
-  came up.
+  came up. Follow-up from the same feedback: `.input-card` (the shared Text
+  box on Analyze and Read) is a sibling of `.panel`, not a `.panel` itself,
+  so it had no width rule of its own and grew wider than the panel content
+  under it once the viewport exceeded the data width — it now shares the
+  same `.panel` width rule explicitly.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study

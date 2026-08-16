@@ -153,9 +153,14 @@ body {
      wider depending on which panel you landed on, and a stable column beats a
      few extra characters per line on a data-dense desktop layout. Relations
      still opts into the wider visual measure below — its spatial canvas has
-     a standing, previously-fixed cropping reason the others don't. */
+     a standing, previously-fixed cropping reason the others don't.
+
+     .input-card (the shared Text box) gets the same treatment: it's a
+     sibling of .panel, not a .panel itself, so without its own rule here it
+     stayed uncapped and grew wider than the panel content sitting right
+     below it on Analyze and Read once the viewport exceeded the data width. */
   main.wrap, footer.wrap.site-foot { margin-left: 232px; max-width: none; }
-  .panel { width: 100%; max-width: var(--layout-data); margin-inline: auto; }
+  .panel, .input-card { width: 100%; max-width: var(--layout-data); margin-inline: auto; }
   .panel[data-layout="wide"].is-active { max-width: var(--panel-wide-max, var(--layout-data)); }
 }
 
