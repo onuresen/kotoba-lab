@@ -48,17 +48,30 @@
         <button class="tab" data-tab="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
         <button class="tab" data-tab="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
         <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" data-badge="review-due" hidden></span></button>
-        <button class="tab" data-tab="mywords"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
+        <button class="tab" data-tab="words"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">Words</span></button>
       </nav>
-      <!-- Achievements and Settings are deliberately not .tab: neither takes a
-           mobile bottom-bar slot, which stays at six columns. Icon and label
-           swap the same way the tabs do — text on desktop, glyph on phones —
-           so aria-label carries the name at the width where the label hides. -->
+      <!-- Alchemy, Deck, Achievements, Insights, and Settings are deliberately
+           not .tab: none takes a mobile bottom-bar slot, which stays at six
+           columns. Icon and label swap the same way the tabs do — text on
+           desktop, glyph on phones — so aria-label carries the name at the
+           width where the label hides. -->
+      <button type="button" class="head-action" data-tab="alchemy" title="Radical Alchemy — combine components to discover kanji" aria-label="Radical Alchemy">
+        <span class="head-action-icon" aria-hidden="true">錬</span>
+        <span class="head-action-label">Alchemy</span>
+      </button>
+      <button type="button" class="head-action" data-tab="mywords" title="Deck — your saved review cards and portable study packs" aria-label="Deck">
+        <span class="head-action-icon" aria-hidden="true">札</span>
+        <span class="head-action-label">Deck</span>
+      </button>
       <button type="button" class="head-action" data-tab="achievements" title="Achievements — the reading milestones you've actually passed" aria-label="Achievements">
         <span class="head-action-icon" aria-hidden="true">証</span>
         <span class="head-action-label">Achievements</span>
       </button>
-      <button type="button" class="head-action" data-tab="profile" title="Profile &amp; Data — backups, local dashboard, usage journal, and offline availability" aria-label="Settings">
+      <button type="button" class="head-action" data-tab="insights" title="Insights — your optional local usage journal and friction radar" aria-label="Insights">
+        <span class="head-action-icon" aria-hidden="true">計</span>
+        <span class="head-action-label">Insights</span>
+      </button>
+      <button type="button" class="head-action" data-tab="profile" title="Settings — profile summary, local data dashboard, backup, and import" aria-label="Settings">
         <span class="head-action-icon" aria-hidden="true">設</span>
         <span class="head-action-label">Settings</span>
       </button>
@@ -82,11 +95,14 @@
     <button class="tab rail-link is-active" data-tab="analyze" data-nav-color="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
     <button class="tab rail-link" data-tab="read" data-nav-color="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
     <button class="tab rail-link" data-tab="kanji" data-nav-color="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
+    <button class="tab rail-link" data-tab="alchemy" data-nav-color="alchemy"><span class="tab-icon" aria-hidden="true">錬</span><span class="tab-label">Alchemy</span></button>
     <button class="tab rail-link" data-tab="relations" data-nav-color="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
     <button class="tab rail-link" data-tab="review" data-nav-color="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" data-badge="review-due" hidden></span></button>
-    <button class="tab rail-link" data-tab="mywords" data-nav-color="words"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
+    <button class="tab rail-link" data-tab="words" data-nav-color="words"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">Words</span></button>
     <span class="side-rail-divider" role="separator"></span>
+    <button class="tab rail-link" data-tab="mywords" data-nav-color="deck"><span class="tab-icon" aria-hidden="true">札</span><span class="tab-label">Deck</span></button>
     <button class="tab rail-link" data-tab="achievements" data-nav-color="achievements"><span class="tab-icon" aria-hidden="true">証</span><span class="tab-label">Achievements</span></button>
+    <button class="tab rail-link" data-tab="insights" data-nav-color="insights"><span class="tab-icon" aria-hidden="true">計</span><span class="tab-label">Insights</span></button>
     <button class="tab rail-link" data-tab="profile" data-nav-color="settings"><span class="tab-icon" aria-hidden="true">設</span><span class="tab-label">Settings</span></button>
   </div>
 </nav>
@@ -238,16 +254,6 @@
         </label>
       </div>
 
-      <button type="button" id="kanji-alchemy-open" class="kanji-alchemy-doorway">
-        <span class="kanji-alchemy-seal" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="assets/alchemy/alchemy-icons.svg#seal"></use></svg><i>錬</i></span>
-        <span class="kanji-alchemy-doorway-copy">
-          <span class="label">Daily component challenge</span>
-          <strong>Radical Alchemy</strong>
-          <small>Combine two real visual components and discover the kanji they form.</small>
-        </span>
-        <span class="kanji-alchemy-enter">Enter lab <span aria-hidden="true">→</span></span>
-      </button>
-
       <div class="kanji-filter-block">
         <span class="label">JLPT level</span>
         <div class="kanji-levels" role="group" aria-label="Filter by JLPT level">
@@ -319,7 +325,6 @@
       </div>
     </div>
 
-    <section id="kanji-alchemy-workspace" class="card kanji-alchemy-workspace" hidden aria-live="polite"></section>
     <section id="kanji-study-workspace" class="card kanji-study-workspace" hidden aria-live="polite"></section>
 
     <div id="kanji-results-head" class="kanji-results-head">
@@ -328,6 +333,11 @@
     </div>
     <div id="kanji-results"></div>
     <button type="button" id="kanji-more" class="btn btn-ghost kanji-more" hidden>Show more</button>
+  </section>
+
+  <!-- RADICAL ALCHEMY -->
+  <section class="panel" data-panel="alchemy" data-layout="wide" id="alchemy-panel">
+    <section id="kanji-alchemy-workspace" class="card kanji-alchemy-workspace" aria-live="polite"></section>
   </section>
 
   <!-- RELATIONS -->
@@ -418,8 +428,8 @@
     <p class="hint">Scheduling is SM-2-lite: two learning steps (1&nbsp;min, 10&nbsp;min), then intervals grow by each card's ease. <kbd>Space</kbd> shows the answer / answers <em>Good</em>; <kbd>1</kbd>–<kbd>4</kbd> grade directly. Progress is stored in this browser only, alongside your deck.</p>
   </section>
 
-  <!-- MY WORDS -->
-  <section class="panel" data-panel="mywords" id="mywords-panel">
+  <!-- WORDS -->
+  <section class="panel" data-panel="words" id="words-panel">
     <div class="card">
       <div class="ui-section-header">
         <span class="ui-section-title">Known</span>
@@ -469,7 +479,10 @@
       </div>
       <div id="wl-results" class="compound-list"></div>
     </div>
+  </section>
 
+  <!-- DECK -->
+  <section class="panel" data-panel="mywords" id="mywords-panel">
     <div class="card">
       <div class="ui-section-header">
         <span class="ui-section-title">Saved deck</span>
@@ -488,7 +501,6 @@
       </div>
       <p class="hint">Fields: <code>word · reading · meaning · JLPT level · sentence</code> (tab-separated). Good for Anki — but it drops each card's schedule, so it isn't a backup. Use the backup below for that.</p>
     </div>
-
 
     <div class="card study-pack-card">
       <div class="ui-section-header">
@@ -540,6 +552,35 @@
           <div><input id="profile-reset-phrase" class="input" type="text" autocomplete="off" spellcheck="false"><button type="button" id="profile-reset-apply" class="btn btn-primary" disabled>Reset everything</button><button type="button" id="profile-reset-cancel" class="btn btn-ghost">Cancel</button></div>
         </section>
       </section>
+      <section class="offline-store" aria-labelledby="offline-store-title">
+        <div class="usage-journal-head">
+          <div><span class="label">INSTALLABLE · WORKS OFFLINE</span><h3 id="offline-store-title">Offline availability</h3></div>
+          <span id="offline-store-status" class="badge" data-status="archive">Checking…</span>
+        </div>
+        <p class="hint">Kotoba Lab stores its own application files so it opens without a connection. This is separate from your study data and is never included in a profile backup.</p>
+        <div id="offline-rows" class="offline-rows"></div>
+      </section>
+      <div class="profile-actions">
+        <button id="mw-backup-download" class="btn btn-primary" title="Download every saved card, schedule, known word and kanji, and review history as one JSON file">Download profile (.json)</button>
+        <label class="file-btn btn">Choose profile to import<input type="file" id="mw-backup-file" accept=".json,application/json" hidden></label>
+      </div>
+      <section id="profile-import-preview" class="profile-import-preview" hidden aria-live="polite">
+        <div class="profile-preview-head"><div><span class="label">IMPORT PREVIEW</span><h3 id="profile-import-name">Kotoba Lab profile</h3></div><button type="button" id="profile-import-cancel" class="btn btn-ghost">Cancel</button></div>
+        <p id="profile-import-meta" class="hint"></p>
+        <div id="profile-import-counts" class="profile-summary"></div>
+        <p id="profile-import-impact" class="profile-import-impact"></p>
+        <div class="profile-import-actions">
+          <button type="button" id="profile-import-merge" class="btn btn-primary">Merge safely</button>
+          <button type="button" id="profile-import-replace" class="btn btn-ghost profile-replace">Replace local profile</button>
+        </div>
+        <p class="hint"><strong>Merge safely</strong> adds missing data and keeps the most recently studied schedule. Replace deletes the current local profile first.</p>
+      </section>
+      <p class="hint">Importing never changes anything until you approve the preview. The recommended merge is repeat-safe: importing the same profile twice does not duplicate progress.</p>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="insights" id="insights-panel">
+    <div class="card">
       <section class="usage-journal" aria-labelledby="usage-journal-title">
         <div class="usage-journal-head">
           <div><span class="label">OPTIONAL · LOCAL ONLY</span><h3 id="usage-journal-title">Usage journal</h3></div>
@@ -573,30 +614,6 @@
           <button type="button" id="usage-journal-clear" class="btn btn-ghost" disabled>Reset journal</button>
         </div>
       </section>
-      <section class="offline-store" aria-labelledby="offline-store-title">
-        <div class="usage-journal-head">
-          <div><span class="label">INSTALLABLE · WORKS OFFLINE</span><h3 id="offline-store-title">Offline availability</h3></div>
-          <span id="offline-store-status" class="badge" data-status="archive">Checking…</span>
-        </div>
-        <p class="hint">Kotoba Lab stores its own application files so it opens without a connection. This is separate from your study data and is never included in a profile backup.</p>
-        <div id="offline-rows" class="offline-rows"></div>
-      </section>
-      <div class="profile-actions">
-        <button id="mw-backup-download" class="btn btn-primary" title="Download every saved card, schedule, known word and kanji, and review history as one JSON file">Download profile (.json)</button>
-        <label class="file-btn btn">Choose profile to import<input type="file" id="mw-backup-file" accept=".json,application/json" hidden></label>
-      </div>
-      <section id="profile-import-preview" class="profile-import-preview" hidden aria-live="polite">
-        <div class="profile-preview-head"><div><span class="label">IMPORT PREVIEW</span><h3 id="profile-import-name">Kotoba Lab profile</h3></div><button type="button" id="profile-import-cancel" class="btn btn-ghost">Cancel</button></div>
-        <p id="profile-import-meta" class="hint"></p>
-        <div id="profile-import-counts" class="profile-summary"></div>
-        <p id="profile-import-impact" class="profile-import-impact"></p>
-        <div class="profile-import-actions">
-          <button type="button" id="profile-import-merge" class="btn btn-primary">Merge safely</button>
-          <button type="button" id="profile-import-replace" class="btn btn-ghost profile-replace">Replace local profile</button>
-        </div>
-        <p class="hint"><strong>Merge safely</strong> adds missing data and keeps the most recently studied schedule. Replace deletes the current local profile first.</p>
-      </section>
-      <p class="hint">Importing never changes anything until you approve the preview. The recommended merge is repeat-safe: importing the same profile twice does not duplicate progress.</p>
     </div>
   </section>
 

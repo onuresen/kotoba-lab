@@ -28,10 +28,10 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
   an on’yomi, kun’yomi, canonical radical, or direct visual component. On large
   screens the library expands into a denser five-card workspace.
-- **Radical Alchemy:** enter the laboratory from the Kanji library and practice
-  result brewing, missing ingredients, reverse recipes, or short transformation
-  chains. Every formula comes from an unambiguous pair of direct KanjiVG
-  components and can be filtered to unknown kanji. The session-only recipe trail
+- **Radical Alchemy:** its own tab; practice result brewing, missing
+  ingredients, reverse recipes, or short transformation chains. Every formula
+  comes from an unambiguous pair of direct KanjiVG components and can be
+  filtered to unknown kanji. The session-only recipe trail
   can become a temporary reveal-card study pass; known-state and Radical Tree
   controls remain available on each answer. A
   text-free illustrated workbench, crisp SVG laboratory symbols, ingredient
@@ -83,14 +83,15 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   try short shared-component and reading-exception challenges with no score.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
-- **Adaptive workspace width:** the Kanji browsing grid and the Relations canvas
-  use the available desktop space, because both are visual workspaces that need
-  it. Every other view — Analyze, Read, Review, My Words, and Settings — keeps a
-  focused reading measure. Tablet and phone layouts keep their existing flow.
-- **Words you can now read:** My Words lists the compound words written entirely
-  in kanji you have marked known — what those kanji combine into, rather than
-  what they break down from. Ranked easiest-first, and every kanji opens its
-  Radical Tree. Save any of them straight into the review deck.
+- **Consistent desktop width:** every workspace shares the same width on
+  larger desktops — the one Kanji and Alchemy use — so switching tabs never
+  snaps the page narrower or wider. Relations alone opts into an even wider
+  measure for its spatial maps. Tablet and phone layouts keep their existing
+  flow.
+- **Words you can now read:** the Words tab lists the compound words written
+  entirely in kanji you have marked known — what those kanji combine into,
+  rather than what they break down from. Ranked easiest-first, and every kanji
+  opens its Radical Tree. Save any of them straight into the review deck.
 - **Achievements:** its own tab shows the reading milestones you have actually
   passed — kanji known, words readable, days reviewed — worked out from your
   local data each time it renders, with nothing recorded or awarded.
@@ -109,13 +110,14 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   replace local cards, schedules, known items, and review history. A local-data
   dashboard separates new/due/scheduled cards, known collections, review
   activity, category cleanup, and a typed-confirmation full reset.
-- **Optional local usage journal:** learn which parts of Kotoba Lab you really
-  use through daily session, visible-minute, and coarse-action totals. It is off
-  by default, records no study content, and never sends data anywhere. A local
-  friction radar turns those totals into a feature mix and cautious suggestions
-  for stalled reading, exploration, or review handoffs. A separate Markdown
-  report can be previewed, copied, or downloaded when you want to discuss those
-  patterns without sharing the raw journal or study content.
+- **Insights:** its own tab for the optional local usage journal — learn which
+  parts of Kotoba Lab you really use through daily session, visible-minute, and
+  coarse-action totals. It is off by default, records no study content, and
+  never sends data anywhere. A local friction radar turns those totals into a
+  feature mix and cautious suggestions for stalled reading, exploration, or
+  review handoffs. A separate Markdown report can be previewed, copied, or
+  downloaded when you want to discuss those patterns without sharing the raw
+  journal or study content.
 - **Portable Study Packs:** export kanji from the current text, a selected
   family, a Relations network, or the visible Atlas without personal progress; imported packs open
   directly as temporary Kanji study sessions.

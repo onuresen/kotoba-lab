@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.30.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.34.1 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -174,6 +174,56 @@
   button (Achievements, next to Settings) and that button collapsing to
   icon-only starting at 1080px instead of 780px, so the pill tab row plus two
   head-actions still fit above phone width.
+- Two fixes to the above, both from real testing feedback: (1) wide panels
+  (Kanji, Relations) and the Atlas's immersive focus width were still sized
+  off `100vw`, which doesn't know the rail exists — `main.wrap` now drops its
+  own `max-width` at 1081px+ and each `.panel` centers itself independently
+  (`max-width` + `margin-inline: auto`), so a wide panel's width is relative
+  to `main`'s already-rail-aware box, never the raw viewport. (2) Achievement
+  cards are grouped into one section per category instead of one flat list
+  interleaved by raw threshold — five distinct kinds of progress, not a
+  repeating two-color pattern that read as duplicated.
+- Radical Alchemy is ✓ its own tab: it left the Kanji library doorway for
+  `data-panel="alchemy"` (`renderAlchemyTab()`), reversing the rule recorded
+  in Radical Alchemy conventions. Reachable everywhere the same way
+  Achievements is — a head-action on phone/tablet, a colored `.rail-link` on
+  desktop. No open/close state machine anymore: it renders on tab arrival and
+  preserves an in-progress session across a revisit instead of restarting it.
+- My Words split into Words and Deck is ✓ Done: known-words/kanji chips,
+  readable compounds, and word lookup moved to a new `data-panel="words"` tab
+  (`renderWords()`); the saved deck table and Portable Study Packs stayed at
+  `data-panel="mywords"` under a "Deck" label (`renderMyWords()`, now deck-only
+  — see the Persistent state rule above for who must refresh what). Words took
+  the bottom-bar slot the old My Words tab had, since it's the more frequently
+  visited of the two; Deck moved to a head-action alongside Alchemy,
+  Achievements, and Settings. Four head-actions plus the brand needed a
+  tighter `.head-nav` gap and `.head-action` padding at ≤1080px to keep fitting
+  the narrowest phone widths without clipping — see the icon-only block in
+  japanese-reader.css.
+- Settings split into Settings and Insights is ✓ Done: the usage journal,
+  friction radar, and shareable report moved to a new `data-panel="insights"`
+  tab, reusing `renderUsageJournal()` unchanged (called from `switchTab` now
+  instead of only from inside `renderProfilePanel()`). Settings kept profile
+  summary, the local data dashboard, offline availability, and backup/import
+  — `renderProfilePanel()` is now data-management-only. Insights is a fifth
+  head-action (Alchemy, Deck, Achievements, Insights, Settings), which pushed
+  header spacing to its practical limit on the narrowest phones — see Mobile
+  interface conventions. While moving this, also fixed a real pre-existing
+  bug: the friction radar's "go to X" suggestion buttons (`[data-usage-tab]`)
+  had no click handler wired to their actual panel at all (the only listener
+  checking for them lived on `#mywords-panel`, which never contained them) —
+  they now work, bound directly on `#insights-panel`.
+- Consistent desktop panel width is ✓ Done: every panel at 1081px+ now shares
+  `--layout-data` (Kanji's width) as its `max-width` by default instead of
+  splitting between the reading and data measures — see the reversed rule in
+  Desktop layout conventions for why and what Relations kept. Owner feedback
+  from four desktop screenshots was that the previous split made tab
+  switching visibly snap the page narrower or wider depending on which panel
+  came up. Follow-up from the same feedback: `.input-card` (the shared Text
+  box on Analyze and Read) is a sibling of `.panel`, not a `.panel` itself,
+  so it had no width rule of its own and grew wider than the panel content
+  under it once the viewport exceeded the data width — it now shares the
+  same `.panel` width rule explicitly.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -262,9 +312,12 @@
   or storage.
 - `js/routing.js` — pure hash parsing, tab/route translation, and unknown-route
   fallback; no DOM, history, or fetch.
-- `index.html` `[data-panel="profile"]` — Profile & Data panel: summary,
-  dashboard, reset, usage journal, friction radar, report, offline availability,
-  backup actions, and import preview. Reached only from the header control.
+- `index.html` `[data-panel="profile"]` — Settings panel: profile summary,
+  local data dashboard, reset, offline availability, backup actions, and
+  import preview. Reached only from a header control.
+- `index.html` `[data-panel="insights"]` — Insights panel: the opt-in usage
+  journal, friction radar, and shareable report. Split out of Settings so
+  each destination holds one focus; reached only from a header control.
 - `assets/icons/` — 192/512 any-purpose and 512 full-bleed maskable icons.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
@@ -351,15 +404,40 @@
 - Keep `--layout-reading`, `--layout-data`, and `--layout-visual` as the shared
   width contract. Do not scatter new panel-specific desktop widths through the
   stylesheet.
-- A panel goes wide only when its content genuinely needs the room: a dense
+- **Reversed 2026-08-16, by explicit owner sign-off.** The rule used to read:
+  *"A panel goes wide only when its content genuinely needs the room: a dense
   browsing grid or a spatial canvas. Kanji uses the data width; Relations
-  overrides that shared limit with the visual width. Everything else — Analyze,
-  Read, Review, My Words, and Settings — stays at the reading measure, because
-  reading columns, card lists, and tables are all more legible narrow.
-- Only panels explicitly marked `data-layout="wide"` may escape the reading
-  measure, and there are exactly two. Do not add a third without a content
-  reason that survives the test above; "it has a table" is not one, since
-  Analyze holds the same table markup at the reading measure.
+  overrides that shared limit with the visual width. Everything else —
+  Analyze, Read, Review, My Words, and Settings — stays at the reading
+  measure, because reading columns, card lists, and tables are all more
+  legible narrow. Only panels explicitly marked `data-layout="wide"` may
+  escape the reading measure, and there are exactly two."* Owner feedback
+  (four desktop screenshots) was that snapping between a narrow panel and a
+  wide one on every tab switch reads as unpolished regardless of the
+  per-panel legibility argument. Every panel at 1081px+ now shares the data
+  width (`--layout-data`, Kanji's width) as its `max-width` by default —
+  `data-layout="wide"` no longer changes anything on its own, since wide and
+  default now resolve to the same value. What survived: Relations still opts
+  into the even-wider visual width via its own `--panel-wide-max` override,
+  because that's a spatial canvas with a standing, previously-fixed cropping
+  reason the flat content panels don't share. Do not reintroduce a narrower
+  default for any panel to "improve" its reading measure without checking
+  with the owner first — the whole point of this reversal is a width that
+  does not change when the tab does.
+- `.panel`'s desktop rule needs an explicit `width: 100%` alongside its
+  `max-width`, not `max-width` alone. `main.wrap` is `display: flex;
+  flex-direction: column`, so `.panel` is a flex item whose cross-axis
+  (width) sizing normally stretches to fill it — but a lightly-populated
+  panel (Achievements or Settings with a fresh profile, before any content
+  fills the card) can be narrow enough that its own shrink-to-fit content
+  width comes in under the flex container's stretched width, and without
+  an explicit `width` the panel shrinks to that content width instead of
+  staying full-width. `max-width` alone only ever caps a size that's
+  already explicit; it does not force stretch to kick in. This is exactly
+  the failure mode the panel-width consistency rule above exists to
+  prevent, so a panel with sparse content is the case most likely to
+  silently regress it — check an empty/near-empty panel state, not just a
+  full one, after touching this rule.
 - Wide workspaces begin above the 1080 px reading measure and must not create
   page overflow. Tablet and phone behavior remains governed by the existing
   responsive rules rather than separate narrow-screen width overrides.
@@ -415,20 +493,31 @@
 ## Mobile interface conventions
 
 - At 1080px and below, keep the six primary tabs in the fixed bottom bar and
-  leave the sticky header for compact branding plus the Achievements and
-  Settings head-action controls. Respect safe-area insets and reserve enough
-  main-content padding that the bar never covers actions.
-- Profile & Data and Achievements are headed panels, not bottom-bar tabs. Both
-  are reached from head-action controls in the header and must never gain a
-  bottom-bar slot; the bar stays at six columns regardless of how many
-  destinations the desktop side rail carries. Their buttons carry `data-tab`
-  but never the `.tab` class, and `switchTab()` selects `[data-tab]` so the
-  header controls receive `is-active` and `aria-current` through the same path
-  as the real tabs. Each needs an explicit `aria-label` because its glyph is
-  `aria-hidden` and its text label is `display: none` on phones.
+  leave the sticky header for compact branding plus the Alchemy, Deck,
+  Achievements, Insights, and Settings head-action controls. Respect
+  safe-area insets and reserve enough main-content padding that the bar never
+  covers actions. Five head-actions plus the brand need spacing tightened in
+  two steps: the ≤1080px block tightens once (icon-only, reduced padding) for
+  everything from phone up through tablet; the ≤780px block tightens further
+  still (smaller brand mark, tighter `.head-nav`/`.head-action` gap and
+  padding, both using a `.head-nav .head-action` selector to outrank the
+  ≤1080px block's own rule, which loads later in the file) because tablet
+  width has room to spare that the narrowest phones don't. Check actual
+  narrow-phone screenshots (≤360px) *and* ~900px tablet, not just a mid-size
+  phone, before adding a sixth — at five, 360px already has no room left and
+  only avoids clipping by wrapping the brand name to two lines.
+- Settings, Alchemy, Deck, Achievements, and Insights are headed panels, not
+  bottom-bar tabs. Each is reached from a head-action control in the header
+  and must never gain a bottom-bar slot; the bar stays at six columns
+  regardless of how many destinations the desktop side rail carries. Their
+  buttons carry `data-tab` but never the `.tab` class, and `switchTab()`
+  selects `[data-tab]` so the header controls receive `is-active` and
+  `aria-current` through the same path as the real tabs. Each needs an
+  explicit `aria-label` because its glyph is `aria-hidden` and its text label
+  is `display: none` on phones.
 - 1081px+ is the desktop side rail (`.side-rail` in japanese-reader.css): it
-  replaces the header outright and lists every destination — including
-  Achievements and Settings — as an equally-weighted row with its own color
+  replaces the header outright and lists every destination — including the
+  five head-action-only ones — as an equally-weighted row with its own color
   from the `--nav-*` token set in `palettes/washi-sumi.css`. Each rail link
   duplicates a `data-tab` already present in the header; add a destination to
   both nav copies, never just one, or it's reachable on one width but not the
@@ -436,9 +525,14 @@
   due badge today) must key off a shared `[data-badge="..."]` attribute rather
   than an element `id`, since more than one nav copy of that destination can
   be mounted at once — see `renderReviewStats()`.
-- Anything that changes cards or known state must refresh both `renderMyWords()`
-  and `renderProfilePanel()`. They read the same stores but render separately,
-  and a missed call shows a stale count rather than failing visibly.
+- Anything that changes cards or known state must refresh every render
+  function that owns a piece of it: `renderWords()` (known chips, readable
+  compounds, lookup), `renderMyWords()` (saved deck, study packs), and
+  `renderProfilePanel()`. All three read the same stores but render
+  separately, and a missed call shows a stale count rather than failing
+  visibly — `refreshKnownEverywhere()` is the one place that already calls
+  all of them, so prefer routing a new known-state mutation through it
+  rather than hand-picking which renders to call.
 - Tab changes return phone layouts to the top of the new workspace and keep
   `aria-current` synchronized with the active panel.
 - Sample passages swipe horizontally on phones. Primary touch controls should
@@ -507,9 +601,24 @@
 
 ## Radical Alchemy conventions
 
-- Keep Alchemy inside the Kanji library rather than adding another primary
-  tab. Closing returns focus to its doorway; revealed answers reuse the one
-  delegated `[data-kanji-tree]` route.
+- Alchemy is its own tab (`data-panel="alchemy"`, `renderAlchemyTab()`), not a
+  doorway inside the Kanji library. **This reverses the original rule below
+  on 2026-08-16, by explicit owner sign-off** — kept for the reasoning, not
+  as current guidance:
+  > Keep Alchemy inside the Kanji library rather than adding another primary
+  > tab. Closing returns focus to its doorway; revealed answers reuse the one
+  > delegated `[data-kanji-tree]` route.
+
+  Same reversal, same day, same reason as the Achievements rule in Vocabulary
+  conventions below: one focus per destination instead of a feature tucked
+  inside an unrelated tab.
+  There is no more open/close state machine — `renderAlchemyTab()` renders
+  on arrival and re-renders (never restarts) an in-progress session on
+  revisit, the same pattern `refreshReview()`/`renderKanjiBrowser()` already
+  use. Revealed answers still reuse the one delegated `[data-kanji-tree]`
+  route, unchanged. "Study recipe trail" hands off into the Kanji tab's own
+  `#kanji-study-workspace`, which stayed there rather than being duplicated —
+  the handoff calls `switchTab('kanji')` before opening it.
 - A formula must have exactly two distinct, single-glyph direct labelled
   KanjiVG components, and its sorted pair must resolve to one dictionary kanji.
   Never ask an ambiguous formula or imply the components are an etymology.
