@@ -104,12 +104,12 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.32.0';
+const APP_VERSION = '10.33.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
   profile: 'tab.profile', achievements: 'tab.achievements', alchemy: 'tab.alchemy',
-  words: 'tab.words',
+  words: 'tab.words', insights: 'tab.insights',
 });
 
 let jlpt, samples = [];
@@ -1855,6 +1855,9 @@ function renderAchievements() {
 // Profile & Data lives in its own panel, so it renders independently of the
 // My Words study collection. Both read the same stores, so anything that
 // changes cards or known state must refresh both.
+// Settings: profile summary, local data dashboard, offline availability, and
+// backup/import. Usage journal moved to its own Insights tab (renderUsageJournal(),
+// triggered from switchTab) — an analytics/opt-in concern, not data management.
 function renderProfilePanel() {
   const rows = deck.all();
   const days = Object.keys(reviewLog.all()).length;
@@ -1863,7 +1866,6 @@ function renderProfilePanel() {
   const profileState = currentState();
   $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(profileState));
   renderProfileDashboard(profileState);
-  renderUsageJournal(profileState);
 }
 
 const COMPOUND_LIMIT = 24;
@@ -2013,8 +2015,6 @@ function renderMyWords() {
 }
 
 function onMyWordsClick(e) {
-  const usageAction = e.target.closest('[data-usage-tab]');
-  if (usageAction) { switchTab(usageAction.dataset.usageTab); return; }
   const categoryClear = e.target.closest('[data-profile-clear]');
   if (categoryClear) {
     const category = categoryClear.dataset.profileClear;
@@ -2309,7 +2309,7 @@ function switchTab(name, push = true) {
   usageJournal.record(TAB_USAGE_EVENTS[name]);
   // The shared Text box feeds Analyze and Read only. The other tabs are
   // independent workspaces and should open at their own content immediately.
-  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords' || name === 'profile' || name === 'achievements' || name === 'alchemy' || name === 'words';
+  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords' || name === 'profile' || name === 'achievements' || name === 'alchemy' || name === 'words' || name === 'insights';
   // cards come due while you're on another tab — recheck on arrival
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();
@@ -2318,6 +2318,7 @@ function switchTab(name, push = true) {
   if (name === 'profile') renderProfilePanel();
   if (name === 'achievements') renderAchievements();
   if (name === 'alchemy') renderAlchemyTab();
+  if (name === 'insights') renderUsageJournal();
   if (name === 'relations') {
     renderRelationsSeeds();
     loadRelationsWorkspace().catch((error) => console.error(error));
@@ -2471,6 +2472,13 @@ function wireUi() {
   // covers both, matched by class, same as switchTab() covers every nav copy.
   $('#words-panel').addEventListener('click', onMyWordsClick);
   $('#mywords-panel').addEventListener('click', onMyWordsClick);
+  // Friction-radar suggestion buttons ("go do X"), generated inside
+  // renderUsageJournal(). Previously unwired — this panel had no delegated
+  // click listener of its own before Insights became a tab.
+  $('#insights-panel').addEventListener('click', (event) => {
+    const usageAction = event.target.closest('[data-usage-tab]');
+    if (usageAction) switchTab(usageAction.dataset.usageTab);
+  });
   $('#mw-copy').addEventListener('click', () => exportDeck(false));
   $('#mw-download').addEventListener('click', () => exportDeck(true));
   $('#mw-backup-download').addEventListener('click', downloadBackup);

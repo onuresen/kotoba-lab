@@ -85,9 +85,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   previews, keyboard grading, a due counter, and streak tracking.
 - **Adaptive workspace width:** the Kanji, Alchemy, and Relations workspaces use
   the available desktop space, because all three are visual workspaces that
-  need it. Every other view — Analyze, Read, Review, Words, Deck, and
-  Settings — keeps a focused reading measure. Tablet and phone layouts keep
-  their existing flow.
+  need it. Every other view — Analyze, Read, Review, Words, Deck, Achievements,
+  Insights, and Settings — keeps a focused reading measure. Tablet and phone
+  layouts keep their existing flow.
 - **Words you can now read:** the Words tab lists the compound words written
   entirely in kanji you have marked known — what those kanji combine into,
   rather than what they break down from. Ranked easiest-first, and every kanji
@@ -110,13 +110,14 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   replace local cards, schedules, known items, and review history. A local-data
   dashboard separates new/due/scheduled cards, known collections, review
   activity, category cleanup, and a typed-confirmation full reset.
-- **Optional local usage journal:** learn which parts of Kotoba Lab you really
-  use through daily session, visible-minute, and coarse-action totals. It is off
-  by default, records no study content, and never sends data anywhere. A local
-  friction radar turns those totals into a feature mix and cautious suggestions
-  for stalled reading, exploration, or review handoffs. A separate Markdown
-  report can be previewed, copied, or downloaded when you want to discuss those
-  patterns without sharing the raw journal or study content.
+- **Insights:** its own tab for the optional local usage journal — learn which
+  parts of Kotoba Lab you really use through daily session, visible-minute, and
+  coarse-action totals. It is off by default, records no study content, and
+  never sends data anywhere. A local friction radar turns those totals into a
+  feature mix and cautious suggestions for stalled reading, exploration, or
+  review handoffs. A separate Markdown report can be previewed, copied, or
+  downloaded when you want to discuss those patterns without sharing the raw
+  journal or study content.
 - **Portable Study Packs:** export kanji from the current text, a selected
   family, a Relations network, or the visible Atlas without personal progress; imported packs open
   directly as temporary Kanji study sessions.
