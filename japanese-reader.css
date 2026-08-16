@@ -876,6 +876,7 @@ kbd {
   .usage-signal .btn { min-height: 44px; }
   .usage-report .profile-actions { grid-template-columns: 1fr; }
   .profile-categories { grid-template-columns: 1fr; }
+  .profile-category .btn { min-height: 44px; }
   .profile-reset-zone { align-items: stretch; flex-direction: column; }
   .profile-reset-zone .btn { min-height: 44px; }
   .profile-reset-confirm > div { grid-template-columns: 1fr; }
@@ -2119,6 +2120,18 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 .heatmap-cell[data-level="1"] { background: color-mix(in srgb, var(--nav-relations) 30%, var(--surface-sunken)); }
 .heatmap-cell[data-level="2"] { background: color-mix(in srgb, var(--nav-relations) 60%, var(--surface-sunken)); }
 .heatmap-cell[data-level="3"] { background: var(--nav-relations); }
+
+@media (max-width: 780px) {
+  /* 24 cards single-column made the page ~6 screens of scroll on a phone —
+     a smaller minmax fits two (sometimes three) per row instead of one,
+     without shrinking the cards below a comfortable tap target. */
+  .achievements-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; }
+  .achievement-card { padding: 14px 8px 12px; gap: 6px; }
+  .achievement-icon { width: 46px; height: 46px; font-size: 22px; }
+  .achievements-filters { gap: 5px; }
+  .achievements-filter { padding: 6px 10px; font-size: 11.5px; min-height: 32px; }
+  .achievements-level-title { font-size: 17px; }
+}
 
 @media (max-width: 480px) {
   .heatmap-cell { width: 8px; height: 8px; }

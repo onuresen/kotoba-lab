@@ -2,7 +2,13 @@
 
 ## Current release and backlog
 
-- **v10.35.0 current.** Achievements is now a full game layer: XP, 8 hand-named
+- **v10.35.1 current.** Achievements mobile pass is ✓ Done: at ≤780px the badge
+  grid drops its minmax to fit two (sometimes three) per row instead of one
+  (cutting the page from ~6 screens of scroll to ~3.5 on a phone), the filter
+  pills get tighter padding, and the Profile & Data category "Clear" buttons
+  gained the missing 44px touch-target rule. No overflow bugs found anywhere
+  else in the app when swept at 320/360/375px.
+- Achievements is now a full game layer: XP, 8 hand-named
   levels (白紙→皆伝), a persisted unlock ledger (`kotoba-lab:achievements`, the
   sixth storage key), locked/unlocked badges across 24 achievements in 7
   categories, a review streak, and a 90-day review-activity heatmap. This
