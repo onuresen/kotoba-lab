@@ -104,7 +104,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.27.0';
+const APP_VERSION = '10.28.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -1855,10 +1855,12 @@ const COMPOUND_LIMIT = 24;
 const WORD_LOOKUP_LIMIT = 30;
 
 // One row shape for every vocabulary list, so the compound card and the lookup
-// stay visually identical and gain features together.
-function wordRowMarkup(word) {
+// stay visually identical and gain features together. `justUnlocked` marks a
+// row that became readable only since the previous render, for the brush
+// reveal below — every other row renders exactly as before.
+function wordRowMarkup(word, justUnlocked = false) {
   const saved = deck.has(word.w);
-  return `<div class="compound-row">
+  return `<div class="compound-row"${justUnlocked ? ' data-unlocked="true"' : ''}>
       <div class="compound-word jp">${[...word.w].map((char) => (isKanji(char)
         ? `<button type="button" class="compound-kanji" data-kanji-tree="${esc(char)}" title="Open the Radical Tree for ${esc(char)}" aria-label="Open radical tree for ${esc(char)}">${esc(char)}</button>`
         : `<span class="compound-kana">${esc(char)}</span>`)).join('')}</div>
@@ -1870,6 +1872,10 @@ function wordRowMarkup(word) {
       <button type="button" class="compound-save" data-compound-save="${esc(word.w)}" title="${saved ? `Remove ${esc(word.w)} from your Review deck` : `Save ${esc(word.w)} to your Review deck — it becomes due immediately`}" aria-pressed="${saved}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★ Saved' : '☆ Save'}</button>
     </div>`;
 }
+
+// Stays null until the first render, so opening My Words for the first time
+// in a session never plays the unlock reveal on words you already knew.
+let seenReadableWords = null;
 
 // The reverse of everything else in the app: instead of taking a kanji apart,
 // report the words the known kanji already combine into.
@@ -1886,6 +1892,19 @@ function renderReadableCompounds() {
     ? `${total} word${total === 1 ? '' : 's'}${total > words.length ? ` · showing ${words.length}` : ''}`
     : '';
 
+  // A word "unlocks" relative to what was last actually shown here — not the
+  // previous render, which commonly happens while this panel is hidden (My
+  // Words re-renders on every known-state change everywhere in the app, not
+  // just while it's the active tab). So the baseline only advances when the
+  // panel is visible; while hidden, newly-readable words keep accumulating
+  // in the diff until the learner actually looks.
+  const surfaces = new Set(words.map((w) => w.w));
+  const justUnlocked = seenReadableWords
+    ? new Set([...surfaces].filter((s) => !seenReadableWords.has(s)))
+    : new Set();
+  const visible = $('#mywords-panel')?.classList.contains('is-active');
+  if (visible || seenReadableWords === null) seenReadableWords = surfaces;
+
   if (!words.length) {
     host.innerHTML = knownKanji.count()
       ? '<p class="hint">No compound words yet from these kanji. Marking a few more known will start unlocking them.</p>'
@@ -1893,7 +1912,7 @@ function renderReadableCompounds() {
     return;
   }
 
-  host.innerHTML = words.map(wordRowMarkup).join('');
+  host.innerHTML = words.map((w) => wordRowMarkup(w, justUnlocked.has(w.w))).join('');
 }
 
 // Updates just the card that was toggled. Mirrors the known-state parts of the
@@ -1933,8 +1952,11 @@ function renderWordLookup() {
     ? `${total.toLocaleString()} match${total === 1 ? '' : 'es'}${total > words.length ? ` · showing ${words.length}` : ''}`
     : 'No matches';
 
+  // Explicit call, not a bare `.map(wordRowMarkup)`: Array.map's index would
+  // otherwise land in the `justUnlocked` parameter and flag every row past
+  // the first as newly unlocked.
   host.innerHTML = words.length
-    ? words.map(wordRowMarkup).join('')
+    ? words.map((w) => wordRowMarkup(w)).join('')
     : '<p class="hint">No vocabulary matches that search. Try a reading, or part of an English meaning.</p>';
 }
 

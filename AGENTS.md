@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.27.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.28.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -140,6 +140,16 @@
   reads as edge-on, so the change is never visible mid-turn. Advancing to the
   next card after grading flips it in the same way. Reduced motion skips the
   flip and renders instantly, unchanged from before this pass.
+- Word-unlock brush reveal and kanji settle are ✓ Done. In My Words, a word
+  that just became readable — relative to what was last actually *shown*
+  there, not the previous render, since this panel silently re-renders while
+  hidden every time known-state changes anywhere in the app — is brushed in
+  left-to-right (`brush-reveal`) instead of appearing with the rest of the
+  list; see the `seenReadableWords` baseline in `renderReadableCompounds()`,
+  which only advances while the panel is visible. The Kanji library grid's
+  entrance now overshoots slightly before settling (`kanji-settle`) instead
+  of a plain fade, reserved for kanji arriving in numbers. Both skip under
+  `prefers-reduced-motion`.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -292,6 +302,13 @@
   play won't restart — see `flipStage()`. Content changes only happen while
   the element is mid-animation and effectively invisible (edge-on, faded,
   off-screen), never at a visible frame.
+- A "new since last time" reveal must diff against what was last actually
+  *shown* on screen, not the previous render call. Several panels (My Words
+  chief among them) re-render every time shared state changes anywhere in the
+  app, including while hidden behind another tab — diffing against every
+  render call consumes the "new" flag on an invisible render and the visible
+  one that follows shows nothing. Gate the baseline update on the panel's own
+  visibility, as `renderReadableCompounds()` does with `seenReadableWords`.
 - Component colors are positional and non-semantic. Keep the assembled kanji
   monochrome; color direct children only in the separated state, and match each
   component button without relying on color as its label.
