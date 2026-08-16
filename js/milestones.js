@@ -10,19 +10,22 @@
 
 // Thresholds describe real reading capability, not effort spent. Keep the list
 // short: a long list reads as a checklist of things undone.
+//
+// `category` is presentation-only (which color/icon a passed milestone gets
+// on the Achievements page) — it carries no scoring or ranking meaning.
 export const MILESTONES = Object.freeze([
-  { id: 'kanji-10', label: '10 kanji known', at: 10, value: (s) => s.knownKanji },
-  { id: 'kanji-50', label: '50 kanji known', at: 50, value: (s) => s.knownKanji },
-  { id: 'kanji-100', label: '100 kanji known', at: 100, value: (s) => s.knownKanji },
-  { id: 'kanji-250', label: '250 kanji known', at: 250, value: (s) => s.knownKanji },
-  { id: 'kanji-500', label: '500 kanji known', at: 500, value: (s) => s.knownKanji },
-  { id: 'readable-25', label: '25 words readable', at: 25, value: (s) => s.readableWords },
-  { id: 'readable-100', label: '100 words readable', at: 100, value: (s) => s.readableWords },
-  { id: 'readable-500', label: '500 words readable', at: 500, value: (s) => s.readableWords },
-  { id: 'words-50', label: '50 words known', at: 50, value: (s) => s.knownWords },
-  { id: 'words-200', label: '200 words known', at: 200, value: (s) => s.knownWords },
-  { id: 'cards-50', label: '50 cards saved', at: 50, value: (s) => s.savedCards },
-  { id: 'review-30', label: '30 days reviewed', at: 30, value: (s) => s.reviewDays },
+  { id: 'kanji-10', label: '10 kanji known', at: 10, category: 'kanji', value: (s) => s.knownKanji },
+  { id: 'kanji-50', label: '50 kanji known', at: 50, category: 'kanji', value: (s) => s.knownKanji },
+  { id: 'kanji-100', label: '100 kanji known', at: 100, category: 'kanji', value: (s) => s.knownKanji },
+  { id: 'kanji-250', label: '250 kanji known', at: 250, category: 'kanji', value: (s) => s.knownKanji },
+  { id: 'kanji-500', label: '500 kanji known', at: 500, category: 'kanji', value: (s) => s.knownKanji },
+  { id: 'readable-25', label: '25 words readable', at: 25, category: 'readable', value: (s) => s.readableWords },
+  { id: 'readable-100', label: '100 words readable', at: 100, category: 'readable', value: (s) => s.readableWords },
+  { id: 'readable-500', label: '500 words readable', at: 500, category: 'readable', value: (s) => s.readableWords },
+  { id: 'words-50', label: '50 words known', at: 50, category: 'words', value: (s) => s.knownWords },
+  { id: 'words-200', label: '200 words known', at: 200, category: 'words', value: (s) => s.knownWords },
+  { id: 'cards-50', label: '50 cards saved', at: 50, category: 'cards', value: (s) => s.savedCards },
+  { id: 'review-30', label: '30 days reviewed', at: 30, category: 'review', value: (s) => s.reviewDays },
 ]);
 
 // A next milestone is mentioned only inside this fraction of its threshold.
@@ -44,14 +47,14 @@ export function buildMilestones(stats) {
     const value = readable(stats, milestone);
     if (value === null) continue;
     if (value >= milestone.at) {
-      passed.push({ id: milestone.id, label: milestone.label, at: milestone.at });
+      passed.push({ id: milestone.id, label: milestone.label, at: milestone.at, category: milestone.category });
       continue;
     }
     const remaining = milestone.at - value;
     if (remaining > milestone.at * CLOSENESS) continue;
     // Keep the single nearest target so the strip never becomes a to-do list.
     if (!next || remaining < next.remaining) {
-      next = { id: milestone.id, label: milestone.label, at: milestone.at, remaining };
+      next = { id: milestone.id, label: milestone.label, at: milestone.at, remaining, category: milestone.category };
     }
   }
 

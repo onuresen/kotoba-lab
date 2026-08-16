@@ -80,6 +80,68 @@ body {
   .tab { flex: 1 0 auto; padding-inline: 14px; white-space: nowrap; }
 }
 
+/* ---- desktop side rail (1081px+) --------------------------------------------
+   Below 1081px the header + mobile bottom bar (above/below) carry navigation.
+   At 1081px+ this rail replaces the header outright: every destination —
+   including the two that never take a bottom-bar slot — becomes an equally
+   weighted, colorfully-iconed row instead of a cramped pill. Every .rail-link
+   duplicates a data-tab already present in the header; switchTab() treats
+   every element sharing a data-tab as one group (js/app.js), so the two nav
+   copies stay in sync for free. */
+.side-rail { display: none; }
+
+@media (min-width: 1081px) {
+  .site-head { display: none; }
+
+  .side-rail {
+    display: flex; flex-direction: column; gap: 4px;
+    position: fixed; z-index: var(--z-sticky); left: 0; top: 0; bottom: 0; width: 232px;
+    padding: 18px 12px; overflow-y: auto;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    border-right: 1px solid color-mix(in srgb, var(--border-strong) 60%, transparent);
+    box-shadow: 6px 0 24px var(--ink-shadow-soft);
+  }
+  .side-rail-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+  .side-rail-brand .brand-mark { width: 38px; height: 38px; font-size: 23px; }
+  .side-rail-brand-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text); }
+  .side-rail-links { display: flex; flex-direction: column; gap: 3px; }
+  .side-rail-divider { height: 1px; margin: 8px 8px; background: color-mix(in srgb, var(--border) 80%, transparent); border: 0; }
+
+  .rail-link {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 9px 10px; border-radius: var(--r-md); text-align: left;
+  }
+  .rail-link:hover { background: var(--surface-sunken); transform: none; }
+  .rail-link.is-active { background: var(--surface-raised); box-shadow: var(--shadow-sm), inset 0 1px 0 var(--paper-glow); }
+  .rail-link .tab-icon {
+    display: grid; place-items: center; flex: 0 0 auto;
+    width: 34px; height: 34px; border-radius: var(--r-sm);
+    font-family: var(--font-display); font-size: 17px;
+    color: var(--nav-color, var(--text2));
+    background: color-mix(in srgb, var(--nav-color, var(--text2)) 14%, var(--surface));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nav-color, var(--text2)) 22%, transparent);
+    transition: background .2s var(--ease), box-shadow .2s var(--ease), color .2s var(--ease);
+  }
+  .rail-link.is-active .tab-icon {
+    color: var(--on-accent);
+    background: var(--nav-color, var(--accent));
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--nav-color, var(--accent)) 32%, transparent);
+  }
+  .rail-link .tab-label { font-size: 13px; font-weight: 600; }
+  .rail-link .tab-badge { margin-left: auto; }
+
+  .rail-link[data-nav-color="analyze"]      { --nav-color: var(--nav-analyze); }
+  .rail-link[data-nav-color="read"]         { --nav-color: var(--nav-read); }
+  .rail-link[data-nav-color="kanji"]        { --nav-color: var(--nav-kanji); }
+  .rail-link[data-nav-color="relations"]    { --nav-color: var(--nav-relations); }
+  .rail-link[data-nav-color="review"]       { --nav-color: var(--nav-review); }
+  .rail-link[data-nav-color="words"]        { --nav-color: var(--nav-words); }
+  .rail-link[data-nav-color="achievements"] { --nav-color: var(--nav-achievements); }
+  .rail-link[data-nav-color="settings"]     { --nav-color: var(--text3); }
+
+  main.wrap, footer.wrap.site-foot { margin-left: 232px; }
+}
+
 main.wrap { padding-top: 20px; padding-bottom: 28px; display: flex; flex-direction: column; gap: 16px; }
 
 /* ---- panels + grids -------------------------------------------------------- */
@@ -1670,7 +1732,7 @@ p.hint { margin: 8px 0 0; }
   .krm-connectors line { animation: none !important; }
   .tab, .tab::after, .journey-stop, .kanji-card, .kanji-card-map, .krm-node, .srs-kchar, .known-chip,
   .kanji-contrast-choice, .kanji-alchemy-doorway, .alchemy-choice, .alchemy-stage, .alchemy-progress span, .cov-fill, .kanji-study-progress span,
-  .kt-component-open, .srs-stage, .ka-sky, .ka-star {
+  .kt-component-open, .srs-stage, .ka-sky, .ka-star, .rail-link .tab-icon {
     transition: none !important;
   }
   .tab:hover, .tab:active, .journey-stop:hover, .kanji-card:hover,
@@ -1785,7 +1847,11 @@ p.hint { margin: 8px 0 0; }
    Never show both, so the control reads like the tabs at every width. */
 .head-action-icon { display: none; font-family: var(--font-display); font-size: 17px; line-height: 1; }
 
-@media (max-width: 780px) {
+/* Two head-actions (Achievements + Settings) plus the tab pill row no longer
+   fit with text labels below the side-rail breakpoint, so they go icon-only
+   there — wider than the .tab-icon swap above, which only needs to clear
+   phone width. */
+@media (max-width: 1080px) {
   .head-action-icon { display: block; font-size: 21px; }
   .head-action-label { display: none; }
   .head-action { padding-inline: 12px; }
@@ -1923,24 +1989,66 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
   .wl-controls .input, .wl-controls .select { flex: 1 1 100%; min-height: 44px; }
 }
 
-/* ---- milestones ---------------------------------------------------------------- */
-/* Passed capability only. No badges, no progress bars, no locked slots: an empty
-   slot would turn "what you can read" into "what you have not done". */
-.milestones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.milestones[hidden] { display: none; }
+/* ---- achievements ---------------------------------------------------------- */
+/* Passed capability only, still. No badges, no progress bars, no locked slots:
+   an empty slot would turn "what you can read" into "what you have not done".
+   The only thing that changed from the old inline strip is that this now has
+   a page of its own to be colorful in — see AGENTS.md for why. */
+.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
 
-.milestone {
-  padding: 4px 10px;
-  font: 600 11px/1.5 var(--font-body);
-  color: var(--accent2-text);
-  background: color-mix(in srgb, var(--accent2-dim) 50%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--accent2) 24%, var(--border));
-  border-radius: var(--r-pill);
+.achievement-card {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 10px; text-align: center;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.achievement-icon {
+  display: grid; place-items: center;
+  width: 46px; height: 46px;
+  font-family: var(--font-display); font-size: 24px;
+  color: var(--on-accent);
+  background: var(--cat-color, var(--accent2));
+  border-radius: var(--r-md);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--cat-color, var(--accent2)) 30%, transparent);
+}
+.achievement-label { font: 600 12px/1.35 var(--font-body); color: var(--text); }
+
+.achievement-card[data-category="kanji"]    { --cat-color: var(--nav-kanji); }
+.achievement-card[data-category="readable"] { --cat-color: var(--nav-read); }
+.achievement-card[data-category="words"]    { --cat-color: var(--nav-words); }
+.achievement-card[data-category="cards"]    { --cat-color: var(--nav-review); }
+.achievement-card[data-category="review"]   { --cat-color: var(--accent2); }
+
+.achievement-next {
+  display: flex; align-items: center; gap: 10px;
+  margin: 14px 0 0; padding: 10px 14px;
+  color: var(--text2); font: 600 12px/1.4 var(--font-body);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border);
+  border-radius: var(--r-md);
+}
+.achievement-next-icon {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 28px; height: 28px;
+  font-family: var(--font-display); font-size: 15px;
+  color: var(--text3);
+  background: var(--surface2);
+  border-radius: var(--r-sm);
 }
 
-.milestone--next {
+.achievements-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 40px 24px; text-align: center;
+  color: var(--text2);
+}
+.achievements-empty span {
+  display: grid; place-items: center;
+  width: 52px; height: 52px;
+  font-family: var(--font-display); font-size: 26px;
   color: var(--text3);
   background: var(--surface-sunken);
-  border-style: dashed;
-  border-color: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 50%;
 }
+.achievements-empty p { margin: 0; max-width: 46ch; }

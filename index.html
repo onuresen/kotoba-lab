@@ -27,6 +27,11 @@
 </head>
 <body>
 
+<!-- Below 1081px (phone + tablet) this stays the sticky top bar: branding, the
+     six-column bottom tab bar (added via CSS from .tabs below), and the two
+     head-action buttons that never take a bottom-bar slot. At 1081px+ this
+     whole header is hidden and the .side-rail beneath it takes over — see
+     the "desktop side rail" block in japanese-reader.css. -->
 <header class="site-head">
   <div class="wrap head-inner">
     <div class="brand">
@@ -42,13 +47,17 @@
         <button class="tab" data-tab="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
         <button class="tab" data-tab="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
         <button class="tab" data-tab="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
-        <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" id="tab-due" hidden></span></button>
+        <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" data-badge="review-due" hidden></span></button>
         <button class="tab" data-tab="mywords"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
       </nav>
-      <!-- Settings is deliberately not a tab: it never enters the mobile bottom
-           bar, which stays at six columns. Icon and label swap the same way the
-           tabs do — text on desktop, glyph on phones — so aria-label carries the
-           name at the width where the label is hidden. -->
+      <!-- Achievements and Settings are deliberately not .tab: neither takes a
+           mobile bottom-bar slot, which stays at six columns. Icon and label
+           swap the same way the tabs do — text on desktop, glyph on phones —
+           so aria-label carries the name at the width where the label hides. -->
+      <button type="button" class="head-action" data-tab="achievements" title="Achievements — the reading milestones you've actually passed" aria-label="Achievements">
+        <span class="head-action-icon" aria-hidden="true">証</span>
+        <span class="head-action-label">Achievements</span>
+      </button>
       <button type="button" class="head-action" data-tab="profile" title="Profile &amp; Data — backups, local dashboard, usage journal, and offline availability" aria-label="Settings">
         <span class="head-action-icon" aria-hidden="true">設</span>
         <span class="head-action-label">Settings</span>
@@ -56,6 +65,31 @@
     </div>
   </div>
 </header>
+
+<!-- 1081px+ only (see japanese-reader.css): the left side rail replaces the
+     header above entirely, so every destination — including the two that
+     stay off the mobile bottom bar — is a first-class, equally-sized button
+     with its own color instead of being squeezed into a pill row. Every
+     button below duplicates a data-tab value from the header; switchTab()
+     already treats every element sharing a data-tab as one nav group
+     (see js/app.js), so no JS changes were needed to add this. -->
+<nav class="side-rail" aria-label="Main navigation">
+  <div class="side-rail-brand" aria-hidden="true">
+    <span class="brand-mark">言</span>
+    <span class="side-rail-brand-name">Kotoba Lab</span>
+  </div>
+  <div class="side-rail-links">
+    <button class="tab rail-link is-active" data-tab="analyze" data-nav-color="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
+    <button class="tab rail-link" data-tab="read" data-nav-color="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
+    <button class="tab rail-link" data-tab="kanji" data-nav-color="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
+    <button class="tab rail-link" data-tab="relations" data-nav-color="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
+    <button class="tab rail-link" data-tab="review" data-nav-color="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" data-badge="review-due" hidden></span></button>
+    <button class="tab rail-link" data-tab="mywords" data-nav-color="words"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">My Words</span></button>
+    <span class="side-rail-divider" role="separator"></span>
+    <button class="tab rail-link" data-tab="achievements" data-nav-color="achievements"><span class="tab-icon" aria-hidden="true">証</span><span class="tab-label">Achievements</span></button>
+    <button class="tab rail-link" data-tab="profile" data-nav-color="settings"><span class="tab-icon" aria-hidden="true">設</span><span class="tab-label">Settings</span></button>
+  </div>
+</nav>
 
 <main class="wrap">
   <!-- Hidden during a normal HTTP startup so a slow dictionary fetch never
@@ -493,7 +527,6 @@
       </div>
       <p class="hint">Your local study profile includes saved cards and scheduling, known words and kanji, review history, and sentence context saved with cards. It never includes the text currently in the editor.</p>
       <div id="profile-summary" class="profile-summary" aria-label="Local profile summary"></div>
-      <div id="profile-milestones" class="milestones" aria-label="Study milestones"></div>
       <section class="profile-dashboard" aria-labelledby="profile-dashboard-title">
         <div class="profile-dashboard-head"><div><span class="label">LOCAL DATA DASHBOARD</span><h3 id="profile-dashboard-title">Inspect and manage this browser</h3></div><span id="profile-health" class="badge" data-status="stable">Healthy</span></div>
         <p id="profile-health-detail" class="hint"></p>
@@ -564,6 +597,19 @@
         <p class="hint"><strong>Merge safely</strong> adds missing data and keeps the most recently studied schedule. Replace deletes the current local profile first.</p>
       </section>
       <p class="hint">Importing never changes anything until you approve the preview. The recommended merge is repeat-safe: importing the same profile twice does not duplicate progress.</p>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="achievements" id="achievements-panel">
+    <div class="card achievements-card">
+      <div class="ui-section-header">
+        <span class="ui-section-title">Achievements</span>
+        <span class="ui-section-line"></span>
+      </div>
+      <p class="hint">The reading milestones you've actually passed, worked out from your local
+      data every time you look. Nothing is recorded or awarded — there's no locked list, only
+      what's already true.</p>
+      <div id="achievements-content" aria-live="polite"></div>
     </div>
   </section>
 </main>

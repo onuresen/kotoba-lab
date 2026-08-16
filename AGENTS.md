@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.29.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.30.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -163,6 +163,17 @@
   was left alone here — it already has route travel, a breathing center, and
   known-star twinkle, and piling more ambient motion on top would read as
   busy rather than alive.
+- Desktop side rail and Achievements tab are ✓ Done: at 1081px+ the header is
+  replaced by `.side-rail`, a fixed left column listing every destination —
+  including Achievements and Settings, which stay off the bottom bar — as an
+  equally-weighted row with its own color from the `--nav-*` token set.
+  Achievements is a new routable tab (`data-panel="achievements"`) carrying
+  the milestones content that used to live inside Profile & Data; see the
+  Vocabulary conventions section for the reversed rule this required. Below
+  1081px nothing changed except the header gaining a second head-action
+  button (Achievements, next to Settings) and that button collapsing to
+  icon-only starting at 1080px instead of 780px, so the pill tab row plus two
+  head-actions still fit above phone width.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -403,17 +414,28 @@
 
 ## Mobile interface conventions
 
-- At 780px and below, keep the six primary tabs in the fixed bottom bar and
-  leave the sticky header for compact branding plus the Settings control. Respect
-  safe-area insets and reserve enough main-content padding that the bar never
-  covers actions.
-- Profile & Data is a headed panel, not a tab. It is reached from the header
-  control and must never gain a bottom-bar slot; the bar stays at six columns.
-  Its button carries `data-tab` but never the `.tab` class, and `switchTab()`
-  selects `[data-tab]` so the header control receives `is-active` and
-  `aria-current` through the same path as the real tabs. The control needs an
-  explicit `aria-label` because its glyph is `aria-hidden` and its text label is
-  `display: none` on phones.
+- At 1080px and below, keep the six primary tabs in the fixed bottom bar and
+  leave the sticky header for compact branding plus the Achievements and
+  Settings head-action controls. Respect safe-area insets and reserve enough
+  main-content padding that the bar never covers actions.
+- Profile & Data and Achievements are headed panels, not bottom-bar tabs. Both
+  are reached from head-action controls in the header and must never gain a
+  bottom-bar slot; the bar stays at six columns regardless of how many
+  destinations the desktop side rail carries. Their buttons carry `data-tab`
+  but never the `.tab` class, and `switchTab()` selects `[data-tab]` so the
+  header controls receive `is-active` and `aria-current` through the same path
+  as the real tabs. Each needs an explicit `aria-label` because its glyph is
+  `aria-hidden` and its text label is `display: none` on phones.
+- 1081px+ is the desktop side rail (`.side-rail` in japanese-reader.css): it
+  replaces the header outright and lists every destination — including
+  Achievements and Settings — as an equally-weighted row with its own color
+  from the `--nav-*` token set in `palettes/washi-sumi.css`. Each rail link
+  duplicates a `data-tab` already present in the header; add a destination to
+  both nav copies, never just one, or it's reachable on one width but not the
+  other. Any UI that shows a live count next to a destination (only the Review
+  due badge today) must key off a shared `[data-badge="..."]` attribute rather
+  than an element `id`, since more than one nav copy of that destination can
+  be mounted at once — see `renderReviewStats()`.
 - Anything that changes cards or known state must refresh both `renderMyWords()`
   and `renderProfilePanel()`. They read the same stores but render separately,
   and a missed call shows a stale count rather than failing visibly.
@@ -530,10 +552,24 @@
   render locked slots, badge grids, tier progress, or percentages: an empty slot
   turns "what you can read" into "what you have not done", which is the
   guilt-heavy shape `IDEA_GARDEN.md` rejects.
-- Milestones live inside Profile & Data as content. They must not become their
-  own tab or panel — a dedicated page fails the "would the solo user open this
-  weekly?" test, and the same call was already made in a sibling project by
-  relabelling its Achievements tool to Profile.
+- Milestones live on their own **Achievements** tab (`data-panel="achievements"`,
+  `renderAchievements()` in `js/app.js`), not inside Profile & Data. **This
+  reverses the original rule below on 2026-08-16, by explicit owner sign-off**
+  — kept for the reasoning, not as current guidance:
+  > Milestones live inside Profile & Data as content. They must not become
+  > their own tab or panel — a dedicated page fails the "would the solo user
+  > open this weekly?" test, and the same call was already made in a sibling
+  > project by relabelling its Achievements tool to Profile.
+
+  The reversal is scoped to *this* project: Kotoba Lab is not the
+  business-register tool Thinking Hub is, and the owner wants each nav
+  destination to hold one focus rather than several — Settings had drifted
+  into profile summary + dashboard + usage journal + import/export +
+  milestones all at once. What did **not** reverse: milestones are still
+  derived every render, never recorded (`buildMilestones()`), and the page
+  still shows only what's passed plus at most one next step — no locked
+  slots, badge grids, tier progress, or percentages. Only the destination
+  changed, not the anti-gamification shape of the content itself.
 - `knownToast()` is the single message for every path that marks a kanji known —
   Kanji cards, the Radical Tree, and the Read info panel. Add new paths to it
   rather than writing another toast, or the feedback drifts apart.

@@ -42,6 +42,23 @@
   --ink-shadow: color-mix(in srgb, var(--text) 13%, transparent);
   --ink-shadow-soft: color-mix(in srgb, var(--text) 7%, transparent);
 
+  /* Navigation categorical palette — one muted hue per main-nav destination,
+     for the sidebar's icon tiles. Deliberately a DIFFERENT hue set from the
+     JLPT N5→N1 ramp in japanese-reader.css: that ramp means difficulty and
+     appears right next to nav icons (word/kanji chips, coverage bars), so
+     reusing its exact hues here would make a destination read as "this is
+     N-something" by accident. Same tonal register as the rest of the palette
+     (dusty/ink-wash, not saturated primary colors) so "colorful" doesn't tip
+     into "cheesy" against the warm paper ground. */
+  --nav-analyze:      #2f7a78;  /* muted teal */
+  --nav-read:         #a8763c;  /* muted gold */
+  --nav-kanji:        #7a4a8f;  /* muted plum */
+  --nav-relations:    #4f6b7a;  /* slate blue */
+  --nav-review:       #3f7a4a;  /* forest green */
+  --nav-words:        #b5623a;  /* terracotta */
+  --nav-alchemy:      #8a5a3a;  /* copper */
+  --nav-achievements: #c99a3a;  /* trophy gold */
+
   --font-display: 'Zen Old Mincho', 'Fraunces', Georgia, 'Yu Mincho', serif;
   --font-body:    'DM Sans', system-ui, -apple-system, sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, monospace;

@@ -104,11 +104,11 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.29.0';
+const APP_VERSION = '10.30.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
-  profile: 'tab.profile',
+  profile: 'tab.profile', achievements: 'tab.achievements',
 });
 
 let jlpt, samples = [];
@@ -1543,9 +1543,13 @@ function renderReviewStats() {
     cell(s.total, 'cards in deck');
 
   const waiting = s.due + s.fresh;
-  const badge = $('#tab-due');
-  badge.textContent = waiting > 99 ? '99+' : waiting;
-  badge.hidden = waiting === 0;
+  // Two nav copies of the Review destination exist (mobile bottom bar, desktop
+  // side rail), each with its own badge sharing this attribute — not an id,
+  // so both stay in sync from one render the same way [data-tab] already does.
+  document.querySelectorAll('[data-badge="review-due"]').forEach((badge) => {
+    badge.textContent = waiting > 99 ? '99+' : waiting;
+    badge.hidden = waiting === 0;
+  });
 }
 
 function emptyState(icon, title, sub) {
@@ -1805,9 +1809,23 @@ function downloadUsageReport() {
 }
 
 // Capability milestones, recomputed from current profile numbers every render.
-// Nothing here is stored: see js/milestones.js for why.
-function renderMilestones() {
-  const host = $('#profile-milestones');
+// Nothing here is stored: see js/milestones.js for why. Achievements is a real
+// tab (renders when switchTab arrives on it), not refreshed from every state
+// change the way Profile & Data is — same as Kanji/Relations/Review.
+const ACHIEVEMENT_ICON = Object.freeze({
+  kanji: '漢', readable: '読', words: '語', cards: '札', review: '暦',
+});
+
+function achievementCardMarkup(m) {
+  const icon = ACHIEVEMENT_ICON[m.category] || '証';
+  return `<div class="achievement-card" data-category="${esc(m.category)}">
+      <span class="achievement-icon" aria-hidden="true">${icon}</span>
+      <span class="achievement-label">${esc(m.label)}</span>
+    </div>`;
+}
+
+function renderAchievements() {
+  const host = $('#achievements-content');
   if (!host) return;
 
   const readableWords = buildReadableCompounds(
@@ -1823,17 +1841,21 @@ function renderMilestones() {
   });
 
   if (!passed.length && !next) {
-    host.innerHTML = '';
-    host.hidden = true;
+    host.innerHTML = `<div class="achievements-empty">
+        <span aria-hidden="true">証</span>
+        <p>Nothing yet. Mark a few kanji or words known, save a card, or start a review
+        streak — what you can actually do shows up here as soon as it's true.</p>
+      </div>`;
     return;
   }
-  host.hidden = false;
 
-  // Passed milestones only. A forward line appears just once, and only when the
-  // pure module judged it close enough to be encouraging rather than nagging.
+  const nextIcon = next ? (ACHIEVEMENT_ICON[next.category] || '証') : '';
   host.innerHTML = `
-    ${passed.map((m) => `<span class="milestone">${esc(m.label)}</span>`).join('')}
-    ${next ? `<span class="milestone milestone--next">${next.remaining.toLocaleString()} to ${esc(next.label)}</span>` : ''}`;
+    <div class="achievements-grid">${passed.map(achievementCardMarkup).join('')}</div>
+    ${next ? `<p class="achievement-next">
+        <span class="achievement-next-icon" aria-hidden="true">${nextIcon}</span>
+        ${next.remaining.toLocaleString()} to ${esc(next.label)}
+      </p>` : ''}`;
 }
 
 // Profile & Data lives in its own panel, so it renders independently of the
@@ -1848,7 +1870,6 @@ function renderProfilePanel() {
   $('#profile-summary').innerHTML = profileSummaryMarkup(backupSummary(profileState));
   renderProfileDashboard(profileState);
   renderUsageJournal(profileState);
-  renderMilestones();
 }
 
 const COMPOUND_LIMIT = 24;
@@ -2270,8 +2291,10 @@ let currentTab = 'analyze';
 // tab never pushes a duplicate entry.
 function switchTab(name, push = true) {
   if (name !== 'relations') relationsAtlas?.setFocus(false);
-  // [data-tab] rather than .tab so the header Data control shares the same
-  // active-state and aria-current path as the six bottom-bar tabs.
+  // [data-tab] rather than .tab: every destination now has up to three nav
+  // elements sharing one data-tab value (mobile bottom bar and/or header
+  // head-action, plus the desktop side rail), and all of them need the same
+  // active-state and aria-current path.
   document.querySelectorAll('[data-tab]').forEach((t) => {
     const active = t.dataset.tab === name;
     t.classList.toggle('is-active', active);
@@ -2282,12 +2305,13 @@ function switchTab(name, push = true) {
   usageJournal.record(TAB_USAGE_EVENTS[name]);
   // The shared Text box feeds Analyze and Read only. The other tabs are
   // independent workspaces and should open at their own content immediately.
-  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords' || name === 'profile';
+  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords' || name === 'profile' || name === 'achievements';
   // cards come due while you're on another tab — recheck on arrival
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();
   if (name === 'mywords') renderMyWords();
   if (name === 'profile') renderProfilePanel();
+  if (name === 'achievements') renderAchievements();
   if (name === 'relations') {
     renderRelationsSeeds();
     loadRelationsWorkspace().catch((error) => console.error(error));
