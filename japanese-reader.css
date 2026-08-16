@@ -137,6 +137,7 @@ body {
   .rail-link[data-nav-color="relations"]    { --nav-color: var(--nav-relations); }
   .rail-link[data-nav-color="review"]       { --nav-color: var(--nav-review); }
   .rail-link[data-nav-color="words"]        { --nav-color: var(--nav-words); }
+  .rail-link[data-nav-color="deck"]         { --nav-color: var(--nav-deck); }
   .rail-link[data-nav-color="achievements"] { --nav-color: var(--nav-achievements); }
   .rail-link[data-nav-color="settings"]     { --nav-color: var(--text3); }
 
@@ -1541,9 +1542,9 @@ p.hint { margin: 8px 0 0; }
     position: sticky; background: var(--surface);
     backdrop-filter: none; -webkit-backdrop-filter: none;
   }
-  .head-inner { min-height: 60px; padding: 8px 16px; align-items: center; flex-direction: row; }
-  .brand { gap: 10px; }
-  .brand-mark { width: 40px; height: 40px; font-size: 25px; }
+  .head-inner { min-height: 60px; padding: 8px 16px; align-items: center; flex-direction: row; gap: 8px; }
+  .brand { gap: 10px; min-width: 0; }
+  .brand-mark { width: 40px; height: 40px; font-size: 25px; flex: 0 0 auto; }
   .brand h1 { font-size: 20px; }
   .tagline { display: none; }
 
@@ -1830,14 +1831,16 @@ p.hint { margin: 8px 0 0; }
    Never show both, so the control reads like the tabs at every width. */
 .head-action-icon { display: none; font-family: var(--font-display); font-size: 17px; line-height: 1; }
 
-/* Two head-actions (Achievements + Settings) plus the tab pill row no longer
-   fit with text labels below the side-rail breakpoint, so they go icon-only
-   there — wider than the .tab-icon swap above, which only needs to clear
-   phone width. */
+/* Four head-actions (Alchemy, Deck, Achievements, Settings) plus the tab pill
+   row no longer fit with text labels below the side-rail breakpoint, so they
+   go icon-only there — wider than the .tab-icon swap above, which only needs
+   to clear phone width. Tighter gap/padding than the desktop rail buttons
+   get, so all four plus the brand still fit the narrowest phone widths. */
 @media (max-width: 1080px) {
   .head-action-icon { display: block; font-size: 21px; }
   .head-action-label { display: none; }
-  .head-action { padding-inline: 12px; }
+  .head-action { padding-inline: 8px; }
+  .head-nav { gap: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -11,7 +11,7 @@ import {
 
 test('every application tab is routable', () => {
   assert.deepEqual([...ROUTABLE_TABS].sort(),
-    ['achievements', 'alchemy', 'analyze', 'kanji', 'mywords', 'profile', 'read', 'relations', 'review']);
+    ['achievements', 'alchemy', 'analyze', 'kanji', 'mywords', 'profile', 'read', 'relations', 'review', 'words']);
 });
 
 test('hashes parse in every shape a URL bar can produce', () => {

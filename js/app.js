@@ -104,11 +104,12 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.31.0';
+const APP_VERSION = '10.32.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
   profile: 'tab.profile', achievements: 'tab.achievements', alchemy: 'tab.alchemy',
+  words: 'tab.words',
 });
 
 let jlpt, samples = [];
@@ -224,6 +225,7 @@ async function boot() {
   renderSampleChips();
   wireUi();
   renderKanjiBrowser();
+  renderWords();
   renderMyWords();
   renderProfilePanel();
   refreshReview();
@@ -805,6 +807,7 @@ function refreshKnownEverywhere({ skipKanjiBrowser = false } = {}) {
     }
     renderTextJourney();
   }
+  renderWords();
   renderMyWords();
   renderProfilePanel();
   if (!skipKanjiBrowser) renderKanjiBrowser();
@@ -1905,16 +1908,16 @@ function renderReadableCompounds() {
     : '';
 
   // A word "unlocks" relative to what was last actually shown here — not the
-  // previous render, which commonly happens while this panel is hidden (My
-  // Words re-renders on every known-state change everywhere in the app, not
-  // just while it's the active tab). So the baseline only advances when the
-  // panel is visible; while hidden, newly-readable words keep accumulating
-  // in the diff until the learner actually looks.
+  // previous render, which commonly happens while this panel is hidden (Words
+  // re-renders on every known-state change everywhere in the app, not just
+  // while it's the active tab). So the baseline only advances when the panel
+  // is visible; while hidden, newly-readable words keep accumulating in the
+  // diff until the learner actually looks.
   const surfaces = new Set(words.map((w) => w.w));
   const justUnlocked = seenReadableWords
     ? new Set([...surfaces].filter((s) => !seenReadableWords.has(s)))
     : new Set();
-  const visible = $('#mywords-panel')?.classList.contains('is-active');
+  const visible = $('#words-panel')?.classList.contains('is-active');
   if (visible || seenReadableWords === null) seenReadableWords = surfaces;
 
   if (!words.length) {
@@ -1972,7 +1975,12 @@ function renderWordLookup() {
     : '<p class="hint">No vocabulary matches that search. Try a reading, or part of an English meaning.</p>';
 }
 
-function renderMyWords() {
+// Known words/kanji, words newly readable from them, and vocabulary lookup —
+// the "browse and manage what you know" half of what used to be one My Words
+// tab. Split from the deck (renderMyWords()) so each destination has one job;
+// see AGENTS.md for why. Both still read the same stores, so anything that
+// changes known state or the deck must refresh whichever of the two it touches.
+function renderWords() {
   $('#mw-known-count').textContent = `${knownWords.count()} words · ${knownKanji.count()} kanji`;
   $('#mw-known-words').innerHTML = knownWords.all().length
     ? knownWords.all().map((w) => `<span class="known-chip"><span class="known-chip-label">${esc(w)}</span><button type="button" class="known-rm" data-kind="word" data-key="${esc(w)}" title="Unmark ${esc(w)} as known" aria-label="Unmark known word ${esc(w)}">×</button></span>`).join('')
@@ -1983,7 +1991,12 @@ function renderMyWords() {
 
   renderReadableCompounds();
   renderWordLookup();
+}
 
+// The saved review deck and Portable Study Packs — the "your collection"
+// half. Deliberately does not touch known/readable/lookup state; see
+// renderWords() above for that half.
+function renderMyWords() {
   const rows = deck.all();
   $('#mw-deck-count').textContent = `${rows.length} card${rows.length === 1 ? '' : 's'}`;
   $('#mw-deck-tbody').innerHTML = rows.length
@@ -2296,10 +2309,11 @@ function switchTab(name, push = true) {
   usageJournal.record(TAB_USAGE_EVENTS[name]);
   // The shared Text box feeds Analyze and Read only. The other tabs are
   // independent workspaces and should open at their own content immediately.
-  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords' || name === 'profile' || name === 'achievements' || name === 'alchemy';
+  $('.input-card').hidden = name === 'review' || name === 'kanji' || name === 'relations' || name === 'mywords' || name === 'profile' || name === 'achievements' || name === 'alchemy' || name === 'words';
   // cards come due while you're on another tab — recheck on arrival
   if (name === 'review') refreshReview();
   if (name === 'kanji') renderKanjiBrowser();
+  if (name === 'words') renderWords();
   if (name === 'mywords') renderMyWords();
   if (name === 'profile') renderProfilePanel();
   if (name === 'achievements') renderAchievements();
@@ -2452,6 +2466,10 @@ function wireUi() {
   $('#kanji-study-workspace').addEventListener('click', onKanjiStudyAction);
   $('#text-journey').addEventListener('click', onTextJourneyAction);
   $('#info').addEventListener('click', onInfoAction);
+  // The Known-chip removal path lives in #words-panel now, deck-row removal
+  // and the go-review/go-profile links stay in #mywords-panel — one handler
+  // covers both, matched by class, same as switchTab() covers every nav copy.
+  $('#words-panel').addEventListener('click', onMyWordsClick);
   $('#mywords-panel').addEventListener('click', onMyWordsClick);
   $('#mw-copy').addEventListener('click', () => exportDeck(false));
   $('#mw-download').addEventListener('click', () => exportDeck(true));
@@ -2525,8 +2543,8 @@ function wireUi() {
           level: Number.isFinite(entry.lvl) ? entry.lvl : null, srs: newCard(),
         });
         toast(now ? 'Saved to deck — due for review now.' : 'Removed from deck.', 'success');
+        renderWords();
         renderMyWords();
-        renderWordLookup();
         renderProfilePanel();
         refreshReview();
       }
