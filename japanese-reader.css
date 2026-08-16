@@ -146,9 +146,16 @@ body {
      main at the old page-centered width, leaving wide panels no extra room to
      actually get wider — max-width:none here hands that job to .panel below,
      which centers itself independently within main's now-full remaining
-     width instead of relying on main to already be the right size. */
+     width instead of relying on main to already be the right size.
+
+     Every panel shares the data width (Kanji's width) here, not the narrower
+     reading measure: switching tabs used to visibly snap the page narrower or
+     wider depending on which panel you landed on, and a stable column beats a
+     few extra characters per line on a data-dense desktop layout. Relations
+     still opts into the wider visual measure below — its spatial canvas has
+     a standing, previously-fixed cropping reason the others don't. */
   main.wrap, footer.wrap.site-foot { margin-left: 232px; max-width: none; }
-  .panel { max-width: var(--layout-reading); margin-inline: auto; }
+  .panel { width: 100%; max-width: var(--layout-data); margin-inline: auto; }
   .panel[data-layout="wide"].is-active { max-width: var(--panel-wide-max, var(--layout-data)); }
 }
 
