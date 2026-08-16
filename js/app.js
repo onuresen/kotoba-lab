@@ -8,7 +8,7 @@ import { kanjiStats, wordStats, charMix, readability, coverage } from './analyze
 import { renderReading, applyKnownClasses } from './read.js';
 import { pickStudyWords, toTSV, download } from './flashcards.js';
 import { readAozoraFile } from './aozora.js';
-import { createKnownSet, createDeck, createReviewLog } from './storage.js';
+import { createKnownSet, createDeck, createReviewLog, createAchievementLog } from './storage.js';
 import { serializeBackup, backupFilename, inspectBackup, backupSummary, mergeState, describeMerge } from './backup.js';
 import { serializeStudyPack, parseStudyPack, studyPackFilename, studyPackFamily } from './study-pack.js';
 import { buildProfileMetrics, clearProfileCategory, emptyProfileState } from './profile-dashboard.js';
@@ -28,7 +28,7 @@ import { cacheNameFor } from './offline-cache.js';
 import { parseRoute, routeToHash } from './routing.js';
 import { buildReadableCompounds, wordsContaining, isReadableCompound, unlockedBy } from './compound-words.js';
 import { searchWords } from './word-browser.js';
-import { buildMilestones } from './milestones.js';
+import { buildAchievements, evaluateNewlyUnlocked } from './achievements.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
 import { createKanjiNetworkView } from './kanji-network.js';
@@ -104,7 +104,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.34.1';
+const APP_VERSION = '10.35.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -144,6 +144,7 @@ let kanjiAlchemySession = null;
 let textJourney = null;
 let textJourneySession = null;
 let usageReportPreviewOpen = false;
+let achievementsFilter = 'all';
 const kanjiBrowseLevels = new Set();
 
 // persisted, personal — survive across sessions in this browser only
@@ -151,6 +152,7 @@ const knownWords = createKnownSet('known-words');
 const knownKanji = createKnownSet('known-kanji');
 const deck = createDeck('deck');
 const reviewLog = createReviewLog('review-log');
+const achievementLog = createAchievementLog('achievements');
 const usageJournal = createUsageJournal();
 const isKnown = { word: (s) => knownWords.has(s), kanji: (c) => knownKanji.has(c) };
 
@@ -1777,30 +1779,64 @@ function downloadUsageReport() {
   recordUsageReportExport('Downloaded privacy-safe usage report.');
 }
 
-// Capability milestones, recomputed from current profile numbers every render.
-// Nothing here is stored: see js/milestones.js for why. Achievements is a real
-// tab (renders when switchTab arrives on it), not refreshed from every state
-// change the way Profile & Data is — same as Kanji/Relations/Review.
+// Achievements: XP, levels, streaks, and a locked/unlocked badge grid — see
+// js/achievements.js for the catalog and js/storage.js's createAchievementLog
+// for the persisted ledger. Recomputed and re-persisted only when this tab
+// renders (a tab switch, or a filter-pill click), same lifecycle as
+// Kanji/Relations/Review, not on every state change the way Profile & Data is.
 const ACHIEVEMENT_ICON = Object.freeze({
-  kanji: '漢', readable: '読', words: '語', cards: '札', review: '暦',
+  kanji: '漢', readable: '読', words: '語', cards: '札', review: '暦', streak: '続', allround: '全',
 });
-// Display order and section heading for each milestone category. Grouping
+// Display order and section heading for each achievement category. Grouping
 // (rather than one flat list sorted by raw threshold) keeps same-category
-// cards together instead of interleaving two colors in a repeating pattern
-// that reads as duplicated rather than as five distinct kinds of progress.
+// cards together instead of interleaving colors in a repeating pattern that
+// reads as duplicated rather than as seven distinct kinds of progress.
 const ACHIEVEMENT_GROUPS = Object.freeze([
   ['kanji', 'Kanji'],
   ['readable', 'Words you can read'],
   ['words', 'Words known'],
   ['cards', 'Cards saved'],
-  ['review', 'Review streak'],
+  ['review', 'Review days'],
+  ['streak', 'Review streak'],
+  ['allround', 'Well-rounded'],
+]);
+// Shorter labels for the filter pills — the group headings above read well as
+// section titles but are too long for a row of toggle buttons.
+const ACHIEVEMENT_FILTERS = Object.freeze([
+  ['all', 'All'], ['kanji', 'Kanji'], ['readable', 'Readable'], ['words', 'Words'],
+  ['cards', 'Cards'], ['review', 'Review'], ['streak', 'Streak'], ['allround', 'Well-rounded'],
 ]);
 
-function achievementCardMarkup(m) {
-  const icon = ACHIEVEMENT_ICON[m.category] || '証';
-  return `<div class="achievement-card" data-category="${esc(m.category)}">
+function achievementCardMarkup(a, locked, earnedAt, justUnlocked) {
+  const icon = ACHIEVEMENT_ICON[a.category] || '証';
+  const cls = ['achievement-card'];
+  if (locked) cls.push('achievement-card--locked');
+  if (justUnlocked) cls.push('achievement-unlocking');
+  const title = locked ? `Locked — +${a.xp} XP` : `Earned ${new Date(earnedAt).toLocaleDateString()}`;
+  return `<div class="${cls.join(' ')}" data-category="${esc(a.category)}" title="${esc(title)}">
       <span class="achievement-icon" aria-hidden="true">${icon}</span>
-      <span class="achievement-label">${esc(m.label)}</span>
+      <span class="achievement-label">${esc(a.label)}</span>
+      <span class="achievement-xp">+${a.xp} XP</span>
+    </div>`;
+}
+
+// GitHub-contribution-style grid over exactly reviewLog's 90-day retention
+// window — no padded 365-day claim for activity the log doesn't actually keep.
+function achievementsHeatmapMarkup(days) {
+  const cells = [];
+  const cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+  for (let i = 89; i >= 0; i -= 1) {
+    const d = new Date(cursor);
+    d.setDate(d.getDate() - i);
+    const key = d.toLocaleDateString('en-CA');
+    const count = days[key] || 0;
+    const level = count === 0 ? 0 : count <= 2 ? 1 : count <= 5 ? 2 : 3;
+    cells.push(`<span class="heatmap-cell" data-level="${level}" title="${esc(key)}: ${count} answered"></span>`);
+  }
+  return `<div class="achievements-heatmap">
+      <p class="achievements-heatmap-label">Review activity — last 90 days</p>
+      <div class="heatmap-grid">${cells.join('')}</div>
     </div>`;
 }
 
@@ -1811,45 +1847,79 @@ function renderAchievements() {
   const readableWords = buildReadableCompounds(
     vocabList, (char) => knownKanji.has(char), 0,
   ).total;
-
-  const { passed, next } = buildMilestones({
+  const stats = {
     knownKanji: knownKanji.count(),
     knownWords: knownWords.count(),
     readableWords,
     savedCards: deck.count(),
     reviewDays: Object.keys(reviewLog.all()).length,
-  });
+    reviewStreak: reviewLog.streak(),
+  };
+  stats.wellRounded = stats.knownKanji > 0 && stats.knownWords > 0 && stats.savedCards > 0 && stats.reviewDays > 0;
 
-  if (!passed.length && !next) {
-    host.innerHTML = `<div class="achievements-empty">
-        <span aria-hidden="true">証</span>
-        <p>Nothing yet. Mark a few kanji or words known, save a card, or start a review
-        streak — what you can actually do shows up here as soon as it's true.</p>
-      </div>`;
-    return;
-  }
+  // Detect + persist only on render, per the app's lazy-tab lifecycle — see the
+  // module comment above. record() is a no-op for anything already earned, so
+  // re-running this on every filter-pill click is harmless.
+  const newlyUnlocked = evaluateNewlyUnlocked(stats, achievementLog.all());
+  for (const id of newlyUnlocked) achievementLog.record(id);
+  const justUnlocked = new Set(newlyUnlocked);
 
-  const byCategory = new Map();
-  for (const m of passed) {
-    if (!byCategory.has(m.category)) byCategory.set(m.category, []);
-    byCategory.get(m.category).push(m);
+  const unlockedMap = achievementLog.all();
+  const { unlocked, locked, totalXp, level, levelTitle, xpIntoLevel, xpForNextLevel } = buildAchievements(stats, unlockedMap);
+
+  const cardsByCategory = new Map();
+  for (const a of unlocked) {
+    if (!cardsByCategory.has(a.category)) cardsByCategory.set(a.category, []);
+    cardsByCategory.get(a.category).push({ ...a, locked: false });
   }
+  for (const a of locked) {
+    if (!cardsByCategory.has(a.category)) cardsByCategory.set(a.category, []);
+    cardsByCategory.get(a.category).push({ ...a, locked: true });
+  }
+  for (const list of cardsByCategory.values()) list.sort((a, b) => a.at - b.at);
+
   const groups = ACHIEVEMENT_GROUPS
-    .filter(([category]) => byCategory.has(category))
+    .filter(([category]) => achievementsFilter === 'all' || achievementsFilter === category)
     .map(([category, title]) => `
       <section class="achievement-group">
         <h3 class="achievement-group-title">${esc(title)}</h3>
-        <div class="achievements-grid">${byCategory.get(category).map(achievementCardMarkup).join('')}</div>
+        <div class="achievements-grid">${(cardsByCategory.get(category) || [])
+          .map((a) => achievementCardMarkup(a, a.locked, unlockedMap[a.id], justUnlocked.has(a.id)))
+          .join('')}</div>
       </section>`)
     .join('');
 
-  const nextIcon = next ? (ACHIEVEMENT_ICON[next.category] || '証') : '';
+  const filterButtons = ACHIEVEMENT_FILTERS
+    .map(([category, label]) => `<button type="button" class="achievements-filter" data-achv-filter="${category}" aria-pressed="${achievementsFilter === category}">${esc(label)}</button>`)
+    .join('');
+
+  const pct = xpForNextLevel > 0 ? Math.min(100, Math.round((xpIntoLevel / xpForNextLevel) * 100)) : 100;
+  const streak = stats.reviewStreak;
+  const total = unlocked.length + locked.length;
+
   host.innerHTML = `
+    <div class="achievements-header">
+      <div class="achievements-level">
+        <span class="achievements-level-num">Lv ${level}</span>
+        <span class="achievements-level-title">${esc(levelTitle)}</span>
+      </div>
+      <div class="achievements-xp-bar"><div class="achievements-xp-fill" style="width:${pct}%"></div></div>
+      <div class="achievements-stats-row">
+        <span>${unlocked.length} of ${total} unlocked</span>
+        <span>${totalXp.toLocaleString()} XP</span>
+        ${streak ? `<span>${streak}-day streak</span>` : ''}
+      </div>
+    </div>
+    <div class="achievements-filters" role="tablist" aria-label="Filter achievements by category">${filterButtons}</div>
     ${groups}
-    ${next ? `<p class="achievement-next">
-        <span class="achievement-next-icon" aria-hidden="true">${nextIcon}</span>
-        ${next.remaining.toLocaleString()} to ${esc(next.label)}
-      </p>` : ''}`;
+    ${achievementsHeatmapMarkup(reviewLog.all())}`;
+}
+
+function onAchievementsClick(e) {
+  const filterButton = e.target.closest('[data-achv-filter]');
+  if (!filterButton) return;
+  achievementsFilter = filterButton.dataset.achvFilter;
+  renderAchievements();
 }
 
 // Profile & Data lives in its own panel, so it renders independently of the
@@ -2066,6 +2136,7 @@ function currentState() {
     knownWords: knownWords.all(),
     knownKanji: knownKanji.all(),
     reviewLog: reviewLog.all(),
+    achievements: achievementLog.all(),
   };
 }
 
@@ -2117,6 +2188,7 @@ function writeProfileState(state) {
   knownWords.replaceAll(state.knownWords);
   knownKanji.replaceAll(state.knownKanji);
   reviewLog.replaceAll(state.reviewLog);
+  achievementLog.replaceAll(state.achievements || {});
   sessionCount = 0;
   refreshKnownEverywhere();
   refreshReview();
@@ -2472,6 +2544,7 @@ function wireUi() {
   // covers both, matched by class, same as switchTab() covers every nav copy.
   $('#words-panel').addEventListener('click', onMyWordsClick);
   $('#mywords-panel').addEventListener('click', onMyWordsClick);
+  $('#achievements-panel').addEventListener('click', onAchievementsClick);
   // Friction-radar suggestion buttons ("go do X"), generated inside
   // renderUsageJournal(). Previously unwired — this panel had no delegated
   // click listener of its own before Insights became a tab.

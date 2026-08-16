@@ -2,7 +2,14 @@
 
 ## Current release and backlog
 
-- **v10.34.1 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.35.0 current.** Achievements is now a full game layer: XP, 8 hand-named
+  levels (白紙→皆伝), a persisted unlock ledger (`kotoba-lab:achievements`, the
+  sixth storage key), locked/unlocked badges across 24 achievements in 7
+  categories, a review streak, and a 90-day review-activity heatmap. This
+  reverses the page's earlier derived-only, no-locked-slots doctrine by
+  explicit owner sign-off — see the Vocabulary conventions section. `js/milestones.js`
+  is retired; `js/achievements.js` is its replacement and is not derived-only.
+- Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -325,8 +332,9 @@
   reverse index; lazy-loaded only for structural family views.
 - `data/kanjivg.manifest.json` — pinned input and artifact checksums used by CI.
 - `js/app.js` — retryable lazy loader plus delegated doorway integration.
-- `js/milestones.js` — pure capability thresholds derived from profile counts;
-  no DOM, storage, or fetch, and no persisted earned state.
+- `js/achievements.js` — pure achievement catalog (24 ids, XP, category), level
+  curve, and unlock evaluation; no DOM, storage, or fetch. Persisted unlock
+  timestamps live in `storage.js`'s `createAchievementLog`, not here.
 - `js/kanji-atlas.js` — pure bounded component-family graph/layout, reading-route,
   unknown-study, and challenge helpers plus the ephemeral Atlas interactions.
 - `japanese-reader.css` — app-specific styles, including Tree and Relationship
@@ -652,16 +660,39 @@
 
 - Reward the learner with real consequences, never invented ones. `unlockedBy()`
   reports the compounds a newly known kanji actually completed, read out of
-  committed dictionary data. Do not add points, levels, or streak pressure; the
-  idea garden rejects guilt-heavy mechanics deliberately.
-- Milestones are derived, never recorded. `buildMilestones()` recomputes from
-  current profile numbers, so there is no earned-badge state to store, migrate,
-  or resynchronise after a profile import.
-- Show only milestones already passed, plus at most one nearby next step. Never
-  render locked slots, badge grids, tier progress, or percentages: an empty slot
-  turns "what you can read" into "what you have not done", which is the
-  guilt-heavy shape `IDEA_GARDEN.md` rejects.
-- Milestones live on their own **Achievements** tab (`data-panel="achievements"`,
+  committed dictionary data. This still governs kanji-unlock feedback,
+  Radical Alchemy, and everything else in the app.
+
+  **Achievements is the one deliberate exception, reversed on 2026-08-16 by
+  explicit owner sign-off**, using Thinking Hub's own gamified Achievements
+  page as the reference this time rather than a shape to avoid. Kept for the
+  reasoning, not as current guidance for that page:
+  > Do not add points, levels, or streak pressure; the idea garden rejects
+  > guilt-heavy mechanics deliberately.
+  >
+  > Milestones are derived, never recorded. `buildMilestones()` recomputes
+  > from current profile numbers, so there is no earned-badge state to store,
+  > migrate, or resynchronise after a profile import.
+  >
+  > Show only milestones already passed, plus at most one nearby next step.
+  > Never render locked slots, badge grids, tier progress, or percentages: an
+  > empty slot turns "what you can read" into "what you have not done", which
+  > is the guilt-heavy shape `IDEA_GARDEN.md` rejects.
+
+  What actually changed, in `js/achievements.js` and `js/storage.js`'s
+  `createAchievementLog`: 24 achievements across 7 categories each carry XP;
+  total XP maps to one of 8 hand-named levels (白紙→皆伝); a review streak and
+  90-day review-activity heatmap read `reviewLog`; and unlock state is now
+  **recorded**, in a sixth `localStorage` key (`kotoba-lab:achievements`,
+  reversing the five-key doctrine) — once earned, an achievement stays earned
+  even if the underlying stat later regresses, and it round-trips through
+  backup export/import (`BACKUP_VERSION` 3) and the full data-wipe flow like
+  every other store. Every achievement is visible from a fresh profile, locked
+  ones grayed out with their XP value. The one thing kept from the original
+  objection: a locked badge states what it's worth, never a "N to go"
+  countdown — that specific guilt-heavy framing is still avoided. This
+  reversal is scoped to Achievements; no other feature gained invented points.
+- Achievements live on their own **Achievements** tab (`data-panel="achievements"`,
   `renderAchievements()` in `js/app.js`), not inside Profile & Data. **This
   reverses the original rule below on 2026-08-16, by explicit owner sign-off**
   — kept for the reasoning, not as current guidance:
@@ -674,11 +705,7 @@
   business-register tool Thinking Hub is, and the owner wants each nav
   destination to hold one focus rather than several — Settings had drifted
   into profile summary + dashboard + usage journal + import/export +
-  milestones all at once. What did **not** reverse: milestones are still
-  derived every render, never recorded (`buildMilestones()`), and the page
-  still shows only what's passed plus at most one next step — no locked
-  slots, badge grids, tier progress, or percentages. Only the destination
-  changed, not the anti-gamification shape of the content itself.
+  milestones all at once.
 - `knownToast()` is the single message for every path that marks a kanji known —
   Kanji cards, the Radical Tree, and the Read info panel. Add new paths to it
   rather than writing another toast, or the feedback drifts apart.
@@ -857,14 +884,22 @@
 
 ## Persistent state
 
-There are exactly five localStorage keys. Radical Tree, profiles, and study
-packs add none; the fifth belongs only to the optional local usage journal:
+There are exactly six localStorage keys. Radical Tree and study packs add
+none; the fifth belongs only to the optional local usage journal, and the
+sixth is the achievement ledger — added 2026-08-16, reversing the original
+five-key doctrine by the same explicit owner sign-off covered in Vocabulary
+conventions:
 
 - `kotoba-lab:deck`
 - `kotoba-lab:known-words`
 - `kotoba-lab:known-kanji`
 - `kotoba-lab:review-log`
 - `kotoba-lab:usage-journal`
+- `kotoba-lab:achievements` — id → unlock timestamp (ms), written by
+  `js/storage.js`'s `createAchievementLog`. Unlike the usage journal, this one
+  **is** included in profile backups (`BACKUP_VERSION` 3) and the full
+  data-wipe flow, same as deck/known/review-log: it's earned progress, not
+  behavioral telemetry.
 
 The journal is off by default. It may store only allowlisted event counts,
 daily sessions, and visible active minutes for the last 90 days. Never add an

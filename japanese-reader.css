@@ -1996,12 +1996,40 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 }
 
 /* ---- achievements ---------------------------------------------------------- */
-/* Passed capability only, still. No badges, no progress bars, no locked slots:
-   an empty slot would turn "what you can read" into "what you have not done".
-   What changed from the old inline strip: this now has a page of its own to
-   be colorful in, and cards group by category (one section per kind of
-   progress) instead of one flat list interleaved by raw threshold — five
-   distinct kinds of proof, not a repeating two-tone pattern. */
+/* The full game layer: XP, a level title, a review streak, and every
+   achievement visible — unlocked in full color, locked grayed out with its XP
+   value but no "N to go" countdown. This reverses the page's earlier
+   derived-only, locked-slots-forbidden doctrine by explicit owner sign-off —
+   see AGENTS.md's Vocabulary conventions section for the reasoning kept from
+   both the original rule and this reversal. Cards still group by category
+   (one section per kind of progress) rather than one flat list. */
+.achievements-header { margin-bottom: 16px; }
+.achievements-level { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.achievements-level-num {
+  font: 700 13px/1 var(--font-body); color: var(--on-accent);
+  background: var(--accent2); padding: 4px 10px; border-radius: var(--r-pill);
+}
+.achievements-level-title { font: 700 20px/1.1 var(--font-display); color: var(--text); }
+.achievements-xp-bar { height: 10px; border-radius: var(--r-pill); background: var(--surface-sunken); overflow: hidden; box-shadow: inset 0 1px 4px var(--ink-shadow-soft); }
+.achievements-xp-fill {
+  display: block; height: 100%; border-radius: var(--r-pill);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent2) 76%, var(--accent)), var(--accent2));
+  transition: width .45s var(--ease);
+}
+.achievements-stats-row {
+  display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px;
+  font: 600 12px/1.4 var(--font-body); color: var(--text2);
+}
+
+.achievements-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.achievements-filter {
+  padding: 6px 12px; font: 600 12px/1.3 var(--font-body); color: var(--text2);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-pill);
+  cursor: pointer; transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+}
+.achievements-filter:hover { border-color: var(--border-strong); }
+.achievements-filter[aria-pressed="true"] { color: var(--on-accent); background: var(--accent2); border-color: var(--accent2); }
+
 .achievement-group { margin-top: 20px; }
 .achievement-group:first-child { margin-top: 4px; }
 .achievement-group-title {
@@ -2043,47 +2071,55 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
   border-radius: 50%;
 }
 .achievement-label { font: 700 12.5px/1.35 var(--font-body); color: var(--text); }
+.achievement-xp { font: 700 10.5px/1.3 var(--font-body); color: var(--text3); }
 
 .achievement-card[data-category="kanji"]    { --cat-color: var(--nav-kanji); }
 .achievement-card[data-category="readable"] { --cat-color: var(--nav-read); }
 .achievement-card[data-category="words"]    { --cat-color: var(--nav-words); }
 .achievement-card[data-category="cards"]    { --cat-color: var(--nav-review); }
-.achievement-card[data-category="review"]   { --cat-color: var(--accent2); }
+.achievement-card[data-category="review"]   { --cat-color: var(--nav-relations); }
+.achievement-card[data-category="streak"]   { --cat-color: var(--accent); }
+.achievement-card[data-category="allround"] { --cat-color: var(--accent2); }
+
+/* Locked: same medallion shape, desaturated and dimmed, so the shape of what's
+   achievable is visible without pretending it's already true — the point of
+   this reversal, without reintroducing the "N to go" countdown the original
+   doctrine specifically rejected. */
+.achievement-card--locked { box-shadow: none; }
+.achievement-card--locked:hover { transform: none; box-shadow: var(--shadow-sm); }
+.achievement-card--locked .achievement-icon {
+  filter: grayscale(1); opacity: .5;
+  box-shadow: inset 0 1px 0 var(--paper-glow);
+}
+.achievement-card--locked .achievement-icon::after { opacity: .5; }
+.achievement-card--locked .achievement-label { color: var(--text3); }
+
+/* Reuses Radical Alchemy's own seal-stamp keyframe (japanese-reader.css, the
+   alchemy section) rather than inventing new motion for the same "stamped"
+   moment. */
+.achievement-unlocking .achievement-icon { animation: alchemy-seal-stamp .5s var(--ease) both; }
 
 @media (prefers-reduced-motion: reduce) {
   .achievement-card { transition: none; }
   .achievement-card:hover { transform: none; }
+  .achievement-unlocking .achievement-icon { animation: none; }
+  .achievements-xp-fill { transition: none; }
 }
 
-.achievement-next {
-  display: flex; align-items: center; gap: 10px;
-  margin: 14px 0 0; padding: 10px 14px;
-  color: var(--text2); font: 600 12px/1.4 var(--font-body);
-  background: var(--surface-sunken);
-  border: 1px dashed var(--border);
-  border-radius: var(--r-md);
+.achievements-heatmap { margin-top: 24px; }
+.achievements-heatmap-label {
+  margin: 0 0 8px;
+  font: 700 12px/1.3 var(--font-body); color: var(--text2);
 }
-.achievement-next-icon {
-  display: grid; place-items: center; flex: 0 0 auto;
-  width: 28px; height: 28px;
-  font-family: var(--font-display); font-size: 15px;
-  color: var(--text3);
-  background: var(--surface2);
-  border-radius: var(--r-sm);
+.heatmap-grid {
+  display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column;
+  gap: 3px; width: fit-content;
 }
+.heatmap-cell { width: 11px; height: 11px; border-radius: 2px; background: var(--surface-sunken); }
+.heatmap-cell[data-level="1"] { background: color-mix(in srgb, var(--nav-relations) 30%, var(--surface-sunken)); }
+.heatmap-cell[data-level="2"] { background: color-mix(in srgb, var(--nav-relations) 60%, var(--surface-sunken)); }
+.heatmap-cell[data-level="3"] { background: var(--nav-relations); }
 
-.achievements-empty {
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 40px 24px; text-align: center;
-  color: var(--text2);
+@media (max-width: 480px) {
+  .heatmap-cell { width: 8px; height: 8px; }
 }
-.achievements-empty span {
-  display: grid; place-items: center;
-  width: 52px; height: 52px;
-  font-family: var(--font-display); font-size: 26px;
-  color: var(--text3);
-  background: var(--surface-sunken);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-}
-.achievements-empty p { margin: 0; max-width: 46ch; }

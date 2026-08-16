@@ -112,3 +112,26 @@ export function createReviewLog(key, keepDays = 90) {
     clear() { days = {}; persist(); },
   };
 }
+
+// A persisted achievement ledger: id -> unlock timestamp (ms). Once an id is
+// recorded it is never overwritten — first-earned wins, so re-evaluating the
+// same achievement on every Achievements-tab render never loses the original
+// unlock time. Unknown ids (a future catalog change) are simply carried along
+// unused rather than dropped, so an earlier version's earned data is never
+// destroyed by a newer one that trims the catalog.
+export function createAchievementLog(key) {
+  let unlocked = readJSON(key, {});
+  const persist = () => writeJSON(key, unlocked);
+  return {
+    has: (id) => id in unlocked,
+    record(id, at = Date.now()) {
+      if (id in unlocked) return false;
+      unlocked[id] = at;
+      persist();
+      return true;
+    },
+    all: () => ({ ...unlocked }),
+    replaceAll(next) { unlocked = { ...next }; persist(); },
+    clear() { unlocked = {}; persist(); },
+  };
+}

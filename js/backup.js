@@ -15,13 +15,31 @@
 // that's ahead backwards. Every rule here is chosen so that importing the same
 // file twice changes nothing the second time.
 
+import { ACHIEVEMENTS } from './achievements.js';
+
 export const BACKUP_FORMAT = 'kotoba-lab-backup';
-export const BACKUP_VERSION = 2;
+export const BACKUP_VERSION = 3;
 
 // ---- shape helpers ----------------------------------------------------------
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const num = (v, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
+const ACHIEVEMENT_IDS = new Set(ACHIEVEMENTS.map((a) => a.id));
+
+// id -> unlock timestamp (ms). An id this build's catalog doesn't recognize
+// (an older or newer catalog) is dropped rather than trusted, same as every
+// other cleaner here — it simply can't be awarded XP for a threshold this
+// build doesn't define.
+function cleanAchievements(raw) {
+  if (!isObj(raw)) return {};
+  const out = {};
+  for (const [id, at] of Object.entries(raw)) {
+    if (!ACHIEVEMENT_IDS.has(id)) continue;
+    const timestamp = num(at, NaN);
+    if (Number.isFinite(timestamp) && timestamp >= 0) out[id] = Math.round(timestamp);
+  }
+  return out;
+}
 
 // Keep only strings, deduped, order preserved — a known-set is exactly that.
 function cleanStrings(list) {
@@ -104,6 +122,7 @@ export function buildBackup(state, now = Date.now(), { appVersion = '' } = {}) {
     knownWords: cleanStrings(state.knownWords),
     knownKanji: cleanStrings(state.knownKanji),
     reviewLog: cleanLog(state.reviewLog),
+    achievements: cleanAchievements(state.achievements),
   };
   return {
     format: BACKUP_FORMAT,
@@ -152,6 +171,7 @@ export function inspectBackup(text) {
     knownWords: cleanStrings(raw.knownWords),
     knownKanji: cleanStrings(raw.knownKanji),
     reviewLog: cleanLog(raw.reviewLog),
+    achievements: cleanAchievements(raw.achievements),
   };
   if (!deck.length && !state.knownWords.length && !state.knownKanji.length && !Object.keys(state.reviewLog).length) {
     throw new Error('That backup is empty — no cards and no known words.');
@@ -225,12 +245,23 @@ export function mergeState(current, incoming) {
     log[day] = Math.max(log[day] || 0, n);
   }
 
+  // Earliest timestamp wins: the achievement was earned whenever it first
+  // became true on whichever device got there first, mirroring the
+  // earliest-savedAt rule for deck cards above.
+  const achievements = { ...(current.achievements || {}) };
+  let achievementsAdded = 0;
+  for (const [id, at] of Object.entries(incoming.achievements || {})) {
+    if (!(id in achievements)) achievementsAdded += 1;
+    achievements[id] = Math.min(achievements[id] ?? Infinity, at ?? Infinity);
+  }
+
   return {
     state: {
       deck: [...bySurface.values()],
       knownWords: [...words],
       knownKanji: [...kanji],
       reviewLog: log,
+      achievements,
     },
     stats: {
       cardsAdded,
@@ -239,6 +270,7 @@ export function mergeState(current, incoming) {
       wordsAdded: words.size - wordsBefore,
       kanjiAdded: kanji.size - kanjiBefore,
       daysAdded,
+      achievementsAdded,
     },
   };
 }
@@ -250,6 +282,7 @@ export function describeMerge(stats) {
   if (stats.cardsUpdated) bits.push(`${stats.cardsUpdated} updated`);
   const known = stats.wordsAdded + stats.kanjiAdded;
   if (known) bits.push(`${known} known item${known === 1 ? '' : 's'}`);
+  if (stats.achievementsAdded) bits.push(`${stats.achievementsAdded} achievement${stats.achievementsAdded === 1 ? '' : 's'}`);
   if (!bits.length) return 'Already up to date — nothing new in that backup.';
   return `Imported: ${bits.join(', ')}.`;
 }

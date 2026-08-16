@@ -92,9 +92,11 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   entirely in kanji you have marked known — what those kanji combine into,
   rather than what they break down from. Ranked easiest-first, and every kanji
   opens its Radical Tree. Save any of them straight into the review deck.
-- **Achievements:** its own tab shows the reading milestones you have actually
-  passed — kanji known, words readable, days reviewed — worked out from your
-  local data each time it renders, with nothing recorded or awarded.
+- **Achievements:** its own tab tracks 24 achievements across kanji, reading,
+  words, saved cards, review days, and review streaks. Each carries XP toward
+  one of 8 levels, locked ones stay visible (grayed, with their XP value), and
+  once earned an achievement is remembered for good — plus a 90-day review
+  activity heatmap.
 - **Unlock feedback:** marking a kanji known tells you which compound words that
   just made readable, so the most consequential action in the app finally says
   what it bought you.

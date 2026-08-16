@@ -8,6 +8,7 @@ export const EMPTY_PROFILE = Object.freeze({
   knownWords: Object.freeze([]),
   knownKanji: Object.freeze([]),
   reviewLog: Object.freeze({}),
+  achievements: Object.freeze({}),
 });
 
 function normalizedState(state = {}) {
@@ -16,6 +17,7 @@ function normalizedState(state = {}) {
     knownWords: Array.isArray(state.knownWords) ? state.knownWords : [],
     knownKanji: Array.isArray(state.knownKanji) ? state.knownKanji : [],
     reviewLog: state.reviewLog && typeof state.reviewLog === 'object' && !Array.isArray(state.reviewLog) ? state.reviewLog : {},
+    achievements: state.achievements && typeof state.achievements === 'object' && !Array.isArray(state.achievements) ? state.achievements : {},
   };
 }
 
@@ -57,5 +59,5 @@ export function clearProfileCategory(state, category) {
 }
 
 export function emptyProfileState() {
-  return { deck: [], knownWords: [], knownKanji: [], reviewLog: {} };
+  return { deck: [], knownWords: [], knownKanji: [], reviewLog: {}, achievements: {} };
 }

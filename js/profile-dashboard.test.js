@@ -13,6 +13,7 @@ const state = {
   knownWords: ['日本語', '勉強'],
   knownKanji: ['日'],
   reviewLog: { '2026-08-12': 3, '2026-08-14': 5 },
+  achievements: { 'kanji-1': NOW },
 };
 
 test('dashboard metrics distinguish new, due, and scheduled cards', () => {
@@ -37,7 +38,7 @@ test('category clearing changes only the requested collection and never mutates 
   assert.deepEqual(state.knownKanji, ['日']);
 });
 
-test('unknown categories are safe and a full reset returns the four canonical stores', () => {
+test('unknown categories are safe and a full reset returns the five canonical stores', () => {
   assert.deepEqual(clearProfileCategory(state, 'mystery'), state);
-  assert.deepEqual(emptyProfileState(), { deck: [], knownWords: [], knownKanji: [], reviewLog: {} });
+  assert.deepEqual(emptyProfileState(), { deck: [], knownWords: [], knownKanji: [], reviewLog: {}, achievements: {} });
 });

@@ -8,7 +8,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createKnownSet, createDeck, createReviewLog } from './storage.js';
+import { createKnownSet, createDeck, createReviewLog, createAchievementLog } from './storage.js';
 
 // ---- a fake localStorage ----------------------------------------------------
 
@@ -148,6 +148,40 @@ test('an empty log has no streak and no today', (t) => {
   assert.equal(log.streak(), 0);
   assert.equal(log.today(), 0);
   assert.deepEqual(log.all(), {});
+});
+
+// ---- achievement ledger ------------------------------------------------------
+
+test('record persists a timestamp and never overwrites an already-earned id', (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date(2026, 7, 11, 12, 0, 0) });
+  useStorage(fakeStorage());
+
+  const log = createAchievementLog('achievements');
+  assert.equal(log.record('kanji-10'), true, 'first record succeeds');
+  const firstAt = log.all()['kanji-10'];
+  assert.ok(firstAt > 0);
+
+  t.mock.timers.tick(60_000);
+  assert.equal(log.record('kanji-10'), false, 'already earned — a no-op');
+  assert.equal(log.all()['kanji-10'], firstAt, 'the original timestamp is untouched');
+
+  assert.deepEqual(createAchievementLog('achievements').all(), { 'kanji-10': firstAt }, 'persisted');
+});
+
+test('has, replaceAll, and clear behave like the other stores', () => {
+  useStorage(fakeStorage());
+  const log = createAchievementLog('achievements');
+  assert.equal(log.has('kanji-10'), false);
+  log.record('kanji-10', 1000);
+  assert.equal(log.has('kanji-10'), true);
+
+  log.replaceAll({ 'words-50': 2000 });
+  assert.deepEqual(log.all(), { 'words-50': 2000 });
+  assert.equal(log.has('kanji-10'), false, 'replaceAll swaps the whole ledger');
+
+  log.clear();
+  assert.deepEqual(log.all(), {});
+  assert.deepEqual(createAchievementLog('achievements').all(), {});
 });
 
 // ---- the "never throws" promise --------------------------------------------

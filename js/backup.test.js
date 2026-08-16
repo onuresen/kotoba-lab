@@ -18,7 +18,7 @@ const card = (over = {}) => ({ due: T0, interval: 1, ease: 2.5, reps: 1, lapses:
 const entry = (surface, over = {}) => ({
   surface, reading: 'よみ', gloss: 'meaning', level: 3, savedAt: T0, srs: card(), ...over,
 });
-const state = (over = {}) => ({ deck: [], knownWords: [], knownKanji: [], reviewLog: {}, ...over });
+const state = (over = {}) => ({ deck: [], knownWords: [], knownKanji: [], reviewLog: {}, achievements: {}, ...over });
 
 // ---- export -----------------------------------------------------------------
 
@@ -190,6 +190,42 @@ test('importing the same backup twice is a no-op the second time', () => {
   const once = mergeState(mine, parseBackup(file));
   const twice = mergeState(once.state, parseBackup(file));
   assert.deepEqual(twice.state, once.state);
-  assert.deepEqual(twice.stats, { cardsAdded: 0, cardsUpdated: 0, cardsTotal: 2, wordsAdded: 0, kanjiAdded: 0, daysAdded: 0 });
+  assert.deepEqual(twice.stats, {
+    cardsAdded: 0, cardsUpdated: 0, cardsTotal: 2, wordsAdded: 0, kanjiAdded: 0, daysAdded: 0, achievementsAdded: 0,
+  });
   assert.match(describeMerge(twice.stats), /Already up to date/);
+});
+
+// ---- achievement ledger ------------------------------------------------------
+
+test('an achievement ledger round-trips through export and import', () => {
+  const original = state({ deck: [entry('本')], achievements: { 'kanji-1': T0, 'words-1': T0 + DAY } });
+  const back = parseBackup(serializeBackup(original, T0));
+  assert.deepEqual(back.achievements, { 'kanji-1': T0, 'words-1': T0 + DAY });
+});
+
+test('an achievement id this build does not recognize is dropped, not trusted', () => {
+  const parsed = parseBackup(JSON.stringify({
+    format: BACKUP_FORMAT, version: 1, deck: [entry('本')],
+    achievements: { 'kanji-1': T0, 'not-a-real-id': T0, 'kanji-10': 'nonsense', 'words-1': -5 },
+  }));
+  assert.deepEqual(parsed.achievements, { 'kanji-1': T0 });
+});
+
+test('a v2 backup with no achievements field imports cleanly as empty, not a throw', () => {
+  const legacyV2 = JSON.stringify({
+    format: BACKUP_FORMAT, version: 2, exportedAt: new Date(T0).toISOString(), deck: [entry('本')],
+  });
+  const inspected = inspectBackup(legacyV2);
+  assert.deepEqual(inspected.state.achievements, {});
+});
+
+test('merging achievements keeps the earlier of two unlock timestamps', () => {
+  const mine = state({ deck: [entry('本')], achievements: { 'kanji-1': T0 + DAY } });
+  const theirs = state({ deck: [entry('水')], achievements: { 'kanji-1': T0, 'words-1': T0 } });
+  const { state: merged, stats } = mergeState(mine, theirs);
+  assert.equal(merged.achievements['kanji-1'], T0, 'the earlier timestamp wins');
+  assert.equal(merged.achievements['words-1'], T0, 'a new id is simply added');
+  assert.equal(stats.achievementsAdded, 1, 'kanji-1 already existed — only words-1 is new');
+  assert.match(describeMerge(stats), /1 achievement/);
 });

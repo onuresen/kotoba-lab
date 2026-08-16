@@ -15,6 +15,7 @@ export const FONT_HOSTS = Object.freeze(['fonts.googleapis.com', 'fonts.gstatic.
 // graph loads at boot and all of it is tier 1. A test asserts this list matches
 // the directory, so a renamed module cannot silently break offline install.
 const JS_MODULES = Object.freeze([
+  'js/achievements.js',
   'js/analyze.js',
   'js/aozora.js',
   'js/app.js',
@@ -33,7 +34,6 @@ const JS_MODULES = Object.freeze([
   'js/kanji-study.js',
   'js/kanjitree.js',
   'js/kanjivg.js',
-  'js/milestones.js',
   'js/offline-cache.js',
   'js/profile-dashboard.js',
   'js/read.js',
