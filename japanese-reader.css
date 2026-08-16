@@ -1161,7 +1161,18 @@ body.krm-open { overflow: hidden; }
 .krm-legend [data-kind="reading"]::before { border-top-style: dashed; }
 .krm-canvas { position: relative; flex: 1 0 570px; min-height: 570px; isolation: isolate; }
 .krm-connectors { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.krm-connectors line { stroke: var(--accent); stroke-width: .28; vector-effect: non-scaling-stroke; opacity: .58; }
+/* Every connector shares x1,y1 = the center kanji (50,50 in the viewBox), so
+   scaling from 0 anchored at that exact point sweeps the far end out from the
+   center to its node — reading as the web growing outward, not just fading
+   in — without touching stroke-dasharray, which the reading-kind line below
+   still needs for its own steady-state dashed pattern. Redraws on every
+   re-center, since each one is a fresh <line> element. */
+.krm-connectors line {
+  stroke: var(--accent); stroke-width: .28; vector-effect: non-scaling-stroke; opacity: .58;
+  transform-box: view-box; transform-origin: 50px 50px;
+  animation: krm-connector-grow .4s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
 .krm-connectors line[data-kind="radical"] { stroke: var(--accent2-text); stroke-width: .38; }
 .krm-connectors line[data-kind="component"] { stroke: var(--accent); stroke-width: .34; }
 .krm-connectors line[data-kind="reading"] { stroke: color-mix(in srgb, var(--accent) 48%, var(--text2)); stroke-dasharray: 1.4 1.2; opacity: .48; }
@@ -1316,6 +1327,13 @@ body.krm-open { overflow: hidden; }
   0% { opacity: 0; transform: translateY(10px) scale(.9); }
   55% { opacity: 1; transform: translateY(-2px) scale(1.035); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* transform only, deliberately: each connector kind keeps its own resting
+   opacity and dash pattern as a plain (non-animated) property, so the "both"
+   fill-mode here can't pin every line to one shared end-state opacity. */
+@keyframes krm-connector-grow {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
 }
 
 .input-card:not([hidden]) { animation: item-enter .34s var(--ease) both; }
@@ -1649,6 +1667,7 @@ p.hint { margin: 8px 0 0; }
     animation: none !important;
   }
   .ka-reading-routes line, .ka-star[data-known="true"]::before, .ka-center::after { animation: none !important; }
+  .krm-connectors line { animation: none !important; }
   .tab, .tab::after, .journey-stop, .kanji-card, .kanji-card-map, .krm-node, .srs-kchar, .known-chip,
   .kanji-contrast-choice, .kanji-alchemy-doorway, .alchemy-choice, .alchemy-stage, .alchemy-progress span, .cov-fill, .kanji-study-progress span,
   .kt-component-open, .srs-stage, .ka-sky, .ka-star {

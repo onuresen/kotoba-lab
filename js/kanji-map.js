@@ -152,7 +152,11 @@ export function createKanjiMap({
     title.textContent = `${center.char} — relationships`;
     backButton.hidden = history.length < 2;
 
-    const lines = layout.map(({ neighbor, x, y }) => `<line x1="50" y1="50" x2="${x}" y2="${y}" data-kind="${primaryKind(neighbor)}"></line>`).join('');
+    // pathLength="1" normalizes stroke-dasharray/dashoffset to a 0-1 range for
+    // every line regardless of its actual length or the viewBox's non-uniform
+    // stretch (preserveAspectRatio="none"), so the CSS draw-in animation below
+    // needs no per-line geometry math. --i staggers each line's start.
+    const lines = layout.map(({ neighbor, x, y }, i) => `<line x1="50" y1="50" x2="${x}" y2="${y}" data-kind="${primaryKind(neighbor)}" pathLength="1" style="--i:${i}"></line>`).join('');
     const nodes = layout.map(({ neighbor, x, y }) => `<div class="krm-node-position" style="--krm-x:${x}%;--krm-y:${y}%">${nodeMarkup(neighbor)}</div>`).join('');
     const structure = currentMap.neighbors.filter((neighbor) => relationshipLane(neighbor) === 'structure');
     const readings = currentMap.neighbors.filter((neighbor) => relationshipLane(neighbor) === 'reading');

@@ -104,7 +104,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.28.0';
+const APP_VERSION = '10.29.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
