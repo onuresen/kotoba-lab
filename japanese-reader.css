@@ -143,6 +143,7 @@ table.freq { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.freq th { position: sticky; top: 0; background: var(--surface); text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); padding: 6px 8px; border-bottom: 1px solid var(--border); }
 table.freq td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; transition: background .16s var(--ease); }
 table.freq tbody tr:hover td { background: color-mix(in srgb, var(--accent2) 5%, transparent); }
+table.freq tbody tr[data-leaving="true"] { animation: row-leave .18s var(--ease) both; pointer-events: none; }
 table.freq .rank { color: var(--text3); font-family: var(--font-mono); font-size: 11px; width: 28px; }
 table.freq .num, table.freq th.num { text-align: right; font-family: var(--font-mono); }
 table.freq .jp { font-family: var(--font-display); font-size: 17px; display: flex; align-items: center; gap: 8px; }
@@ -447,6 +448,7 @@ kbd {
 .known-kanji-open { cursor: pointer; font-family: var(--font-display); font-size: 17px; }
 .known-rm { padding: 4px 8px 4px 5px; cursor: pointer; color: var(--text3); }
 .known-rm:hover { color: var(--accent); }
+.known-chip[data-leaving="true"] { animation: chip-leave .18s var(--ease) both; pointer-events: none; }
 
 /* ---- Kanji library -------------------------------------------------------- */
 .kanji-toolbar { display: flex; flex-direction: column; gap: 18px; }
@@ -680,7 +682,7 @@ kbd {
 .kanji-card:hover { border-color: var(--jl); background: color-mix(in srgb, var(--jl) 6%, var(--surface-raised)); box-shadow: 0 10px 26px color-mix(in srgb, var(--jl) 12%, var(--ink-shadow)); transform: translateY(-3px); }
 .kanji-card:active { transform: translateY(0) scale(.99); box-shadow: var(--shadow-sm); }
 .kanji-card:focus-visible { border-color: var(--jl); box-shadow: 0 0 0 3px color-mix(in srgb, var(--jl) 22%, transparent), var(--shadow-md); }
-.kanji-card[data-known="true"] { border-color: color-mix(in srgb, var(--accent2) 46%, var(--border)); background: linear-gradient(145deg, color-mix(in srgb, var(--accent2) 5%, var(--surface-raised)), var(--surface)); }
+.kanji-card[data-known="true"] { border-color: color-mix(in srgb, var(--accent2) 46%, var(--border)); background: linear-gradient(145deg, color-mix(in srgb, var(--accent2) 5%, var(--surface-raised)), var(--surface)); animation: confirm-pop .28s var(--ease) both; }
 .kanji-card-glyph { font-family: var(--font-display); font-size: 46px; line-height: 1; color: var(--jl); text-align: center; }
 .kanji-card-copy { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .kanji-card-copy strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 13px; line-height: 1.35; }
@@ -1278,6 +1280,17 @@ body.krm-open { overflow: hidden; }
   38% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
   100% { opacity: 0; transform: translate(-50%, -60%) scale(1); }
 }
+/* Release, the counterpart to confirm-pop: an item leaving because a mutating
+   action removed it (unmarking known, removing a saved card), not because it
+   failed or was rejected. Settles away rather than snapping out. */
+@keyframes chip-leave {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(.82); }
+}
+@keyframes row-leave {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
 
 .input-card:not([hidden]) { animation: item-enter .34s var(--ease) both; }
 .kanji-filter-row.is-open { animation: disclosure-enter .24s var(--ease) both; }
@@ -1603,7 +1616,9 @@ p.hint { margin: 8px 0 0; }
   .alchemy-reveal, .alchemy-verdict-icon, .alchemy-loading-seal, .kanji-alchemy-seal svg,
   .kanji-study-stage[data-revealed="true"] .kanji-study-answer,
   .kanji-study-progress[data-complete="true"] span,
-  .info-actions .act-save[data-saved="true"], .info-actions .act-known[data-known="true"] {
+  .info-actions .act-save[data-saved="true"], .info-actions .act-known[data-known="true"],
+  .kanji-card[data-known="true"], .compound-save[aria-pressed="true"],
+  .known-chip[data-leaving="true"], table.freq tbody tr[data-leaving="true"] {
     animation: none !important;
   }
   .ka-reading-routes line, .ka-star[data-known="true"]::before, .ka-center::after { animation: none !important; }
@@ -1788,6 +1803,7 @@ p.hint { margin: 8px 0 0; }
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   border-color: var(--accent-glow);
+  animation: confirm-pop .28s var(--ease) both;
 }
 
 @media (max-width: 780px) {

@@ -90,8 +90,21 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Plays a brief "leaving" animation on `el` (see .known-chip[data-leaving],
+// tr[data-leaving] in japanese-reader.css) before running `after`, which does
+// the actual re-render. The underlying toggle/removal has already happened by
+// the time this runs, so a slow or reduced-motion browser only delays the
+// visual confirmation, never the data change — same contract as the Review
+// grade transition below.
+function leaveThen(el, after) {
+  if (!el || reducedMotion()) { after(); return; }
+  el.dataset.leaving = 'true';
+  setTimeout(after, 180);
+}
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.25.0';
+const APP_VERSION = '10.26.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -1631,7 +1644,7 @@ function answer(grade) {
   stage.dataset.feedback = grade;
   stage.setAttribute('aria-busy', 'true');
   clearTimeout(reviewTransitionTimer);
-  const transitionMs = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 240;
+  const transitionMs = reducedMotion() ? 0 : 240;
   reviewTransitionTimer = setTimeout(() => {
     refreshReview();
     renderMyWords();
@@ -1953,11 +1966,14 @@ function onMyWordsClick(e) {
     const set = knownRemove.dataset.kind === 'word' ? knownWords : knownKanji;
     set.toggle(knownRemove.dataset.key);
     usageJournal.record('known.change');
-    refreshKnownEverywhere();
+    leaveThen(knownRemove.closest('.known-chip'), () => refreshKnownEverywhere());
     return;
   }
   const rm = e.target.closest('.deck-rm');
-  if (rm) { deck.remove(rm.dataset.key); renderMyWords(); renderProfilePanel(); refreshReview(); }
+  if (rm) {
+    deck.remove(rm.dataset.key);
+    leaveThen(rm.closest('tr'), () => { renderMyWords(); renderProfilePanel(); refreshReview(); });
+  }
 }
 
 function exportDeck(dl) {

@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.25.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.26.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -129,6 +129,11 @@
   passed — kanji known, words readable, words known, cards saved, days reviewed —
   derived from the four profile stores at render time. No ledger, no badges, no
   sixth storage key, and no new surface.
+- Micro-feedback pass 1 is ✓ Done: mark-known now pops consistently on the Kanji
+  library grid, and Save pops on compound/word-lookup cards, both reusing
+  `confirm-pop`. Removing a known chip or a saved deck row now plays a brief
+  `chip-leave`/`row-leave` release before the list re-renders, via the shared
+  `leaveThen()` helper, instead of vanishing on the spot. All reduced-motion.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -270,6 +275,11 @@
   `prefers-reduced-motion` rule.
 - Review scheduling must be persisted before its 240 ms grade acknowledgement;
   the animation may delay rendering the next card, never saving the answer.
+- Removing something from a rendered list (an unmark, a deck removal) should
+  play a brief release before the list re-renders, not vanish instantly. Use
+  the shared `leaveThen(el, after)` helper: it mutates the store immediately,
+  same as the Review acknowledgement above, and only delays the re-render —
+  skipping the delay entirely under `prefers-reduced-motion`.
 - Component colors are positional and non-semantic. Keep the assembled kanji
   monochrome; color direct children only in the separated state, and match each
   component button without relying on color as its label.
