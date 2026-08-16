@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.28.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.29.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -150,6 +150,19 @@
   entrance now overshoots slightly before settling (`kanji-settle`) instead
   of a plain fade, reserved for kanji arriving in numbers. Both skip under
   `prefers-reduced-motion`.
+- Relationship Map connector grow is ✓ Done: every `.krm-connectors line`
+  shares `x1,y1` at the center kanji, so scaling each one from 0 anchored at
+  that exact point (`transform-box: view-box; transform-origin: 50px 50px`)
+  sweeps its far end out to its node — the web growing outward, not merely
+  fading in — via `krm-connector-grow`, staggered per line with an inline
+  `--i`. Deliberately animates `transform` only, never `opacity`: the
+  `both` fill-mode would otherwise pin every line to one shared end-state
+  opacity, erasing the reading-kind line's own dimmer resting opacity and
+  dashed pattern. Redraws on every re-center, since navigating within the map
+  always renders a fresh set of `<line>` elements. The Constellation Atlas
+  was left alone here — it already has route travel, a breathing center, and
+  known-star twinkle, and piling more ambient motion on top would read as
+  busy rather than alive.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -309,6 +322,12 @@
   render call consumes the "new" flag on an invisible render and the visible
   one that follows shows nothing. Gate the baseline update on the panel's own
   visibility, as `renderReadableCompounds()` does with `seenReadableWords`.
+- When an entrance animation uses `both` fill-mode on a selector whose
+  resting `opacity` (or any other property) already varies by kind or state,
+  animate `transform` only. The held keyframe end-state overrides the plain
+  property forever once the animation finishes, so animating `opacity` there
+  would flatten every kind to one shared value — see `krm-connector-grow`,
+  which leaves the reading-kind connector's dimmer resting opacity alone.
 - Component colors are positional and non-semantic. Keep the assembled kanji
   monochrome; color direct children only in the separated state, and match each
   component button without relying on color as its label.
