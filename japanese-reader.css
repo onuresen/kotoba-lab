@@ -139,7 +139,14 @@ body {
   .rail-link[data-nav-color="achievements"] { --nav-color: var(--nav-achievements); }
   .rail-link[data-nav-color="settings"]     { --nav-color: var(--text3); }
 
-  main.wrap, footer.wrap.site-foot { margin-left: 232px; }
+  /* .wrap's own max-width (--layout-reading, 1080px) would otherwise still cap
+     main at the old page-centered width, leaving wide panels no extra room to
+     actually get wider — max-width:none here hands that job to .panel below,
+     which centers itself independently within main's now-full remaining
+     width instead of relying on main to already be the right size. */
+  main.wrap, footer.wrap.site-foot { margin-left: 232px; max-width: none; }
+  .panel { max-width: var(--layout-reading); margin-inline: auto; }
+  .panel[data-layout="wide"].is-active { max-width: var(--panel-wide-max, var(--layout-data)); }
 }
 
 main.wrap { padding-top: 20px; padding-bottom: 28px; display: flex; flex-direction: column; gap: 16px; }
@@ -147,12 +154,11 @@ main.wrap { padding-top: 20px; padding-bottom: 28px; display: flex; flex-directi
 /* ---- panels + grids -------------------------------------------------------- */
 .panel { display: none; flex-direction: column; gap: 16px; }
 .panel.is-active { display: flex; animation: panel-enter .32s var(--ease) both; }
-@media (min-width: 1081px) {
-  .panel[data-layout="wide"].is-active {
-    width: min(var(--panel-wide-max, var(--layout-data)), calc(100vw - 32px));
-    align-self: center;
-  }
-}
+/* The 1081px+ .panel max-width/margin-inline rules that used to live here (a
+   viewport-relative width capped to the reading measure) now live in the
+   side-rail block above, where main.wrap's own max-width is also handled —
+   the two have to change together or a wide panel ends up sized against a
+   main box that's still capped to the old page-centered width. */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid-read { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
 @media (max-width: 780px) { .grid-2, .grid-read { grid-template-columns: 1fr; } }
@@ -1087,7 +1093,9 @@ kbd {
 }
 
 @media (min-width: 1081px) {
-  .relations-panel.is-active[data-atlas-focus="true"] { width: calc(100vw - 24px); max-width: none; gap: 0; }
+  /* 100%, not 100vw — same reasoning as the wide-panel rule above: main.wrap's
+     own width already excludes the side rail at this breakpoint. */
+  .relations-panel.is-active[data-atlas-focus="true"] { width: calc(100% - 24px); max-width: none; gap: 0; }
   .relations-panel[data-atlas-focus="true"] > .relations-toolbar,
   .relations-panel[data-atlas-focus="true"] > .relations-status,
   .relations-panel[data-atlas-focus="true"] > .relations-view-switch { display: none; }
@@ -1992,33 +2000,62 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 /* ---- achievements ---------------------------------------------------------- */
 /* Passed capability only, still. No badges, no progress bars, no locked slots:
    an empty slot would turn "what you can read" into "what you have not done".
-   The only thing that changed from the old inline strip is that this now has
-   a page of its own to be colorful in — see AGENTS.md for why. */
-.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+   What changed from the old inline strip: this now has a page of its own to
+   be colorful in, and cards group by category (one section per kind of
+   progress) instead of one flat list interleaved by raw threshold — five
+   distinct kinds of proof, not a repeating two-tone pattern. */
+.achievement-group { margin-top: 20px; }
+.achievement-group:first-child { margin-top: 4px; }
+.achievement-group-title {
+  margin: 0 0 10px;
+  font-family: var(--font-display); font-size: 13px; font-weight: 700;
+  color: var(--text2); text-transform: uppercase; letter-spacing: .05em;
+}
+.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
 
 .achievement-card {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 16px 10px; text-align: center;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 20px 12px 16px; text-align: center;
+  background: linear-gradient(165deg, color-mix(in srgb, var(--cat-color, var(--accent2)) 9%, var(--surface-raised)), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--accent2)) 22%, var(--border));
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.achievement-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--cat-color, var(--accent2)) 18%, var(--ink-shadow));
 }
 .achievement-icon {
+  position: relative;
   display: grid; place-items: center;
-  width: 46px; height: 46px;
-  font-family: var(--font-display); font-size: 24px;
+  width: 56px; height: 56px;
+  font-family: var(--font-display); font-size: 28px; line-height: 1;
   color: var(--on-accent);
-  background: var(--cat-color, var(--accent2));
-  border-radius: var(--r-md);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--cat-color, var(--accent2)) 30%, transparent);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--cat-color, var(--accent2)) 85%, var(--on-accent)), var(--cat-color, var(--accent2)));
+  border-radius: 50%;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--cat-color, var(--accent2)) 38%, transparent), inset 0 1px 0 var(--paper-glow);
 }
-.achievement-label { font: 600 12px/1.35 var(--font-body); color: var(--text); }
+/* A thin free-floating ring around the medallion — the same "stamped seal"
+   language as .brand-mark's own inset border, so a passed milestone reads as
+   sealed/certified rather than as a generic colored icon. */
+.achievement-icon::after {
+  content: ''; position: absolute; inset: -5px;
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--accent2)) 32%, transparent);
+  border-radius: 50%;
+}
+.achievement-label { font: 700 12.5px/1.35 var(--font-body); color: var(--text); }
 
 .achievement-card[data-category="kanji"]    { --cat-color: var(--nav-kanji); }
 .achievement-card[data-category="readable"] { --cat-color: var(--nav-read); }
 .achievement-card[data-category="words"]    { --cat-color: var(--nav-words); }
 .achievement-card[data-category="cards"]    { --cat-color: var(--nav-review); }
 .achievement-card[data-category="review"]   { --cat-color: var(--accent2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .achievement-card { transition: none; }
+  .achievement-card:hover { transform: none; }
+}
 
 .achievement-next {
   display: flex; align-items: center; gap: 10px;

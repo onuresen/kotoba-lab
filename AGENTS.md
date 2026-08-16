@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.30.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.30.1 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -174,6 +174,15 @@
   button (Achievements, next to Settings) and that button collapsing to
   icon-only starting at 1080px instead of 780px, so the pill tab row plus two
   head-actions still fit above phone width.
+- Two fixes to the above, both from real testing feedback: (1) wide panels
+  (Kanji, Relations) and the Atlas's immersive focus width were still sized
+  off `100vw`, which doesn't know the rail exists — `main.wrap` now drops its
+  own `max-width` at 1081px+ and each `.panel` centers itself independently
+  (`max-width` + `margin-inline: auto`), so a wide panel's width is relative
+  to `main`'s already-rail-aware box, never the raw viewport. (2) Achievement
+  cards are grouped into one section per category instead of one flat list
+  interleaved by raw threshold — five distinct kinds of progress, not a
+  repeating two-color pattern that read as duplicated.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study

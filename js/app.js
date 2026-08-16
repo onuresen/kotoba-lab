@@ -104,7 +104,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.30.0';
+const APP_VERSION = '10.30.1';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -1815,6 +1815,17 @@ function downloadUsageReport() {
 const ACHIEVEMENT_ICON = Object.freeze({
   kanji: '漢', readable: '読', words: '語', cards: '札', review: '暦',
 });
+// Display order and section heading for each milestone category. Grouping
+// (rather than one flat list sorted by raw threshold) keeps same-category
+// cards together instead of interleaving two colors in a repeating pattern
+// that reads as duplicated rather than as five distinct kinds of progress.
+const ACHIEVEMENT_GROUPS = Object.freeze([
+  ['kanji', 'Kanji'],
+  ['readable', 'Words you can read'],
+  ['words', 'Words known'],
+  ['cards', 'Cards saved'],
+  ['review', 'Review streak'],
+]);
 
 function achievementCardMarkup(m) {
   const icon = ACHIEVEMENT_ICON[m.category] || '証';
@@ -1849,9 +1860,23 @@ function renderAchievements() {
     return;
   }
 
+  const byCategory = new Map();
+  for (const m of passed) {
+    if (!byCategory.has(m.category)) byCategory.set(m.category, []);
+    byCategory.get(m.category).push(m);
+  }
+  const groups = ACHIEVEMENT_GROUPS
+    .filter(([category]) => byCategory.has(category))
+    .map(([category, title]) => `
+      <section class="achievement-group">
+        <h3 class="achievement-group-title">${esc(title)}</h3>
+        <div class="achievements-grid">${byCategory.get(category).map(achievementCardMarkup).join('')}</div>
+      </section>`)
+    .join('');
+
   const nextIcon = next ? (ACHIEVEMENT_ICON[next.category] || '証') : '';
   host.innerHTML = `
-    <div class="achievements-grid">${passed.map(achievementCardMarkup).join('')}</div>
+    ${groups}
     ${next ? `<p class="achievement-next">
         <span class="achievement-next-icon" aria-hidden="true">${nextIcon}</span>
         ${next.remaining.toLocaleString()} to ${esc(next.label)}
