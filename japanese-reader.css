@@ -143,6 +143,7 @@ table.freq { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.freq th { position: sticky; top: 0; background: var(--surface); text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); padding: 6px 8px; border-bottom: 1px solid var(--border); }
 table.freq td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; transition: background .16s var(--ease); }
 table.freq tbody tr:hover td { background: color-mix(in srgb, var(--accent2) 5%, transparent); }
+table.freq tbody tr[data-leaving="true"] { animation: row-leave .18s var(--ease) both; pointer-events: none; }
 table.freq .rank { color: var(--text3); font-family: var(--font-mono); font-size: 11px; width: 28px; }
 table.freq .num, table.freq th.num { text-align: right; font-family: var(--font-mono); }
 table.freq .jp { font-family: var(--font-display); font-size: 17px; display: flex; align-items: center; gap: 8px; }
@@ -279,6 +280,12 @@ td.hint, .hint { color: var(--text3); font-size: 12px; }
 .boot-warning[hidden] { display: none; }
 
 .srs-stage { position: relative; display: flex; flex-direction: column; gap: 18px; min-height: 340px; overflow: hidden; border-color: color-mix(in srgb, var(--accent2) 28%, var(--border)); background: linear-gradient(155deg, var(--surface-raised), var(--surface-warm)); transition: border-color .2s var(--ease), box-shadow .2s var(--ease); }
+/* Turning the card over like a real flashcard: 'out' rotates the current face
+   edge-on before its content is swapped, 'in' brings the new face back
+   around. See flipStage() in app.js — content always changes while the card
+   reads as edge-on, so the swap itself is never visible mid-turn. */
+.srs-stage[data-flip="out"] { animation: card-flip-out .16s var(--ease) both; }
+.srs-stage[data-flip="in"] { animation: card-flip-in .18s var(--ease) both; }
 .srs-meta { display: flex; align-items: center; gap: 10px; }
 
 /* the card face: prompt on top, answer revealed underneath, vertically centred */
@@ -447,6 +454,7 @@ kbd {
 .known-kanji-open { cursor: pointer; font-family: var(--font-display); font-size: 17px; }
 .known-rm { padding: 4px 8px 4px 5px; cursor: pointer; color: var(--text3); }
 .known-rm:hover { color: var(--accent); }
+.known-chip[data-leaving="true"] { animation: chip-leave .18s var(--ease) both; pointer-events: none; }
 
 /* ---- Kanji library -------------------------------------------------------- */
 .kanji-toolbar { display: flex; flex-direction: column; gap: 18px; }
@@ -680,7 +688,7 @@ kbd {
 .kanji-card:hover { border-color: var(--jl); background: color-mix(in srgb, var(--jl) 6%, var(--surface-raised)); box-shadow: 0 10px 26px color-mix(in srgb, var(--jl) 12%, var(--ink-shadow)); transform: translateY(-3px); }
 .kanji-card:active { transform: translateY(0) scale(.99); box-shadow: var(--shadow-sm); }
 .kanji-card:focus-visible { border-color: var(--jl); box-shadow: 0 0 0 3px color-mix(in srgb, var(--jl) 22%, transparent), var(--shadow-md); }
-.kanji-card[data-known="true"] { border-color: color-mix(in srgb, var(--accent2) 46%, var(--border)); background: linear-gradient(145deg, color-mix(in srgb, var(--accent2) 5%, var(--surface-raised)), var(--surface)); }
+.kanji-card[data-known="true"] { border-color: color-mix(in srgb, var(--accent2) 46%, var(--border)); background: linear-gradient(145deg, color-mix(in srgb, var(--accent2) 5%, var(--surface-raised)), var(--surface)); animation: confirm-pop .28s var(--ease) both; }
 .kanji-card-glyph { font-family: var(--font-display); font-size: 46px; line-height: 1; color: var(--jl); text-align: center; }
 .kanji-card-copy { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .kanji-card-copy strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 13px; line-height: 1.35; }
@@ -1278,10 +1286,41 @@ body.krm-open { overflow: hidden; }
   38% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
   100% { opacity: 0; transform: translate(-50%, -60%) scale(1); }
 }
+/* Release, the counterpart to confirm-pop: an item leaving because a mutating
+   action removed it (unmarking known, removing a saved card), not because it
+   failed or was rejected. Settles away rather than snapping out. */
+@keyframes chip-leave {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(.82); }
+}
+@keyframes row-leave {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes card-flip-out {
+  from { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
+  to { transform: perspective(1200px) rotateY(-90deg); opacity: .4; }
+}
+@keyframes card-flip-in {
+  from { transform: perspective(1200px) rotateY(90deg); opacity: .4; }
+  to { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
+}
+@keyframes brush-reveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+/* A slight spring overshoot, for something settling into place rather than
+   merely fading in — reserved for kanji arriving in numbers (a grid, a sky),
+   where the small bounce reads as physical weight instead of decoration. */
+@keyframes kanji-settle {
+  0% { opacity: 0; transform: translateY(10px) scale(.9); }
+  55% { opacity: 1; transform: translateY(-2px) scale(1.035); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 .input-card:not([hidden]) { animation: item-enter .34s var(--ease) both; }
 .kanji-filter-row.is-open { animation: disclosure-enter .24s var(--ease) both; }
-.kanji-grid .kanji-card-wrap { animation: item-enter .34s var(--ease) both; }
+.kanji-grid .kanji-card-wrap { animation: kanji-settle .4s var(--ease) both; }
 .kanji-grid .kanji-card-wrap:nth-child(2) { animation-delay: 30ms; }
 .kanji-grid .kanji-card-wrap:nth-child(3) { animation-delay: 60ms; }
 .kanji-grid .kanji-card-wrap:nth-child(4) { animation-delay: 90ms; }
@@ -1603,7 +1642,10 @@ p.hint { margin: 8px 0 0; }
   .alchemy-reveal, .alchemy-verdict-icon, .alchemy-loading-seal, .kanji-alchemy-seal svg,
   .kanji-study-stage[data-revealed="true"] .kanji-study-answer,
   .kanji-study-progress[data-complete="true"] span,
-  .info-actions .act-save[data-saved="true"], .info-actions .act-known[data-known="true"] {
+  .info-actions .act-save[data-saved="true"], .info-actions .act-known[data-known="true"],
+  .kanji-card[data-known="true"], .compound-save[aria-pressed="true"],
+  .known-chip[data-leaving="true"], table.freq tbody tr[data-leaving="true"],
+  .srs-stage[data-flip], .compound-row[data-unlocked="true"] {
     animation: none !important;
   }
   .ka-reading-routes line, .ka-star[data-known="true"]::before, .ka-center::after { animation: none !important; }
@@ -1746,6 +1788,11 @@ p.hint { margin: 8px 0 0; }
   border: 1px solid var(--border);
   border-radius: var(--r-md);
 }
+/* A word that just became readable is brushed onto the row left-to-right,
+   like ink from a single stroke, instead of appearing with the rest of the
+   list. Only the row(s) that actually changed carry this attribute — see
+   the seenReadableWords diff in renderReadableCompounds(). */
+.compound-row[data-unlocked="true"] { animation: brush-reveal .5s var(--ease) both; }
 .compound-word { display: flex; gap: 2px; flex: 0 0 auto; }
 .compound-kanji {
   font-family: var(--font-display);
@@ -1788,6 +1835,7 @@ p.hint { margin: 8px 0 0; }
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   border-color: var(--accent-glow);
+  animation: confirm-pop .28s var(--ease) both;
 }
 
 @media (max-width: 780px) {
@@ -1854,4 +1902,26 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 
 @media (max-width: 780px) {
   .wl-controls .input, .wl-controls .select { flex: 1 1 100%; min-height: 44px; }
+}
+
+/* ---- milestones ---------------------------------------------------------------- */
+/* Passed capability only. No badges, no progress bars, no locked slots: an empty
+   slot would turn "what you can read" into "what you have not done". */
+.milestones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.milestones[hidden] { display: none; }
+
+.milestone {
+  padding: 4px 10px;
+  font: 600 11px/1.5 var(--font-body);
+  color: var(--accent2-text);
+  background: color-mix(in srgb, var(--accent2-dim) 50%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent2) 24%, var(--border));
+  border-radius: var(--r-pill);
+}
+
+.milestone--next {
+  color: var(--text3);
+  background: var(--surface-sunken);
+  border-style: dashed;
+  border-color: var(--border);
 }

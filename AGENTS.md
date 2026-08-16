@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.24.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.28.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -125,6 +125,31 @@
 - Unlock feedback is ✓ Done: marking a kanji known now names the compounds it
   just made readable — "✓ 校 known — unlocks 学校、校長、高校 and 2 more" — from
   every path that marks one. Marking from a Kanji card had been silent.
+- Milestones are ✓ Done: Profile & Data lists the capability thresholds already
+  passed — kanji known, words readable, words known, cards saved, days reviewed —
+  derived from the four profile stores at render time. No ledger, no badges, no
+  sixth storage key, and no new surface.
+- Micro-feedback pass 1 is ✓ Done: mark-known now pops consistently on the Kanji
+  library grid, and Save pops on compound/word-lookup cards, both reusing
+  `confirm-pop`. Removing a known chip or a saved deck row now plays a brief
+  `chip-leave`/`row-leave` release before the list re-renders, via the shared
+  `leaveThen()` helper, instead of vanishing on the spot. All reduced-motion.
+- Review card flip is ✓ Done: showing the answer turns the whole `#srs-stage`
+  card edge-on and back, like a physical flashcard, via `flipStage()` and the
+  `card-flip-out`/`card-flip-in` keyframes; content is swapped while the card
+  reads as edge-on, so the change is never visible mid-turn. Advancing to the
+  next card after grading flips it in the same way. Reduced motion skips the
+  flip and renders instantly, unchanged from before this pass.
+- Word-unlock brush reveal and kanji settle are ✓ Done. In My Words, a word
+  that just became readable — relative to what was last actually *shown*
+  there, not the previous render, since this panel silently re-renders while
+  hidden every time known-state changes anywhere in the app — is brushed in
+  left-to-right (`brush-reveal`) instead of appearing with the rest of the
+  list; see the `seenReadableWords` baseline in `renderReadableCompounds()`,
+  which only advances while the panel is visible. The Kanji library grid's
+  entrance now overshoots slightly before settling (`kanji-settle`) instead
+  of a plain fade, reserved for kanji arriving in numbers. Both skip under
+  `prefers-reduced-motion`.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -223,6 +248,8 @@
   reverse index; lazy-loaded only for structural family views.
 - `data/kanjivg.manifest.json` — pinned input and artifact checksums used by CI.
 - `js/app.js` — retryable lazy loader plus delegated doorway integration.
+- `js/milestones.js` — pure capability thresholds derived from profile counts;
+  no DOM, storage, or fetch, and no persisted earned state.
 - `js/kanji-atlas.js` — pure bounded component-family graph/layout, reading-route,
   unknown-study, and challenge helpers plus the ephemeral Atlas interactions.
 - `japanese-reader.css` — app-specific styles, including Tree and Relationship
@@ -264,6 +291,24 @@
   `prefers-reduced-motion` rule.
 - Review scheduling must be persisted before its 240 ms grade acknowledgement;
   the animation may delay rendering the next card, never saving the answer.
+- Removing something from a rendered list (an unmark, a deck removal) should
+  play a brief release before the list re-renders, not vanish instantly. Use
+  the shared `leaveThen(el, after)` helper: it mutates the store immediately,
+  same as the Review acknowledgement above, and only delays the re-render —
+  skipping the delay entirely under `prefers-reduced-motion`.
+- A two-phase attribute animation (flip, or anything else that must play the
+  same visual step twice in a row, e.g. two reveals back to back) needs a
+  forced reflow between removing and re-adding the attribute, or the second
+  play won't restart — see `flipStage()`. Content changes only happen while
+  the element is mid-animation and effectively invisible (edge-on, faded,
+  off-screen), never at a visible frame.
+- A "new since last time" reveal must diff against what was last actually
+  *shown* on screen, not the previous render call. Several panels (My Words
+  chief among them) re-render every time shared state changes anywhere in the
+  app, including while hidden behind another tab — diffing against every
+  render call consumes the "new" flag on an invisible render and the visible
+  one that follows shows nothing. Gate the baseline update on the panel's own
+  visibility, as `renderReadableCompounds()` does with `seenReadableWords`.
 - Component colors are positional and non-semantic. Keep the assembled kanji
   monochrome; color direct children only in the separated state, and match each
   component button without relying on color as its label.
@@ -459,6 +504,17 @@
   reports the compounds a newly known kanji actually completed, read out of
   committed dictionary data. Do not add points, levels, or streak pressure; the
   idea garden rejects guilt-heavy mechanics deliberately.
+- Milestones are derived, never recorded. `buildMilestones()` recomputes from
+  current profile numbers, so there is no earned-badge state to store, migrate,
+  or resynchronise after a profile import.
+- Show only milestones already passed, plus at most one nearby next step. Never
+  render locked slots, badge grids, tier progress, or percentages: an empty slot
+  turns "what you can read" into "what you have not done", which is the
+  guilt-heavy shape `IDEA_GARDEN.md` rejects.
+- Milestones live inside Profile & Data as content. They must not become their
+  own tab or panel — a dedicated page fails the "would the solo user open this
+  weekly?" test, and the same call was already made in a sibling project by
+  relabelling its Achievements tool to Profile.
 - `knownToast()` is the single message for every path that marks a kanji known —
   Kanji cards, the Radical Tree, and the Read info panel. Add new paths to it
   rather than writing another toast, or the feedback drifts apart.

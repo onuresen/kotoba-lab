@@ -53,7 +53,7 @@ Every task's requirements implicitly include this section.
   - `buildMilestones(stats): { passed: Array<{id,label,at}>, next: {id,label,at,remaining}|null }`
   - `stats` shape: `{ knownKanji: number, knownWords: number, readableWords: number, savedCards: number, reviewDays: number }`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `js/milestones.test.js`:
 
@@ -129,7 +129,7 @@ test('malformed or missing stats degrade to nothing rather than throwing', () =>
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 ```bash
 npm test
@@ -137,7 +137,7 @@ npm test
 
 Expected: FAIL with `Cannot find module` for `./milestones.js`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `js/milestones.js`:
 
@@ -204,7 +204,7 @@ export function buildMilestones(stats) {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 ```bash
 npm test
@@ -214,7 +214,7 @@ Expected: **278 passing, 0 failing.**
 
 If `the precache list stays in sync with the js module directory` fails, do Step 5 — that is exactly what it is telling you.
 
-- [ ] **Step 5: Register the module for offline caching**
+- [x] **Step 5: Register the module for offline caching**
 
 In `js/offline-cache.js`, the `JS_MODULES` array is alphabetical. Add the new entry between `'js/kanjivg.js'` and `'js/offline-cache.js'`:
 
@@ -224,7 +224,7 @@ In `js/offline-cache.js`, the `JS_MODULES` array is alphabetical. Add the new en
   'js/offline-cache.js',
 ```
 
-- [ ] **Step 6: Run tests again**
+- [x] **Step 6: Run tests again**
 
 ```bash
 npm test
@@ -232,7 +232,7 @@ npm test
 
 Expected: 278 passing, 0 failing.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add js/milestones.js js/milestones.test.js js/offline-cache.js
@@ -252,7 +252,7 @@ git commit -m "Add pure milestones module"
 - Consumes: `buildMilestones(stats)` from `js/milestones.js`
 - Produces: nothing consumed later
 
-- [ ] **Step 1: Add the markup**
+- [x] **Step 1: Add the markup**
 
 `index.html:495` currently reads:
 
@@ -266,7 +266,7 @@ Add a sibling immediately after it:
       <div id="profile-milestones" class="milestones" aria-label="Study milestones"></div>
 ```
 
-- [ ] **Step 2: Import the module**
+- [x] **Step 2: Import the module**
 
 In `js/app.js`, beside the other local imports near the top (there is already a line `import { searchWords } from './word-browser.js';`), add:
 
@@ -274,7 +274,7 @@ In `js/app.js`, beside the other local imports near the top (there is already a 
 import { buildMilestones } from './milestones.js';
 ```
 
-- [ ] **Step 3: Add the render function**
+- [x] **Step 3: Add the render function**
 
 `js/app.js` already contains `function renderProfilePanel()`. Add this function immediately **above** it:
 
@@ -314,7 +314,7 @@ function renderMilestones() {
 
 Note `buildReadableCompounds(..., 0)` — passing `0` as the limit returns an empty `words` array while still reporting the honest `total`, which is all this needs.
 
-- [ ] **Step 4: Call it**
+- [x] **Step 4: Call it**
 
 Inside `function renderProfilePanel()`, after the existing line `renderUsageJournal(profileState);`, add:
 
@@ -327,7 +327,7 @@ be handed a stale snapshot.
 
 `renderProfilePanel()` is already invoked from every place that changes cards or known state, so milestones refresh with everything else and need no call sites of their own.
 
-- [ ] **Step 5: Style the strip**
+- [x] **Step 5: Style the strip**
 
 Append to `japanese-reader.css`:
 
@@ -355,7 +355,7 @@ Append to `japanese-reader.css`:
 }
 ```
 
-- [ ] **Step 6: Verify in the browser**
+- [x] **Step 6: Verify in the browser**
 
 Start the server:
 
@@ -385,7 +385,7 @@ Clean up afterwards:
 localStorage.removeItem('kotoba-lab:known-kanji');
 ```
 
-- [ ] **Step 7: Run tests**
+- [x] **Step 7: Run tests**
 
 ```bash
 npm test
@@ -393,7 +393,7 @@ npm test
 
 Expected: 278 passing, 0 failing.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add index.html js/app.js japanese-reader.css
@@ -413,7 +413,7 @@ git commit -m "Show passed capability milestones in Profile and Data"
 - Consumes: everything from Tasks 1–2
 - Produces: nothing
 
-- [ ] **Step 1: Bump the version in all three places**
+- [x] **Step 1: Bump the version in all three places**
 
 Set `10.25.0` in each of:
 
@@ -423,7 +423,7 @@ Set `10.25.0` in each of:
 
 All three must match, or `js/sw-routing.test.js` fails. The bump is required regardless, because `index.html`, `js/app.js`, and `japanese-reader.css` are precached and have changed.
 
-- [ ] **Step 2: Update the AGENTS.md backlog**
+- [x] **Step 2: Update the AGENTS.md backlog**
 
 Change the first bullet from `**v10.24.0 current.**` to `**v10.25.0 current.**`, then add a bullet immediately after the "Unlock feedback is ✓ Done" bullet:
 
@@ -434,7 +434,7 @@ Change the first bullet from `**v10.24.0 current.**` to `**v10.25.0 current.**`,
   sixth storage key, and no new surface.
 ```
 
-- [ ] **Step 3: Add the convention**
+- [x] **Step 3: Add the convention**
 
 In `AGENTS.md`, inside the `## Vocabulary conventions` section (it already contains the rule "Reward the learner with real consequences, never invented ones"), add:
 
@@ -452,7 +452,7 @@ In `AGENTS.md`, inside the `## Vocabulary conventions` section (it already conta
   relabelling its Achievements tool to Profile.
 ```
 
-- [ ] **Step 4: Update the AGENTS.md file map**
+- [x] **Step 4: Update the AGENTS.md file map**
 
 Add to the `## File map` section:
 
@@ -461,7 +461,7 @@ Add to the `## File map` section:
   no DOM, storage, or fetch, and no persisted earned state.
 ```
 
-- [ ] **Step 5: Update README.md**
+- [x] **Step 5: Update README.md**
 
 Add to the feature list, immediately before the `- **Unlock feedback:**` bullet:
 
@@ -471,7 +471,7 @@ Add to the feature list, immediately before the `- **Unlock feedback:**` bullet:
   local data each time it renders, with nothing recorded or awarded.
 ```
 
-- [ ] **Step 6: Verify version consistency and run the full check**
+- [x] **Step 6: Verify version consistency and run the full check**
 
 ```bash
 grep -n "APP_VERSION = " js/app.js sw.js && grep -n '"version"' package.json && npm test && npm run kanjivg:check
@@ -479,7 +479,7 @@ grep -n "APP_VERSION = " js/app.js sw.js && grep -n '"version"' package.json && 
 
 Expected: all three versions read `10.25.0`, 278 tests passing, and the KanjiVG manifest reporting current checksums.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add js/app.js sw.js package.json AGENTS.md README.md
