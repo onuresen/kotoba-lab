@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.33.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.34.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -213,6 +213,13 @@
   had no click handler wired to their actual panel at all (the only listener
   checking for them lived on `#mywords-panel`, which never contained them) —
   they now work, bound directly on `#insights-panel`.
+- Consistent desktop panel width is ✓ Done: every panel at 1081px+ now shares
+  `--layout-data` (Kanji's width) as its `max-width` by default instead of
+  splitting between the reading and data measures — see the reversed rule in
+  Desktop layout conventions for why and what Relations kept. Owner feedback
+  from four desktop screenshots was that the previous split made tab
+  switching visibly snap the page narrower or wider depending on which panel
+  came up.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -393,15 +400,40 @@
 - Keep `--layout-reading`, `--layout-data`, and `--layout-visual` as the shared
   width contract. Do not scatter new panel-specific desktop widths through the
   stylesheet.
-- A panel goes wide only when its content genuinely needs the room: a dense
+- **Reversed 2026-08-16, by explicit owner sign-off.** The rule used to read:
+  *"A panel goes wide only when its content genuinely needs the room: a dense
   browsing grid or a spatial canvas. Kanji uses the data width; Relations
-  overrides that shared limit with the visual width. Everything else — Analyze,
-  Read, Review, My Words, and Settings — stays at the reading measure, because
-  reading columns, card lists, and tables are all more legible narrow.
-- Only panels explicitly marked `data-layout="wide"` may escape the reading
-  measure, and there are exactly two. Do not add a third without a content
-  reason that survives the test above; "it has a table" is not one, since
-  Analyze holds the same table markup at the reading measure.
+  overrides that shared limit with the visual width. Everything else —
+  Analyze, Read, Review, My Words, and Settings — stays at the reading
+  measure, because reading columns, card lists, and tables are all more
+  legible narrow. Only panels explicitly marked `data-layout="wide"` may
+  escape the reading measure, and there are exactly two."* Owner feedback
+  (four desktop screenshots) was that snapping between a narrow panel and a
+  wide one on every tab switch reads as unpolished regardless of the
+  per-panel legibility argument. Every panel at 1081px+ now shares the data
+  width (`--layout-data`, Kanji's width) as its `max-width` by default —
+  `data-layout="wide"` no longer changes anything on its own, since wide and
+  default now resolve to the same value. What survived: Relations still opts
+  into the even-wider visual width via its own `--panel-wide-max` override,
+  because that's a spatial canvas with a standing, previously-fixed cropping
+  reason the flat content panels don't share. Do not reintroduce a narrower
+  default for any panel to "improve" its reading measure without checking
+  with the owner first — the whole point of this reversal is a width that
+  does not change when the tab does.
+- `.panel`'s desktop rule needs an explicit `width: 100%` alongside its
+  `max-width`, not `max-width` alone. `main.wrap` is `display: flex;
+  flex-direction: column`, so `.panel` is a flex item whose cross-axis
+  (width) sizing normally stretches to fill it — but a lightly-populated
+  panel (Achievements or Settings with a fresh profile, before any content
+  fills the card) can be narrow enough that its own shrink-to-fit content
+  width comes in under the flex container's stretched width, and without
+  an explicit `width` the panel shrinks to that content width instead of
+  staying full-width. `max-width` alone only ever caps a size that's
+  already explicit; it does not force stretch to kick in. This is exactly
+  the failure mode the panel-width consistency rule above exists to
+  prevent, so a panel with sparse content is the case most likely to
+  silently regress it — check an empty/near-empty panel state, not just a
+  full one, after touching this rule.
 - Wide workspaces begin above the 1080 px reading measure and must not create
   page overflow. Tablet and phone behavior remains governed by the existing
   responsive rules rather than separate narrow-screen width overrides.

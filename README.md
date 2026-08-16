@@ -83,11 +83,11 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   try short shared-component and reading-exception challenges with no score.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
   previews, keyboard grading, a due counter, and streak tracking.
-- **Adaptive workspace width:** the Kanji, Alchemy, and Relations workspaces use
-  the available desktop space, because all three are visual workspaces that
-  need it. Every other view — Analyze, Read, Review, Words, Deck, Achievements,
-  Insights, and Settings — keeps a focused reading measure. Tablet and phone
-  layouts keep their existing flow.
+- **Consistent desktop width:** every workspace shares the same width on
+  larger desktops — the one Kanji and Alchemy use — so switching tabs never
+  snaps the page narrower or wider. Relations alone opts into an even wider
+  measure for its spatial maps. Tablet and phone layouts keep their existing
+  flow.
 - **Words you can now read:** the Words tab lists the compound words written
   entirely in kanji you have marked known — what those kanji combine into,
   rather than what they break down from. Ranked easiest-first, and every kanji
