@@ -6,15 +6,23 @@ const stats = (over = {}) => ({
   knownKanji: 0, knownWords: 0, readableWords: 0, savedCards: 0, reviewDays: 0, ...over,
 });
 
-test('every milestone declares an id, a label, a threshold, and a reader', () => {
+test('every milestone declares an id, a label, a threshold, a category, and a reader', () => {
   assert.ok(MILESTONES.length >= 8);
   for (const m of MILESTONES) {
     assert.equal(typeof m.id, 'string');
     assert.equal(typeof m.label, 'string');
     assert.ok(Number.isFinite(m.at) && m.at > 0, `${m.id} needs a positive threshold`);
+    assert.equal(typeof m.category, 'string');
     assert.equal(typeof m.value, 'function');
   }
   assert.equal(new Set(MILESTONES.map((m) => m.id)).size, MILESTONES.length, 'ids must be unique');
+});
+
+test('passed and next entries carry their category through, for the Achievements page icon', () => {
+  const passed = buildMilestones(stats({ knownKanji: 10 })).passed;
+  assert.equal(passed[0].category, 'kanji');
+  const next = buildMilestones(stats({ knownKanji: 90 })).next;
+  assert.equal(next.category, 'kanji');
 });
 
 test('a fresh profile has passed nothing and is offered no forward line', () => {

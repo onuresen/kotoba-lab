@@ -7,7 +7,7 @@
 // app.js only ever handles tab names.
 
 export const ROUTABLE_TABS = Object.freeze([
-  'analyze', 'read', 'kanji', 'relations', 'review', 'mywords', 'profile',
+  'analyze', 'read', 'kanji', 'relations', 'review', 'mywords', 'profile', 'achievements',
 ]);
 
 const DEFAULT_TAB = 'analyze';
