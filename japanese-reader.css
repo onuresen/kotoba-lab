@@ -139,6 +139,7 @@ body {
   .rail-link[data-nav-color="words"]        { --nav-color: var(--nav-words); }
   .rail-link[data-nav-color="deck"]         { --nav-color: var(--nav-deck); }
   .rail-link[data-nav-color="achievements"] { --nav-color: var(--nav-achievements); }
+  .rail-link[data-nav-color="insights"]     { --nav-color: var(--nav-insights); }
   .rail-link[data-nav-color="settings"]     { --nav-color: var(--text3); }
 
   /* .wrap's own max-width (--layout-reading, 1080px) would otherwise still cap
@@ -1542,9 +1543,16 @@ p.hint { margin: 8px 0 0; }
     position: sticky; background: var(--surface);
     backdrop-filter: none; -webkit-backdrop-filter: none;
   }
-  .head-inner { min-height: 60px; padding: 8px 16px; align-items: center; flex-direction: row; gap: 8px; }
-  .brand { gap: 10px; min-width: 0; }
-  .brand-mark { width: 40px; height: 40px; font-size: 25px; flex: 0 0 auto; }
+  .head-inner { min-height: 60px; padding: 8px 12px; align-items: center; flex-direction: row; gap: 6px; }
+  .brand { gap: 8px; min-width: 0; }
+  .brand-mark { width: 36px; height: 36px; font-size: 22px; flex: 0 0 auto; }
+  /* Five head-actions (Alchemy, Deck, Achievements, Insights, Settings) now
+     share this row with the brand; tighter than the 1080px block below,
+     which still has tablet width to spare. .head-nav .head-action (not
+     .head-action alone) to outrank that block's own padding rule, which
+     loads later in the file and would otherwise win the cascade here too. */
+  .head-nav { gap: 2px; }
+  .head-nav .head-action { padding-inline: 6px; }
   .brand h1 { font-size: 20px; }
   .tagline { display: none; }
 

@@ -50,11 +50,11 @@
         <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" data-badge="review-due" hidden></span></button>
         <button class="tab" data-tab="words"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">Words</span></button>
       </nav>
-      <!-- Alchemy, Deck, Achievements, and Settings are deliberately not .tab:
-           none takes a mobile bottom-bar slot, which stays at six columns.
-           Icon and label swap the same way the tabs do — text on desktop,
-           glyph on phones — so aria-label carries the name at the width
-           where the label hides. -->
+      <!-- Alchemy, Deck, Achievements, Insights, and Settings are deliberately
+           not .tab: none takes a mobile bottom-bar slot, which stays at six
+           columns. Icon and label swap the same way the tabs do — text on
+           desktop, glyph on phones — so aria-label carries the name at the
+           width where the label hides. -->
       <button type="button" class="head-action" data-tab="alchemy" title="Radical Alchemy — combine components to discover kanji" aria-label="Radical Alchemy">
         <span class="head-action-icon" aria-hidden="true">錬</span>
         <span class="head-action-label">Alchemy</span>
@@ -67,7 +67,11 @@
         <span class="head-action-icon" aria-hidden="true">証</span>
         <span class="head-action-label">Achievements</span>
       </button>
-      <button type="button" class="head-action" data-tab="profile" title="Profile &amp; Data — backups, local dashboard, usage journal, and offline availability" aria-label="Settings">
+      <button type="button" class="head-action" data-tab="insights" title="Insights — your optional local usage journal and friction radar" aria-label="Insights">
+        <span class="head-action-icon" aria-hidden="true">計</span>
+        <span class="head-action-label">Insights</span>
+      </button>
+      <button type="button" class="head-action" data-tab="profile" title="Settings — profile summary, local data dashboard, backup, and import" aria-label="Settings">
         <span class="head-action-icon" aria-hidden="true">設</span>
         <span class="head-action-label">Settings</span>
       </button>
@@ -98,6 +102,7 @@
     <span class="side-rail-divider" role="separator"></span>
     <button class="tab rail-link" data-tab="mywords" data-nav-color="deck"><span class="tab-icon" aria-hidden="true">札</span><span class="tab-label">Deck</span></button>
     <button class="tab rail-link" data-tab="achievements" data-nav-color="achievements"><span class="tab-icon" aria-hidden="true">証</span><span class="tab-label">Achievements</span></button>
+    <button class="tab rail-link" data-tab="insights" data-nav-color="insights"><span class="tab-icon" aria-hidden="true">計</span><span class="tab-label">Insights</span></button>
     <button class="tab rail-link" data-tab="profile" data-nav-color="settings"><span class="tab-icon" aria-hidden="true">設</span><span class="tab-label">Settings</span></button>
   </div>
 </nav>
@@ -547,6 +552,35 @@
           <div><input id="profile-reset-phrase" class="input" type="text" autocomplete="off" spellcheck="false"><button type="button" id="profile-reset-apply" class="btn btn-primary" disabled>Reset everything</button><button type="button" id="profile-reset-cancel" class="btn btn-ghost">Cancel</button></div>
         </section>
       </section>
+      <section class="offline-store" aria-labelledby="offline-store-title">
+        <div class="usage-journal-head">
+          <div><span class="label">INSTALLABLE · WORKS OFFLINE</span><h3 id="offline-store-title">Offline availability</h3></div>
+          <span id="offline-store-status" class="badge" data-status="archive">Checking…</span>
+        </div>
+        <p class="hint">Kotoba Lab stores its own application files so it opens without a connection. This is separate from your study data and is never included in a profile backup.</p>
+        <div id="offline-rows" class="offline-rows"></div>
+      </section>
+      <div class="profile-actions">
+        <button id="mw-backup-download" class="btn btn-primary" title="Download every saved card, schedule, known word and kanji, and review history as one JSON file">Download profile (.json)</button>
+        <label class="file-btn btn">Choose profile to import<input type="file" id="mw-backup-file" accept=".json,application/json" hidden></label>
+      </div>
+      <section id="profile-import-preview" class="profile-import-preview" hidden aria-live="polite">
+        <div class="profile-preview-head"><div><span class="label">IMPORT PREVIEW</span><h3 id="profile-import-name">Kotoba Lab profile</h3></div><button type="button" id="profile-import-cancel" class="btn btn-ghost">Cancel</button></div>
+        <p id="profile-import-meta" class="hint"></p>
+        <div id="profile-import-counts" class="profile-summary"></div>
+        <p id="profile-import-impact" class="profile-import-impact"></p>
+        <div class="profile-import-actions">
+          <button type="button" id="profile-import-merge" class="btn btn-primary">Merge safely</button>
+          <button type="button" id="profile-import-replace" class="btn btn-ghost profile-replace">Replace local profile</button>
+        </div>
+        <p class="hint"><strong>Merge safely</strong> adds missing data and keeps the most recently studied schedule. Replace deletes the current local profile first.</p>
+      </section>
+      <p class="hint">Importing never changes anything until you approve the preview. The recommended merge is repeat-safe: importing the same profile twice does not duplicate progress.</p>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="insights" id="insights-panel">
+    <div class="card">
       <section class="usage-journal" aria-labelledby="usage-journal-title">
         <div class="usage-journal-head">
           <div><span class="label">OPTIONAL · LOCAL ONLY</span><h3 id="usage-journal-title">Usage journal</h3></div>
@@ -580,30 +614,6 @@
           <button type="button" id="usage-journal-clear" class="btn btn-ghost" disabled>Reset journal</button>
         </div>
       </section>
-      <section class="offline-store" aria-labelledby="offline-store-title">
-        <div class="usage-journal-head">
-          <div><span class="label">INSTALLABLE · WORKS OFFLINE</span><h3 id="offline-store-title">Offline availability</h3></div>
-          <span id="offline-store-status" class="badge" data-status="archive">Checking…</span>
-        </div>
-        <p class="hint">Kotoba Lab stores its own application files so it opens without a connection. This is separate from your study data and is never included in a profile backup.</p>
-        <div id="offline-rows" class="offline-rows"></div>
-      </section>
-      <div class="profile-actions">
-        <button id="mw-backup-download" class="btn btn-primary" title="Download every saved card, schedule, known word and kanji, and review history as one JSON file">Download profile (.json)</button>
-        <label class="file-btn btn">Choose profile to import<input type="file" id="mw-backup-file" accept=".json,application/json" hidden></label>
-      </div>
-      <section id="profile-import-preview" class="profile-import-preview" hidden aria-live="polite">
-        <div class="profile-preview-head"><div><span class="label">IMPORT PREVIEW</span><h3 id="profile-import-name">Kotoba Lab profile</h3></div><button type="button" id="profile-import-cancel" class="btn btn-ghost">Cancel</button></div>
-        <p id="profile-import-meta" class="hint"></p>
-        <div id="profile-import-counts" class="profile-summary"></div>
-        <p id="profile-import-impact" class="profile-import-impact"></p>
-        <div class="profile-import-actions">
-          <button type="button" id="profile-import-merge" class="btn btn-primary">Merge safely</button>
-          <button type="button" id="profile-import-replace" class="btn btn-ghost profile-replace">Replace local profile</button>
-        </div>
-        <p class="hint"><strong>Merge safely</strong> adds missing data and keeps the most recently studied schedule. Replace deletes the current local profile first.</p>
-      </section>
-      <p class="hint">Importing never changes anything until you approve the preview. The recommended merge is repeat-safe: importing the same profile twice does not duplicate progress.</p>
     </div>
   </section>
 

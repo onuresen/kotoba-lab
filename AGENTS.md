@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.32.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.33.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -200,6 +200,19 @@
   tighter `.head-nav` gap and `.head-action` padding at ≤1080px to keep fitting
   the narrowest phone widths without clipping — see the icon-only block in
   japanese-reader.css.
+- Settings split into Settings and Insights is ✓ Done: the usage journal,
+  friction radar, and shareable report moved to a new `data-panel="insights"`
+  tab, reusing `renderUsageJournal()` unchanged (called from `switchTab` now
+  instead of only from inside `renderProfilePanel()`). Settings kept profile
+  summary, the local data dashboard, offline availability, and backup/import
+  — `renderProfilePanel()` is now data-management-only. Insights is a fifth
+  head-action (Alchemy, Deck, Achievements, Insights, Settings), which pushed
+  header spacing to its practical limit on the narrowest phones — see Mobile
+  interface conventions. While moving this, also fixed a real pre-existing
+  bug: the friction radar's "go to X" suggestion buttons (`[data-usage-tab]`)
+  had no click handler wired to their actual panel at all (the only listener
+  checking for them lived on `#mywords-panel`, which never contained them) —
+  they now work, bound directly on `#insights-panel`.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -288,9 +301,12 @@
   or storage.
 - `js/routing.js` — pure hash parsing, tab/route translation, and unknown-route
   fallback; no DOM, history, or fetch.
-- `index.html` `[data-panel="profile"]` — Profile & Data panel: summary,
-  dashboard, reset, usage journal, friction radar, report, offline availability,
-  backup actions, and import preview. Reached only from the header control.
+- `index.html` `[data-panel="profile"]` — Settings panel: profile summary,
+  local data dashboard, reset, offline availability, backup actions, and
+  import preview. Reached only from a header control.
+- `index.html` `[data-panel="insights"]` — Insights panel: the opt-in usage
+  journal, friction radar, and shareable report. Split out of Settings so
+  each destination holds one focus; reached only from a header control.
 - `assets/icons/` — 192/512 any-purpose and 512 full-bleed maskable icons.
 - `tools/build-kanjivg.mjs` — pinned KanjiVG generator and `--check` command.
 - `data/kanjivg.json` — committed 5.84 MB runtime artifact.
@@ -442,13 +458,19 @@
 
 - At 1080px and below, keep the six primary tabs in the fixed bottom bar and
   leave the sticky header for compact branding plus the Alchemy, Deck,
-  Achievements, and Settings head-action controls. Respect safe-area insets
-  and reserve enough main-content padding that the bar never covers actions.
-  Four head-actions plus the brand need the tighter `.head-nav`/`.head-action`
-  spacing in the ≤1080px block, not the roomier desktop rail spacing, to keep
-  fitting the narrowest phone widths — check actual narrow-phone screenshots
-  (≤360px), not just a mid-size phone, before adding a fifth.
-- Profile & Data, Alchemy, Deck, and Achievements are headed panels, not
+  Achievements, Insights, and Settings head-action controls. Respect
+  safe-area insets and reserve enough main-content padding that the bar never
+  covers actions. Five head-actions plus the brand need spacing tightened in
+  two steps: the ≤1080px block tightens once (icon-only, reduced padding) for
+  everything from phone up through tablet; the ≤780px block tightens further
+  still (smaller brand mark, tighter `.head-nav`/`.head-action` gap and
+  padding, both using a `.head-nav .head-action` selector to outrank the
+  ≤1080px block's own rule, which loads later in the file) because tablet
+  width has room to spare that the narrowest phones don't. Check actual
+  narrow-phone screenshots (≤360px) *and* ~900px tablet, not just a mid-size
+  phone, before adding a sixth — at five, 360px already has no room left and
+  only avoids clipping by wrapping the brand name to two lines.
+- Settings, Alchemy, Deck, Achievements, and Insights are headed panels, not
   bottom-bar tabs. Each is reached from a head-action control in the header
   and must never gain a bottom-bar slot; the bar stays at six columns
   regardless of how many destinations the desktop side rail carries. Their
@@ -459,7 +481,7 @@
   is `display: none` on phones.
 - 1081px+ is the desktop side rail (`.side-rail` in japanese-reader.css): it
   replaces the header outright and lists every destination — including the
-  four head-action-only ones — as an equally-weighted row with its own color
+  five head-action-only ones — as an equally-weighted row with its own color
   from the `--nav-*` token set in `palettes/washi-sumi.css`. Each rail link
   duplicates a `data-tab` already present in the header; add a destination to
   both nav copies, never just one, or it's reachable on one width but not the
