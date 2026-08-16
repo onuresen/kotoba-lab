@@ -2,7 +2,7 @@
 
 ## Current release and backlog
 
-- **v10.26.0 current.** Radical Tree component coloring, the standalone Kanji
+- **v10.27.0 current.** Radical Tree component coloring, the standalone Kanji
   library, Group A stroke/reading families, and Group B radical/component
   reverse browsing are ✓ Done. Group C family study workspaces is also ✓ Done.
 - Phonetic Component Lab, Kanji Contrast Lab, Text-to-Study Journey, and Family
@@ -134,6 +134,12 @@
   `confirm-pop`. Removing a known chip or a saved deck row now plays a brief
   `chip-leave`/`row-leave` release before the list re-renders, via the shared
   `leaveThen()` helper, instead of vanishing on the spot. All reduced-motion.
+- Review card flip is ✓ Done: showing the answer turns the whole `#srs-stage`
+  card edge-on and back, like a physical flashcard, via `flipStage()` and the
+  `card-flip-out`/`card-flip-in` keyframes; content is swapped while the card
+  reads as edge-on, so the change is never visible mid-turn. Advancing to the
+  next card after grading flips it in the same way. Reduced motion skips the
+  flip and renders instantly, unchanged from before this pass.
 - Data Management Groups A–C are ✓ Done: Profile & Data exports versioned full
   profiles with metadata, previews imports before any write, defaults to a
   repeat-safe merge, and gates replacement behind confirmation. Portable Study
@@ -280,6 +286,12 @@
   the shared `leaveThen(el, after)` helper: it mutates the store immediately,
   same as the Review acknowledgement above, and only delays the re-render —
   skipping the delay entirely under `prefers-reduced-motion`.
+- A two-phase attribute animation (flip, or anything else that must play the
+  same visual step twice in a row, e.g. two reveals back to back) needs a
+  forced reflow between removing and re-adding the attribute, or the second
+  play won't restart — see `flipStage()`. Content changes only happen while
+  the element is mid-animation and effectively invisible (edge-on, faded,
+  off-screen), never at a visible frame.
 - Component colors are positional and non-semantic. Keep the assembled kanji
   monochrome; color direct children only in the separated state, and match each
   component button without relying on color as its label.

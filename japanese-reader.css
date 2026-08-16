@@ -280,6 +280,12 @@ td.hint, .hint { color: var(--text3); font-size: 12px; }
 .boot-warning[hidden] { display: none; }
 
 .srs-stage { position: relative; display: flex; flex-direction: column; gap: 18px; min-height: 340px; overflow: hidden; border-color: color-mix(in srgb, var(--accent2) 28%, var(--border)); background: linear-gradient(155deg, var(--surface-raised), var(--surface-warm)); transition: border-color .2s var(--ease), box-shadow .2s var(--ease); }
+/* Turning the card over like a real flashcard: 'out' rotates the current face
+   edge-on before its content is swapped, 'in' brings the new face back
+   around. See flipStage() in app.js — content always changes while the card
+   reads as edge-on, so the swap itself is never visible mid-turn. */
+.srs-stage[data-flip="out"] { animation: card-flip-out .16s var(--ease) both; }
+.srs-stage[data-flip="in"] { animation: card-flip-in .18s var(--ease) both; }
 .srs-meta { display: flex; align-items: center; gap: 10px; }
 
 /* the card face: prompt on top, answer revealed underneath, vertically centred */
@@ -1291,6 +1297,14 @@ body.krm-open { overflow: hidden; }
   from { opacity: 1; }
   to { opacity: 0; }
 }
+@keyframes card-flip-out {
+  from { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
+  to { transform: perspective(1200px) rotateY(-90deg); opacity: .4; }
+}
+@keyframes card-flip-in {
+  from { transform: perspective(1200px) rotateY(90deg); opacity: .4; }
+  to { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
+}
 
 .input-card:not([hidden]) { animation: item-enter .34s var(--ease) both; }
 .kanji-filter-row.is-open { animation: disclosure-enter .24s var(--ease) both; }
@@ -1618,7 +1632,8 @@ p.hint { margin: 8px 0 0; }
   .kanji-study-progress[data-complete="true"] span,
   .info-actions .act-save[data-saved="true"], .info-actions .act-known[data-known="true"],
   .kanji-card[data-known="true"], .compound-save[aria-pressed="true"],
-  .known-chip[data-leaving="true"], table.freq tbody tr[data-leaving="true"] {
+  .known-chip[data-leaving="true"], table.freq tbody tr[data-leaving="true"],
+  .srs-stage[data-flip] {
     animation: none !important;
   }
   .ka-reading-routes line, .ka-star[data-known="true"]::before, .ka-center::after { animation: none !important; }

@@ -104,7 +104,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.26.0';
+const APP_VERSION = '10.27.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -161,6 +161,7 @@ let revealed = false;
 let sessionCount = 0;
 let lastAnswered = null; // keeps the card you just graded from reappearing at once
 let reviewTransitionTimer = null;
+let reviewFlipTimer = null;
 
 // ---- data load --------------------------------------------------------------
 // Without ui-base.css every design token goes undefined and the app renders in
@@ -1623,10 +1624,28 @@ function renderStage() {
       : `<div class="srs-grades"><button id="srs-show" class="btn btn-primary srs-show">Show answer <span class="g-key">Space</span></button></div>`}`;
 }
 
+// Turns the review card over like a physical flashcard: 'out' rotates the
+// current face edge-on, 'in' brings the freshly rendered face back around.
+// Re-setting the same attribute value wouldn't restart the CSS animation, so
+// it's cleared and a reflow is forced before the new value is applied.
+function flipStage(kind) {
+  const stage = $('#srs-stage');
+  if (!stage) return;
+  stage.removeAttribute('data-flip');
+  void stage.offsetWidth;
+  stage.dataset.flip = kind;
+}
+
 function reveal() {
   if (!queue.length || revealed) return;
-  revealed = true;
-  renderStage();
+  if (reducedMotion()) { revealed = true; renderStage(); return; }
+  flipStage('out');
+  clearTimeout(reviewFlipTimer);
+  reviewFlipTimer = setTimeout(() => {
+    revealed = true;
+    renderStage();
+    flipStage('in');
+  }, 160);
 }
 
 function answer(grade) {
@@ -1649,6 +1668,7 @@ function answer(grade) {
     refreshReview();
     renderMyWords();
     renderProfilePanel();
+    if (!reducedMotion()) flipStage('in');
   }, transitionMs);
 }
 
