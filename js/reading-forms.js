@@ -70,45 +70,87 @@ function moraAt(chars, i) {
   return null;
 }
 
+// The shared conversion core: walks a hiragana-normalized string once,
+// yielding one { chars, text } step per input chunk consumed (1 char, or 2
+// for a digraph). kanaToRomaji flattens these into one string; the segment
+// variant below regroups them at caller-supplied boundaries instead, so a
+// sokuon or ん whose disambiguation depends on the mora right after it still
+// resolves correctly even when that mora belongs to the next segment.
+function romajiSteps(text) {
+  const chars = Array.from(toHiragana(String(text || '')));
+  const steps = [];
+  let out = '';
+  let i = 0;
+  while (i < chars.length) {
+    const ch = chars[i];
+    if (ch === CHOONPU) {
+      const lastVowel = [...out].reverse().find((c) => VOWELS.has(c));
+      const piece = lastVowel || '';
+      out += piece; steps.push({ chars: 1, text: piece }); i += 1; continue;
+    }
+    if (ch === SOKUON) {
+      const next = moraAt(chars, i + 1);
+      let piece = '';
+      if (next && !VOWELS.has(next.romaji[0]) && next.romaji[0] !== 'n') {
+        piece = next.romaji[0] === 'c' ? 't' : next.romaji[0]; // ッチ → "tchi"
+      }
+      out += piece; steps.push({ chars: 1, text: piece }); i += 1; continue;
+    }
+    const mora = moraAt(chars, i);
+    if (mora) {
+      let piece;
+      if (mora.romaji === 'n') {
+        const next = moraAt(chars, i + 1);
+        const nextStarts = next ? next.romaji[0] : chars[i + 1];
+        piece = (nextStarts && (VOWELS.has(nextStarts) || nextStarts === 'y')) ? "n'" : 'n';
+      } else {
+        piece = mora.romaji;
+      }
+      out += piece; steps.push({ chars: mora.len, text: piece }); i += mora.len; continue;
+    }
+    out += ch; steps.push({ chars: 1, text: ch }); i += 1; // not a kana mora — pass through
+  }
+  return steps;
+}
+
 // Approximate modified-Hepburn romanization of a hiragana/katakana string.
 // Handles the sokuon consonant-doubling (っ), ん before a vowel/y needing an
 // apostrophe to stay unambiguous, and ー extending the previous vowel. Not
 // exhaustive for every rare loanword spelling; anything unrecognized (kanji,
 // punctuation, latin, digits) passes through unchanged.
 export function kanaToRomaji(text) {
-  const chars = Array.from(toHiragana(String(text || '')));
-  let out = '';
-  for (let i = 0; i < chars.length; i++) {
-    const ch = chars[i];
-    if (ch === CHOONPU) {
-      const lastVowel = [...out].reverse().find((c) => VOWELS.has(c));
-      out += lastVowel || '';
-      continue;
-    }
-    if (ch === SOKUON) {
-      const next = moraAt(chars, i + 1);
-      if (next && !VOWELS.has(next.romaji[0]) && next.romaji[0] !== 'n') {
-        out += next.romaji[0] === 'c' ? 't' : next.romaji[0]; // ッチ → "tchi"
-      }
-      continue;
-    }
-    const mora = moraAt(chars, i);
-    if (mora) {
-      if (mora.romaji === 'n') {
-        const next = moraAt(chars, i + 1);
-        const nextStarts = next ? next.romaji[0] : chars[i + 1];
-        out += (nextStarts && (VOWELS.has(nextStarts) || nextStarts === 'y')) ? "n'" : 'n';
-      } else {
-        out += mora.romaji;
-      }
-      i += mora.len - 1;
-      continue;
-    }
-    out += ch; // not a kana mora — pass through as-is
-  }
-  return out;
+  return romajiSteps(text).map((step) => step.text).join('');
 }
 
 export function tokensToRomaji(tokens) {
   return kanaToRomaji(tokensToKana(tokens));
+}
+
+// Same conversion as kanaToRomaji, but realigned to the boundaries of each
+// input segment (typically one per tokenizer token) instead of flattened to
+// one string. Converting a UI's per-token spans independently would get a
+// sokuon/ん wrong right at a token boundary — this joins the segments,
+// converts once, then cuts the result back apart at the original lengths, so
+// an interactive per-token view and the whole-text kanaToRomaji/copy button
+// stay byte-identical. Not bulletproof for a boundary that lands inside a
+// single digraph (きゃ split mid-character across two segments); real
+// tokenizer output never does that, since it never splits inside one mora.
+export function kanaToRomajiSegments(segments) {
+  const list = segments || [];
+  const steps = romajiSteps(list.join(''));
+
+  const out = [];
+  let stepIndex = 0, inputPos = 0;
+  for (const s of list) {
+    const target = inputPos + String(s || '').length;
+    let piece = '';
+    while (inputPos < target && stepIndex < steps.length) {
+      const step = steps[stepIndex];
+      piece += step.text;
+      inputPos += step.chars;
+      stepIndex += 1;
+    }
+    out.push(piece);
+  }
+  return out;
 }

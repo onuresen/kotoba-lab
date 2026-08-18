@@ -104,6 +104,35 @@ test('every row has the same field count, so the file is a valid table', () => {
   assert.deepEqual([...counts], [5]);
 });
 
+// ---- romaji column (opt-in) --------------------------------------------------
+
+test('romaji is opt-in: the default stays five fields, unchanged', () => {
+  const rows = [row('本', 5, 1, { reading: 'ほん' })];
+  assert.equal(toTSV(rows), toTSV(rows, { romaji: false }));
+  assert.equal(toTSV(rows).split('\t').length, 5);
+});
+
+test('romaji: true appends a sixth field derived from the reading', () => {
+  const tsv = toTSV([row('学校', 5, 1, { reading: 'がっこう', gloss: 'school' })], { romaji: true });
+  assert.equal(tsv, '学校\tがっこう\tschool\tN5\t\tgakkou');
+  assert.equal(tsv.split('\t').length, 6);
+});
+
+test('romaji: true leaves the sixth field empty rather than guessing when there is no reading', () => {
+  const tsv = toTSV([row('議論', null, 1, { reading: null })], { romaji: true });
+  assert.equal(tsv.split('\t').length, 6);
+  assert.equal(tsv.split('\t')[5], '');
+});
+
+test('romaji column keeps the field count uniform across mixed rows', () => {
+  const rows = [
+    row('本', 5, 1, { reading: 'ほん' }),
+    row('議論', null, 1, { reading: null, gloss: null }),
+  ];
+  const counts = new Set(toTSV(rows, { romaji: true }).split('\n').map((l) => l.split('\t').length));
+  assert.deepEqual([...counts], [6]);
+});
+
 // ---- the invariant TSV depends on -------------------------------------------
 
 test('no shipped gloss contains a tab or newline (TSV has no escaping)', () => {

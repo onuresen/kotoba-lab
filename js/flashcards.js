@@ -1,7 +1,9 @@
 // flashcards.js — turn selected study words into an Anki-importable TSV.
-// Fields: surface, reading, meaning (gloss), JLPT level.
+// Fields: surface, reading, meaning (gloss), JLPT level, sentence, and an
+// optional trailing romaji column for learners not yet comfortable with kana.
 
 import { levelName } from './jlpt.js';
+import { kanaToRomaji } from './reading-forms.js';
 
 // Pick study candidates from word-frequency rows: dictionary words at or above
 // a chosen difficulty, plus (optionally) ungraded words. `minLevel` uses the
@@ -21,16 +23,22 @@ export function pickStudyWords(wordRows, { hardestFirst = true, maxLevel = 4, in
 
 // Five columns, always — a saved card carries the sentence it was met in, a
 // word picked off the frequency table has none, and an export whose column
-// count varies by source would break the field mapping on import.
+// count varies by source would break the field mapping on import. `romaji`
+// opts into a sixth trailing column so it never shifts the first five and
+// never breaks an Anki note type already mapped to the plain five-field form.
 //
 // There is no escaping here and TSV has no way to express one: a tab or a
 // newline in a gloss would silently shift every later field. The shipped
 // dictionaries are clean (flashcards.test.js fails if that ever stops being
-// true), and the sentence is stripped of both on the way in for the same reason.
-export function toTSV(rows) {
-  const lines = rows.map((r) =>
-    [r.surface, r.reading || '', r.gloss || '', levelName(r.level), oneLine(r.sentence)].join('\t')
-  );
+// true), and the sentence is stripped of both on the way in for the same
+// reason — the romaji column is derived from the reading, not free-form
+// pasted text, but runs through the same guard for cheap defense in depth.
+export function toTSV(rows, { romaji = false } = {}) {
+  const lines = rows.map((r) => {
+    const fields = [r.surface, r.reading || '', r.gloss || '', levelName(r.level), oneLine(r.sentence)];
+    if (romaji) fields.push(r.reading ? oneLine(kanaToRomaji(r.reading)) : '');
+    return fields.join('\t');
+  });
   return lines.join('\n');
 }
 

@@ -105,7 +105,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.37.0';
+const APP_VERSION = '10.38.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -617,9 +617,7 @@ function run({ recordUsage = true } = {}) {
 function renderReadingView() {
   const root = $('#reading');
   if (!current) return;
-  if (readViewMode === 'kana') { root.textContent = tokensToKana(current.tokens); return; }
-  if (readViewMode === 'romaji') { root.textContent = tokensToRomaji(current.tokens); return; }
-  renderReading(root, current.tokens, jlpt, showInfo, isKnown);
+  renderReading(root, current.tokens, jlpt, showInfo, isKnown, readViewMode);
 }
 
 async function copyReadingForm(kind) {
@@ -2359,7 +2357,7 @@ function exportFlashcards(dl) {
   const includeUngraded = $('#flash-ungraded').checked;
   const rows = pickStudyWords(current.wStats.rows, { maxLevel, includeUngraded });
   if (!rows.length) { toast('No matching study words.', 'error'); return; }
-  const tsv = toTSV(rows);
+  const tsv = toTSV(rows, { romaji: $('#flash-romaji').checked });
   if (dl) {
     download('kotoba-flashcards.tsv', tsv);
     toast(`Exported ${rows.length} words (TSV).`, 'success');

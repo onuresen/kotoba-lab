@@ -2,7 +2,32 @@
 
 ## Current release and backlog
 
-- **v10.37.0 current.** Mobile one-menu pass is ✓ Done, from real usage
+- **v10.38.0 current.** Two small follow-ups from the reading-forms pass are
+  ✓ Done. (1) Switching Read's `#read-view` to kana or romaji used to render
+  plain `textContent`, losing tap-to-inspect entirely. `renderReading()` in
+  `js/read.js` now takes a `mode` parameter and keeps the exact same
+  `.tok.word`/`[data-k]` click targets and token data in every mode — only
+  what a word visually shows changes (kanji+furigana, plain kana, or
+  romaji); an unmatched kanji run still shows and stays clickable as the
+  original glyphs in every mode, since there's no reading to substitute.
+  Getting romaji right required a real fix, not just plumbing: converting
+  each token's reading independently would get a sokuon or ん wrong right at
+  a token boundary (the mora that disambiguates it can belong to the next
+  token). `reading-forms.js` gained `kanaToRomajiSegments()`, which joins
+  all segments, converts once through a shared `romajiSteps()` core, then
+  cuts the result back apart at the original lengths — so the interactive
+  view and the whole-text copy button/`tokensToRomaji()` stay byte-identical
+  at every boundary. `kanaToRomaji()` itself is unchanged (same output),
+  now implemented in terms of `romajiSteps()` too. (2) The Anki TSV export
+  (Analyze tab) gained an opt-in `#flash-romaji` checkbox appending a sixth
+  trailing column via `kanaToRomaji(reading)`. Opt-in and trailing
+  specifically so the default export stays byte-identical five fields —
+  `toTSV()`'s existing "same column count regardless of source" invariant
+  now reads as "same column count for a given `romaji` option," and an Anki
+  note type already mapped to the five-field form keeps working unchanged.
+  Empty when a row has no reading, same "never invent it" rule the whole
+  reading-forms pass follows. `APP_VERSION` bumped to 10.38.0.
+- **v10.37.0.** Mobile one-menu pass is ✓ Done, from real usage
   feedback that the phone/tablet layout carried two separate menus — a fixed
   bottom tab bar plus a second icon row sharing the sticky header. Below
   1081px the header is now branding-only and every destination (the six
@@ -378,9 +403,14 @@
 - `js/routing.js` — pure hash parsing, tab/route translation, and unknown-route
   fallback; no DOM, history, or fetch.
 - `js/reading-forms.js` — pure token→kana and kana→romaji (approximate
-  modified Hepburn) conversion for the Read tab's kana/romaji view modes and
-  copy-to-clipboard actions; no DOM, storage, or fetch. Never guesses a
-  reading for a token that doesn't already have one.
+  modified Hepburn) conversion for the Read tab's interactive kana/romaji
+  view modes, copy-to-clipboard actions, and the Anki export's optional
+  romaji column; no DOM, storage, or fetch. Never guesses a reading for a
+  token that doesn't already have one. `kanaToRomajiSegments()` converts a
+  list of segments as one continuous string, then cuts the result back
+  apart at the original lengths — the boundary-safe form callers reaching
+  across per-token spans need, since a sokuon or ん right at a segment edge
+  depends on the mora just after it.
 - `index.html` `[data-panel="profile"]` — Settings panel: profile summary,
   local data dashboard, reset, offline availability, backup actions, and
   import preview. Reached only from a header control.
@@ -1030,7 +1060,9 @@ npm run kanjivg:check
 ```
 
 `npm test` must keep the explicit `node --test "js/*.test.js"` glob. Browser QA
-must cover Read, Review, My Words, and Kanji-library doorways,
+must cover Read (including tap-to-inspect in all three view modes and the
+Anki export's optional romaji column), Review, My Words, and Kanji-library
+doorways,
 search/filter/group/family switching/paging (including lazy structural-family loading),
 family-study start/reveal/move/shuffle/known/tree/close behavior,
 phonetic-signal thresholds/evidence/prediction scoring,
