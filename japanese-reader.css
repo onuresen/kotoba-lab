@@ -69,31 +69,68 @@ body {
 .brand h1 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: 0.2px; }
 .tagline { margin: 2px 0 0; font-size: 12px; color: var(--text2); }
 
-/* ---- tabs ------------------------------------------------------------------ */
-.tabs { display: flex; gap: 4px; background: var(--surface-sunken); padding: 4px; border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); border-radius: var(--r-pill); overflow-x: auto; box-shadow: inset 0 1px 4px var(--ink-shadow-soft); }
+/* ---- tabs (bottom nav, <=1080px only — 1081px+ uses .side-rail instead,
+   whose rail-link buttons share the .tab class and reuse .tab/.tab::after/
+   .tab-icon below for their own unrelated active-state underline/icon). --- */
+.tabs { display: none; }
 .tab {
+  position: relative;
   border: none; background: transparent; cursor: pointer;
-  font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--text2);
-  padding: 7px 18px; border-radius: var(--r-pill); transition: background .2s var(--ease), color .2s var(--ease), box-shadow .2s var(--ease), transform .16s var(--ease);
+  font-family: var(--font-body); font-weight: 500; color: var(--text2);
+  border-radius: var(--r-md);
+  transition: background .2s var(--ease), color .2s var(--ease), transform .16s var(--ease);
 }
-.tab:hover { color: var(--text); transform: translateY(-1px); }
-.tab:active { transform: translateY(1px) scale(.98); }
-.tab.is-active { background: var(--surface-raised); color: var(--accent); box-shadow: var(--shadow-sm), inset 0 1px 0 var(--paper-glow); }
-@media (max-width: 780px) {
-  .head-inner { align-items: stretch; flex-direction: column; gap: 10px; }
-  .tabs { scrollbar-width: none; }
+.tab::after {
+  content: ''; position: absolute; right: 18px; bottom: 2px; left: 18px; height: 2px;
+  border-radius: var(--r-pill); background: var(--accent); opacity: 0; transform: scaleX(.35);
+  transition: opacity .2s var(--ease), transform .24s var(--ease);
+}
+.tab.is-active::after { opacity: 1; transform: scaleX(1); }
+.tab:active { transform: scale(.96); }
+.tab.is-active { background: var(--accent-dim); color: var(--accent); }
+.tab-icon { display: none; font-family: var(--font-display); font-size: 21px; line-height: 1; }
+.tabs-divider { flex: 0 0 auto; align-self: center; width: 1px; height: 30px; margin-inline: 2px; background: color-mix(in srgb, var(--border) 80%, transparent); }
+
+@media (max-width: 1080px) {
+  .tabs {
+    display: flex; align-items: stretch; gap: 2px;
+    position: fixed; z-index: var(--z-sticky); right: 0; bottom: 0; left: 0;
+    padding: 5px max(6px, env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+    overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x proximity;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    box-shadow: 0 -7px 24px color-mix(in srgb, var(--text) 9%, transparent);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
   .tabs::-webkit-scrollbar { display: none; }
-  .tab { flex: 1 0 auto; padding-inline: 14px; white-space: nowrap; }
+  .tab {
+    flex: 0 0 auto; scroll-snap-align: center;
+    min-width: 68px; min-height: 54px; padding: 5px 6px 3px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    font-size: 10px; line-height: 1.15; white-space: nowrap;
+  }
+  .tab::after { top: 0; right: calc(50% - 14px); bottom: auto; left: calc(50% - 14px); height: 3px; transform: scaleX(.4); }
+  .tab-icon { display: block; }
+  .tab[data-tab="relations"] .tab-label { font-size: 9px; }
+  .tab-badge { position: absolute; top: 3px; left: calc(50% + 8px); }
+  .ui-toast { bottom: calc(78px + env(safe-area-inset-bottom)); width: max-content; justify-content: center; }
+  main.wrap { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .sw-update { bottom: calc(66px + env(safe-area-inset-bottom)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabs { scroll-behavior: auto; }
 }
 
 /* ---- desktop side rail (1081px+) --------------------------------------------
-   Below 1081px the header + mobile bottom bar (above/below) carry navigation.
-   At 1081px+ this rail replaces the header outright: every destination —
-   including the two that never take a bottom-bar slot — becomes an equally
-   weighted, colorfully-iconed row instead of a cramped pill. Every .rail-link
-   duplicates a data-tab already present in the header; switchTab() treats
-   every element sharing a data-tab as one group (js/app.js), so the two nav
-   copies stay in sync for free. */
+   Below 1081px the .tabs bottom bar above carries all navigation and the
+   header holds only the brand. At 1081px+ .tabs and the header's nav both
+   disappear and this rail takes over: every destination becomes an equally
+   weighted, colorfully-iconed row instead of a scrollable strip. Every
+   .rail-link duplicates a data-tab already present in .tabs; switchTab()
+   treats every element sharing a data-tab as one group (js/app.js), so the
+   two nav copies stay in sync for free. */
 .side-rail { display: none; }
 
 @media (min-width: 1081px) {
@@ -1552,15 +1589,11 @@ p.hint { margin: 8px 0 0; }
 
 /* ---- mobile shell + reading ------------------------------------------------
    Keep the desktop workspace intact while giving phone users a stable app
-   frame, touch-sized controls, and details that do not live below the text. */
-.tab { position: relative; }
-.tab::after {
-  content: ''; position: absolute; right: 18px; bottom: 2px; left: 18px; height: 2px;
-  border-radius: var(--r-pill); background: var(--accent); opacity: 0; transform: scaleX(.35);
-  transition: opacity .2s var(--ease), transform .24s var(--ease);
-}
-.tab.is-active::after { opacity: 1; transform: scaleX(1); }
-.tab-icon, .info-close, .info-scrim { display: none; }
+   frame, touch-sized controls, and details that do not live below the text.
+   The header/tabs rules that used to live in this block moved up to the
+   "tabs" section near the top of the file, at the wider <=1080px breakpoint
+   they now share with tablet — see that section's comment for why. */
+.info-close, .info-scrim { display: none; }
 
 @media (max-width: 780px) {
   .wrap { padding-inline: 12px; }
@@ -1568,42 +1601,13 @@ p.hint { margin: 8px 0 0; }
     position: sticky; background: var(--surface);
     backdrop-filter: none; -webkit-backdrop-filter: none;
   }
-  .head-inner { min-height: 60px; padding: 8px 12px; align-items: center; flex-direction: row; gap: 6px; }
+  .head-inner { min-height: 60px; padding: 8px 12px; }
   .brand { gap: 8px; min-width: 0; }
   .brand-mark { width: 36px; height: 36px; font-size: 22px; flex: 0 0 auto; }
-  /* Five head-actions (Alchemy, Deck, Achievements, Insights, Settings) now
-     share this row with the brand; tighter than the 1080px block below,
-     which still has tablet width to spare. .head-nav .head-action (not
-     .head-action alone) to outrank that block's own padding rule, which
-     loads later in the file and would otherwise win the cascade here too. */
-  .head-nav { gap: 2px; }
-  .head-nav .head-action { padding-inline: 6px; }
   .brand h1 { font-size: 20px; }
   .tagline { display: none; }
 
-  .tabs {
-    position: fixed; z-index: var(--z-sticky); right: 0; bottom: 0; left: 0;
-    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0;
-    padding: 5px max(6px, env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
-    overflow: visible; border-top: 1px solid var(--border); border-radius: 0;
-    background: color-mix(in srgb, var(--surface) 94%, transparent);
-    box-shadow: 0 -7px 24px color-mix(in srgb, var(--text) 9%, transparent);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  }
-  .tab {
-    min-width: 0; min-height: 54px; padding: 5px 2px 3px; border-radius: var(--r-md);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-    font-size: 10px; line-height: 1.15; white-space: nowrap;
-  }
-  .tab::after { top: 0; right: calc(50% - 14px); bottom: auto; left: calc(50% - 14px); height: 3px; transform: scaleX(.4); }
-  .tab.is-active::after { transform: scaleX(1); }
-  .tab-icon { display: block; font-family: var(--font-display); font-size: 21px; line-height: 1; }
-  .tab[data-tab="relations"] .tab-label { font-size: 9px; }
-  .tab.is-active { background: var(--accent-dim); box-shadow: none; }
-  .tab-badge { position: absolute; top: 3px; left: calc(50% + 8px); }
-  .ui-toast { bottom: calc(78px + env(safe-area-inset-bottom)); width: max-content; justify-content: center; }
-
-  main.wrap { padding-top: 12px; padding-bottom: calc(76px + env(safe-area-inset-bottom)); gap: 12px; }
+  main.wrap { padding-top: 12px; gap: 12px; }
   .relations-toolbar { padding: 14px; gap: 14px; }
   .relations-intro { grid-template-columns: 1fr; gap: 13px; }
   .relations-intro h2 { font-size: 22px; }
@@ -1800,7 +1804,6 @@ p.hint { margin: 8px 0 0; }
 @media (max-width: 780px) {
   .sw-update {
     right: 8px; left: 8px;
-    bottom: calc(66px + env(safe-area-inset-bottom));
     max-width: none;
     transform: none;
   }
@@ -1836,49 +1839,6 @@ p.hint { margin: 8px 0 0; }
   .offline-row .btn { width: 100%; }
 }
 
-/* ---- header data control ---------------------------------------------------- */
-/* Profile & Data is reached from here rather than the tab bar, so the mobile
-   bottom bar stays at six columns. */
-.head-nav { display: flex; align-items: center; gap: 12px; }
-
-.head-action {
-  display: flex; align-items: center; gap: 7px;
-  min-height: 44px; padding: 8px 14px;
-  font-family: var(--font-body); font-size: 13px; font-weight: 500;
-  color: var(--text2);
-  background: var(--surface-sunken);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  cursor: pointer;
-  transition: color 0.18s var(--ease), background 0.18s var(--ease), border-color 0.18s var(--ease);
-}
-.head-action:hover { color: var(--text); border-color: var(--border-strong); }
-/* Mirrors .tab.is-active so the control reads as part of the same navigation. */
-.head-action.is-active {
-  color: var(--accent);
-  background: var(--surface-raised);
-  border-color: var(--accent-glow);
-  box-shadow: var(--shadow-sm), inset 0 1px 0 var(--paper-glow);
-}
-/* Mirrors .tab-icon: desktop shows the text label only, phones show the glyph.
-   Never show both, so the control reads like the tabs at every width. */
-.head-action-icon { display: none; font-family: var(--font-display); font-size: 17px; line-height: 1; }
-
-/* Four head-actions (Alchemy, Deck, Achievements, Settings) plus the tab pill
-   row no longer fit with text labels below the side-rail breakpoint, so they
-   go icon-only there — wider than the .tab-icon swap above, which only needs
-   to clear phone width. Tighter gap/padding than the desktop rail buttons
-   get, so all four plus the brand still fit the narrowest phone widths. */
-@media (max-width: 1080px) {
-  .head-action-icon { display: block; font-size: 21px; }
-  .head-action-label { display: none; }
-  .head-action { padding-inline: 8px; }
-  .head-nav { gap: 4px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .head-action { transition: none; }
-}
 
 /* ---- words unlocked by known kanji ------------------------------------------ */
 .compound-list { display: grid; gap: 6px; margin-top: 12px; }

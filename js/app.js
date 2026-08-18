@@ -105,7 +105,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.36.0';
+const APP_VERSION = '10.37.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -2395,16 +2395,25 @@ let currentTab = 'analyze';
 // tab never pushes a duplicate entry.
 function switchTab(name, push = true) {
   if (name !== 'relations') relationsAtlas?.setFocus(false);
-  // [data-tab] rather than .tab: every destination now has up to three nav
-  // elements sharing one data-tab value (mobile bottom bar and/or header
-  // head-action, plus the desktop side rail), and all of them need the same
-  // active-state and aria-current path.
+  // [data-tab] rather than .tab: every destination has up to two nav elements
+  // sharing one data-tab value (the mobile/tablet bottom bar and the desktop
+  // side rail), and both need the same active-state and aria-current path.
   document.querySelectorAll('[data-tab]').forEach((t) => {
     const active = t.dataset.tab === name;
     t.classList.toggle('is-active', active);
     if (active) t.setAttribute('aria-current', 'page');
     else t.removeAttribute('aria-current');
   });
+  // The bottom bar holds all eleven destinations in one horizontally
+  // scrollable strip below 1081px, so switching to one off-screen (Settings
+  // from Analyze, say) needs to bring it into view itself — a plain click
+  // already scrolled it there, but arriving via routing/back-forward or the
+  // brand link does not. Scoped to .tabs specifically so this never scrolls
+  // the page to bring a .rail-link into view in the unrelated desktop rail.
+  const activeTab = document.querySelector('.tabs .tab.is-active');
+  if (activeTab && window.matchMedia('(max-width: 1080px)').matches) {
+    activeTab.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', inline: 'center', block: 'nearest' });
+  }
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('is-active', p.dataset.panel === name));
   usageJournal.record(TAB_USAGE_EVENTS[name]);
   // The shared Text box feeds Analyze and Read only. The other tabs are

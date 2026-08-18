@@ -2,7 +2,21 @@
 
 ## Current release and backlog
 
-- **v10.36.0 current.** Read tab reading-forms pass is ✓ Done, from real usage
+- **v10.37.0 current.** Mobile one-menu pass is ✓ Done, from real usage
+  feedback that the phone/tablet layout carried two separate menus — a fixed
+  bottom tab bar plus a second icon row sharing the sticky header. Below
+  1081px the header is now branding-only and every destination (the six
+  former primary tabs plus Alchemy, Deck, Achievements, Insights, and
+  Settings) lives in one `.tabs` bar fixed to the bottom of the viewport,
+  horizontally scrollable/swipeable with scroll-snap and a `switchTab()`-
+  driven `scrollIntoView` so navigating to an off-screen destination slides
+  the bar to reveal it. Tablet (781–1080px) now shares this exact layout
+  instead of its own inline-pill-in-header state — one mobile/tablet nav
+  shape instead of three. See the reversed rule in Mobile interface
+  conventions for the full reasoning and what was removed (`.head-action`,
+  `.head-nav`, the six-column grid). `APP_VERSION` bumped to 10.37.0 (cached
+  HTML/CSS/JS changed).
+- **v10.36.0.** Read tab reading-forms pass is ✓ Done, from real usage
   feedback: (1) furigana had only one all-or-nothing toggle — `#furigana-hide-known`
   adds a second checkbox that fully hides `<rt>` for words already marked known
   (`.reading.hide-known-furigana .tok.word.is-known rt`), independent of the
@@ -548,34 +562,52 @@
 
 ## Mobile interface conventions
 
-- At 1080px and below, keep the six primary tabs in the fixed bottom bar and
-  leave the sticky header for compact branding plus the Alchemy, Deck,
-  Achievements, Insights, and Settings head-action controls. Respect
-  safe-area insets and reserve enough main-content padding that the bar never
-  covers actions. Five head-actions plus the brand need spacing tightened in
-  two steps: the ≤1080px block tightens once (icon-only, reduced padding) for
-  everything from phone up through tablet; the ≤780px block tightens further
-  still (smaller brand mark, tighter `.head-nav`/`.head-action` gap and
-  padding, both using a `.head-nav .head-action` selector to outrank the
-  ≤1080px block's own rule, which loads later in the file) because tablet
-  width has room to spare that the narrowest phones don't. Check actual
-  narrow-phone screenshots (≤360px) *and* ~900px tablet, not just a mid-size
-  phone, before adding a sixth — at five, 360px already has no room left and
-  only avoids clipping by wrapping the brand name to two lines.
-- Settings, Alchemy, Deck, Achievements, and Insights are headed panels, not
-  bottom-bar tabs. Each is reached from a head-action control in the header
-  and must never gain a bottom-bar slot; the bar stays at six columns
-  regardless of how many destinations the desktop side rail carries. Their
-  buttons carry `data-tab` but never the `.tab` class, and `switchTab()`
-  selects `[data-tab]` so the header controls receive `is-active` and
-  `aria-current` through the same path as the real tabs. Each needs an
-  explicit `aria-label` because its glyph is `aria-hidden` and its text label
-  is `display: none` on phones.
+- **Reversed 2026-08-18, by explicit owner sign-off.** The two rules below
+  used to read:
+  > At 1080px and below, keep the six primary tabs in the fixed bottom bar
+  > and leave the sticky header for compact branding plus the Alchemy, Deck,
+  > Achievements, Insights, and Settings head-action controls. ... Settings,
+  > Alchemy, Deck, Achievements, and Insights are headed panels, not
+  > bottom-bar tabs. Each is reached from a head-action control in the header
+  > and must never gain a bottom-bar slot; the bar stays at six columns
+  > regardless of how many destinations the desktop side rail carries.
+
+  Owner feedback was that splitting navigation across two menus — a fixed
+  bottom bar plus a second row of icon-only controls sharing the sticky
+  header — read as two different apps stacked on top of each other,
+  especially on phones. Below 1081px the header is now branding-only (just
+  the `.brand` logo/home button, no nav at all) and all eleven
+  destinations — the former six primary tabs plus Alchemy, Deck,
+  Achievements, Insights, and Settings — live in the one `.tabs` bar fixed to
+  the bottom of the viewport. There is no more "head-action" concept: those
+  five buttons are now ordinary `.tab` elements carrying the same `data-tab`
+  values they always did, so `switchTab()`'s existing generic `[data-tab]`
+  handling needed no changes to pick them up, and each still needs its
+  `title` (no longer a separate `aria-label`, since the visible label text
+  now supplies the accessible name at every width the bar shows). Eleven
+  destinations no longer fit as equal-width grid columns on a phone, so the
+  bar dropped its `display: grid` six-column layout for a horizontally
+  scrollable/swipeable flex row (`overflow-x: auto`, `scroll-snap-type: x
+  proximity`, native momentum scrolling) — the same scroll-snap pattern the
+  sample-passage strip already used, which is the "sliding kind animation"
+  the owner asked for. `switchTab()` calls `scrollIntoView({inline:
+  'center'})` on the newly active `.tab`, so navigating to an off-screen
+  destination (Settings from Analyze, say, or via back/forward routing)
+  slides the bar to reveal it instead of leaving the learner to hunt for it.
+  A `.tabs-divider` marks the same primary/secondary grouping the desktop
+  side rail already uses (analyze…words, then mywords…profile) without
+  adding a second visual menu. This is a real breakpoint change, not just a
+  relabel: the old tablet-width (781–1080px) state — tabs as an inline pill
+  row in the header, head-actions icon-only beside them — is gone too;
+  tablets now get the exact same branding-only header and bottom bar as
+  phones, and the `≤1080px`/`≤780px` split in the point below now separates
+  "the bottom bar exists" (≤1080px, unchanged cutoff) from "the bar's own
+  sizing gets tighter still" (≤780px) rather than "header vs. bottom bar."
 - 1081px+ is the desktop side rail (`.side-rail` in japanese-reader.css): it
-  replaces the header outright and lists every destination — including the
-  five head-action-only ones — as an equally-weighted row with its own color
-  from the `--nav-*` token set in `palettes/washi-sumi.css`. Each rail link
-  duplicates a `data-tab` already present in the header; add a destination to
+  replaces both the header's nav and the `.tabs` bottom bar outright and
+  lists every destination as an equally-weighted row with its own color from
+  the `--nav-*` token set in `palettes/washi-sumi.css`. Each rail link
+  duplicates a `data-tab` already present in `.tabs`; add a destination to
   both nav copies, never just one, or it's reachable on one width but not the
   other. Any UI that shows a live count next to a destination (only the Review
   due badge today) must key off a shared `[data-badge="..."]` attribute rather
