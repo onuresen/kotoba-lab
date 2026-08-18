@@ -37,6 +37,7 @@ const JS_MODULES = Object.freeze([
   'js/offline-cache.js',
   'js/profile-dashboard.js',
   'js/read.js',
+  'js/reading-forms.js',
   'js/routing.js',
   'js/script.js',
   'js/srs.js',

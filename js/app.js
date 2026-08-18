@@ -6,6 +6,7 @@ import { loadKuromojiTokenizer } from './tokenizer-kuromoji.js';
 import { createJlpt, LEVELS, levelName, levelSlug } from './jlpt.js';
 import { kanjiStats, wordStats, charMix, readability, coverage } from './analyze.js';
 import { renderReading, applyKnownClasses } from './read.js';
+import { tokensToKana, tokensToRomaji } from './reading-forms.js';
 import { pickStudyWords, toTSV, download } from './flashcards.js';
 import { readAozoraFile } from './aozora.js';
 import { createKnownSet, createDeck, createReviewLog, createAchievementLog } from './storage.js';
@@ -104,7 +105,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.35.1';
+const APP_VERSION = '10.36.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -145,6 +146,7 @@ let textJourney = null;
 let textJourneySession = null;
 let usageReportPreviewOpen = false;
 let achievementsFilter = 'all';
+let readViewMode = 'original'; // 'original' | 'kana' | 'romaji' — ephemeral, no storage key
 const kanjiBrowseLevels = new Set();
 
 // persisted, personal — survive across sessions in this browser only
@@ -598,13 +600,37 @@ function run({ recordUsage = true } = {}) {
   renderTable('#kanji-tbody', kStats.rows.slice(0, 60), 'kanji', kStats.uniqueKanji);
   renderTable('#word-tbody', wStats.rows.slice(0, 60), 'word', wStats.uniqueWords);
 
-  renderReading($('#reading'), tokens, jlpt, showInfo, isKnown);
+  renderReadingView();
   $('#info').innerHTML = infoHint();
   if ($('#relations-panel').classList.contains('is-active')) {
     renderRelationsSeeds();
     relationsMap?.update();
     relationsNetwork?.update();
     relationsAtlas?.update();
+  }
+}
+
+// Draws #reading in whichever of the three read-view modes is selected.
+// 'original' keeps the interactive ruby/click rendering read.js already owns;
+// 'kana' and 'romaji' are read-only plain-text transcriptions built from the
+// same tokenizer pass — see reading-forms.js for what "no reading" tokens do.
+function renderReadingView() {
+  const root = $('#reading');
+  if (!current) return;
+  if (readViewMode === 'kana') { root.textContent = tokensToKana(current.tokens); return; }
+  if (readViewMode === 'romaji') { root.textContent = tokensToRomaji(current.tokens); return; }
+  renderReading(root, current.tokens, jlpt, showInfo, isKnown);
+}
+
+async function copyReadingForm(kind) {
+  if (!current || !current.tokens.length) { toast('Paste some text first.', 'error'); return; }
+  const text = kind === 'kana' ? tokensToKana(current.tokens) : tokensToRomaji(current.tokens);
+  if (!text) { toast('Nothing to copy yet.', 'error'); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(kind === 'kana' ? 'Furigana copied to clipboard.' : 'Romaji copied to clipboard.', 'success');
+  } catch {
+    toast('Could not copy — your browser blocked clipboard access.', 'error');
   }
 }
 
@@ -1947,6 +1973,7 @@ const WORD_LOOKUP_LIMIT = 30;
 // reveal below — every other row renders exactly as before.
 function wordRowMarkup(word, justUnlocked = false) {
   const saved = deck.has(word.w);
+  const known = knownWords.has(word.w);
   return `<div class="compound-row"${justUnlocked ? ' data-unlocked="true"' : ''}>
       <div class="compound-word jp">${[...word.w].map((char) => (isKanji(char)
         ? `<button type="button" class="compound-kanji" data-kanji-tree="${esc(char)}" title="Open the Radical Tree for ${esc(char)}" aria-label="Open radical tree for ${esc(char)}">${esc(char)}</button>`
@@ -1956,6 +1983,7 @@ function wordRowMarkup(word, justUnlocked = false) {
         <span class="compound-gloss">${esc(word.g)}</span>
       </div>
       <span class="badge" data-status="${word.lvl == null ? 'archive' : 'reference'}">${levelName(word.lvl)}</span>
+      <button type="button" class="compound-known" data-word-known="${esc(word.w)}" title="${known ? `Unmark ${esc(word.w)} as known` : `Mark ${esc(word.w)} as known — dims it while reading and updates your coverage meter`}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(word.w)} as known">${known ? '✓ Known' : 'Mark known'}</button>
       <button type="button" class="compound-save" data-compound-save="${esc(word.w)}" title="${saved ? `Remove ${esc(word.w)} from your Review deck` : `Save ${esc(word.w)} to your Review deck — it becomes due immediately`}" aria-pressed="${saved}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★ Saved' : '☆ Save'}</button>
     </div>`;
 }
@@ -2447,6 +2475,10 @@ function wireUi() {
     if (event.key === 'Escape') setInfoSheet(false);
   });
   $('#furigana').addEventListener('change', (e) => $('#reading').classList.toggle('no-furigana', !e.target.checked));
+  $('#furigana-hide-known').addEventListener('change', (e) => $('#reading').classList.toggle('hide-known-furigana', e.target.checked));
+  $('#read-view').addEventListener('change', (e) => { readViewMode = e.target.value; renderReadingView(); });
+  $('#copy-kana').addEventListener('click', () => copyReadingForm('kana'));
+  $('#copy-romaji').addEventListener('click', () => copyReadingForm('romaji'));
   $('#flash-copy').addEventListener('click', () => exportFlashcards(false));
   $('#flash-download').addEventListener('click', () => exportFlashcards(true));
   $('#precise').addEventListener('change', onPreciseToggle);
@@ -2628,6 +2660,19 @@ function wireUi() {
         renderMyWords();
         renderProfilePanel();
         refreshReview();
+      }
+      return;
+    }
+    // Word lookup / readable-compound rows: the same known toggle the kanji
+    // library card already has, mirrored onto words via knownWords.
+    const wordKnownToggle = event.target.closest?.('[data-word-known]');
+    if (wordKnownToggle) {
+      const surface = wordKnownToggle.dataset.wordKnown;
+      if (surface) {
+        const now = knownWords.toggle(surface);
+        usageJournal.record('known.change');
+        refreshKnownEverywhere({ skipKanjiBrowser: true });
+        toast(now ? `✓ ${surface} known` : `Unmarked ${surface}.`, 'success');
       }
       return;
     }

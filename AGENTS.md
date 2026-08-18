@@ -2,7 +2,45 @@
 
 ## Current release and backlog
 
-- **v10.35.1 current.** Achievements mobile pass is ✓ Done: at ≤780px the badge
+- **v10.36.0 current.** Read tab reading-forms pass is ✓ Done, from real usage
+  feedback: (1) furigana had only one all-or-nothing toggle — `#furigana-hide-known`
+  adds a second checkbox that fully hides `<rt>` for words already marked known
+  (`.reading.hide-known-furigana .tok.word.is-known rt`), independent of the
+  existing dimming and the original show/hide-all checkbox. (2) `js/reading-forms.js`
+  is a new pure module (`tokensToKana`, `kanaToRomaji`, `tokensToRomaji`) that
+  substitutes each token's dictionary/kana reading and leaves anything without
+  one — an unmatched kanji run, punctuation, latin — unchanged rather than
+  guessing; `kanaToRomaji` is an approximate modified-Hepburn converter
+  (digraphs, っ consonant-doubling, ん apostrophe disambiguation before a
+  vowel/y, ー vowel extension) good enough for casual reading, not a
+  linguistic authority. The Read toolbar's new `#read-view` select swaps
+  `#reading` between the interactive original+furigana rendering and two
+  read-only plain-text transcriptions (`renderReadingView()` in `js/app.js`),
+  and `#copy-kana`/`#copy-romaji` copy the same two forms to the clipboard
+  independent of whichever view is showing. All ephemeral — no storage key,
+  no usage-journal event. (3) `.reading` gained `white-space: pre-wrap`,
+  fixing a real bug: pasted paragraph breaks showed correctly in the shared
+  textarea but collapsed to one run once rendered into the Read tab, because
+  nothing preserved newlines in that container. (4) Words gained the same
+  known toggle the Kanji library cards already had: `wordRowMarkup()`'s
+  `.compound-known[data-word-known]` button toggles `kotoba-lab:known-words`
+  (no new store) and sits beside the existing Save button on every compound
+  and word-lookup row; the delegated `[data-word-known]` click handler mirrors
+  the existing `[data-kanji-known]` one and reuses `refreshKnownEverywhere()`.
+  (5) The header brand mark and the desktop side-rail brand are now real
+  `<button data-tab="analyze">` elements instead of inert `<div>`s — they pick
+  up wiring for free since `wireUi()` already binds every `[data-tab]`
+  element — so the logo acts as a home link back to Analyze, with a CSS reset
+  (`background/border/padding/font: inherit`) keeping the native button from
+  changing how either brand block looks. (6) The "confusing/similar kanji"
+  study idea from an earlier conversation is **already shipped**, not a gap:
+  Kanji Contrast Lab (see its conventions section below) groups 3–5 kanji
+  sharing one direct visual component with distinct meanings and quizzes
+  meaning/on'yomi — exactly "similar radical, slightly different kanji."
+  `IDEA_GARDEN.md`'s parked "False-Friend Museum" seed (homophones and
+  near-synonym traps, not just visual similarity) remains a separate,
+  unapproved idea if broader confusable-kanji coverage is wanted later.
+- **v10.35.1.** Achievements mobile pass is ✓ Done: at ≤780px the badge
   grid drops its minmax to fit two (sometimes three) per row instead of one
   (cutting the page from ~6 screens of scroll to ~3.5 on a phone), the filter
   pills get tighter padding, and the Profile & Data category "Clear" buttons
@@ -325,6 +363,10 @@
   or storage.
 - `js/routing.js` — pure hash parsing, tab/route translation, and unknown-route
   fallback; no DOM, history, or fetch.
+- `js/reading-forms.js` — pure token→kana and kana→romaji (approximate
+  modified Hepburn) conversion for the Read tab's kana/romaji view modes and
+  copy-to-clipboard actions; no DOM, storage, or fetch. Never guesses a
+  reading for a token that doesn't already have one.
 - `index.html` `[data-panel="profile"]` — Settings panel: profile summary,
   local data dashboard, reset, offline availability, backup actions, and
   import preview. Reached only from a header control.

@@ -34,13 +34,13 @@
      the "desktop side rail" block in japanese-reader.css. -->
 <header class="site-head">
   <div class="wrap head-inner">
-    <div class="brand">
-      <span class="brand-mark">言</span>
+    <button type="button" class="brand" data-tab="analyze" title="Kotoba Lab — go to Analyze (home)" aria-label="Kotoba Lab — go to Analyze (home)">
+      <span class="brand-mark" aria-hidden="true">言</span>
       <div>
         <h1>Kotoba Lab</h1>
         <p class="tagline">Japanese reading, kanji exploration, and study.</p>
       </div>
-    </div>
+    </button>
     <div class="head-nav">
       <nav class="tabs" aria-label="Main navigation">
         <button class="tab is-active" data-tab="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
@@ -87,10 +87,10 @@
      already treats every element sharing a data-tab as one nav group
      (see js/app.js), so no JS changes were needed to add this. -->
 <nav class="side-rail" aria-label="Main navigation">
-  <div class="side-rail-brand" aria-hidden="true">
-    <span class="brand-mark">言</span>
+  <button type="button" class="side-rail-brand" data-tab="analyze" title="Kotoba Lab — go to Analyze (home)" aria-label="Kotoba Lab — go to Analyze (home)">
+    <span class="brand-mark" aria-hidden="true">言</span>
     <span class="side-rail-brand-name">Kotoba Lab</span>
-  </div>
+  </button>
   <div class="side-rail-links">
     <button class="tab rail-link is-active" data-tab="analyze" data-nav-color="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
     <button class="tab rail-link" data-tab="read" data-nav-color="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
@@ -220,6 +220,18 @@
   <section class="panel" data-panel="read">
     <div class="read-toolbar card">
       <label class="check"><input type="checkbox" id="furigana" checked> Furigana</label>
+      <label class="check"><input type="checkbox" id="furigana-hide-known"> Hide furigana for known words</label>
+      <label class="label inline">View
+        <select id="read-view" class="select">
+          <option value="original" selected>Original + furigana</option>
+          <option value="kana">Full furigana (kana)</option>
+          <option value="romaji">Romaji</option>
+        </select>
+      </label>
+      <div class="read-copy">
+        <button type="button" id="copy-kana" class="btn btn-ghost">Copy furigana</button>
+        <button type="button" id="copy-romaji" class="btn btn-ghost">Copy romaji</button>
+      </div>
       <div class="legend">
         <span class="lg"><i class="sw jlpt-n5"></i>N5</span>
         <span class="lg"><i class="sw jlpt-n4"></i>N4</span>
