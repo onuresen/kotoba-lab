@@ -2,7 +2,23 @@
 
 ## Current release and backlog
 
-- **v10.38.0 current.** Two small follow-ups from the reading-forms pass are
+- **v10.39.0 current.** Bottom-bar scroll affordance is ✓ Done: `.tabs` gets
+  a left/right edge fade hinting there's more to swipe to, but only when
+  that's actually true. Drawn as `.tabs::before`/`::after` overlays (not a
+  `mask-image` on `.tabs` itself, which would fade the bar's own opaque
+  background/blur along with the tabs and leave a see-through strip at each
+  edge) toggled by `updateTabsScrollFade()` in `js/app.js` via `can-scroll-
+  left`/`can-scroll-right` classes. That check compares the first/last
+  `.tab`'s own bounding box against the bar's, not `scrollLeft` against
+  `scrollWidth - clientWidth` — the bar's `scroll-snap-align: center` means
+  the resting scroll position for the last tab already stops short of that
+  raw max, so a scroll-offset comparison left the right-edge fade stuck on
+  even with Settings fully in view. Wired to the bar's own `scroll` event
+  plus `resize`/`load` (a web font still swapping in can nudge label widths
+  enough to change whether the bar overflows at all), so a ~900px tablet
+  where all eleven tabs already fit never shows either fade. `APP_VERSION`
+  bumped to 10.39.0 (cached CSS/JS changed).
+- **v10.38.0.** Two small follow-ups from the reading-forms pass are
   ✓ Done. (1) Switching Read's `#read-view` to kana or romaji used to render
   plain `textContent`, losing tap-to-inspect entirely. `renderReading()` in
   `js/read.js` now takes a `mode` parameter and keeps the exact same
@@ -633,6 +649,13 @@
   phones, and the `≤1080px`/`≤780px` split in the point below now separates
   "the bottom bar exists" (≤1080px, unchanged cutoff) from "the bar's own
   sizing gets tighter still" (≤780px) rather than "header vs. bottom bar."
+- `.tabs` carries a left/right edge fade (`.tabs::before`/`::after`, toggled
+  by `updateTabsScrollFade()` in `js/app.js`) hinting there's more to swipe
+  to, shown only when the first/last `.tab`'s own bounding box actually
+  extends past the bar's — never a static decoration on a bar that already
+  shows everything, and never derived from `scrollLeft`/`scrollWidth`, which
+  the bar's `scroll-snap-align: center` throws off for the last tab. Update
+  on the bar's own `scroll`, plus `resize` and `load`.
 - 1081px+ is the desktop side rail (`.side-rail` in japanese-reader.css): it
   replaces both the header's nav and the `.tabs` bottom bar outright and
   lists every destination as an equally-weighted row with its own color from

@@ -105,7 +105,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.38.0';
+const APP_VERSION = '10.39.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -2441,6 +2441,28 @@ function switchTab(name, push = true) {
   }
   currentTab = name;
 }
+
+// Toggles the left/right edge-fade hint on the mobile/tablet bottom bar so
+// it only ever shows where there genuinely is more to swipe to — never a
+// static decoration on a bar that already shows every destination (e.g. a
+// ~900px tablet, where all eleven tabs already fit). Compares the first/last
+// tab's own bounding box against the bar's, rather than scrollLeft against
+// scrollWidth - clientWidth: the bar's scroll-snap-align:center means the
+// resting scroll position for the last tab already stops short of that raw
+// max, so a scroll-offset comparison would leave the right-edge fade stuck
+// on even once Settings is fully in view. The 1px slack absorbs subpixel
+// rounding, which would otherwise flicker the fade at rest.
+function updateTabsScrollFade() {
+  const el = $('.tabs');
+  const items = el?.querySelectorAll(':scope > .tab');
+  if (!items?.length) return;
+  const barRect = el.getBoundingClientRect();
+  const firstRect = items[0].getBoundingClientRect();
+  const lastRect = items[items.length - 1].getBoundingClientRect();
+  el.classList.toggle('can-scroll-left', firstRect.left < barRect.left - 1);
+  el.classList.toggle('can-scroll-right', lastRect.right > barRect.right + 1);
+}
+
 // Marking a kanji known is the most consequential action in the app and used to
 // be the quietest. Say what it actually bought: the words it just made readable.
 // Call after the toggle, so the character already counts as known.
@@ -2476,6 +2498,12 @@ function wireUi() {
   });
   $('#clear').addEventListener('click', () => { $('#input').value = ''; run(); $('#input').focus(); });
   document.querySelectorAll('[data-tab]').forEach((t) => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+  $('.tabs').addEventListener('scroll', updateTabsScrollFade, { passive: true });
+  window.addEventListener('resize', updateTabsScrollFade);
+  // Web fonts can still be swapping in at this point, which can nudge tab
+  // label widths enough to change whether the bar overflows at all.
+  window.addEventListener('load', updateTabsScrollFade);
+  updateTabsScrollFade();
   $('#info-close').addEventListener('click', () => setInfoSheet(false));
   $('#info-scrim').addEventListener('click', () => setInfoSheet(false));
   document.addEventListener('keydown', (event) => {
