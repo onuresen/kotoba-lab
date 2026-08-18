@@ -50,7 +50,13 @@ body {
   box-shadow: 0 5px 24px var(--ink-shadow-soft);
 }
 .head-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; }
-.brand { display: flex; align-items: center; gap: 12px; }
+/* .brand is a <button> so the logo can act as a home link — reset native
+   button chrome back to the plain flex row it was as a <div>. */
+.brand {
+  display: flex; align-items: center; gap: 12px;
+  background: none; border: 0; margin: 0; padding: 0;
+  font: inherit; text-align: left; color: inherit; cursor: pointer;
+}
 .brand-mark {
   font-family: var(--font-display);
   font-size: 30px; line-height: 1; color: var(--on-accent);
@@ -101,7 +107,10 @@ body {
     border-right: 1px solid color-mix(in srgb, var(--border-strong) 60%, transparent);
     box-shadow: 6px 0 24px var(--ink-shadow-soft);
   }
-  .side-rail-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+  .side-rail-brand {
+    display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; width: 100%;
+    background: none; border: 0; margin: 0; font: inherit; text-align: left; color: inherit; cursor: pointer;
+  }
   .side-rail-brand .brand-mark { width: 38px; height: 38px; font-size: 23px; }
   .side-rail-brand-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text); }
   .side-rail-links { display: flex; flex-direction: column; gap: 3px; }
@@ -256,10 +265,13 @@ td.hint, .hint { color: var(--text3); font-size: 12px; }
   font-family: var(--font-display);
   font-size: 22px; line-height: 2.5;      /* room for furigana above the line */
   color: var(--text);
+  white-space: pre-wrap; /* keep paragraph breaks from the pasted text visible */
 }
 .reading ruby { ruby-align: center; }
 .reading rt { font-family: var(--font-body); font-size: 10px; color: var(--text2); font-weight: 400; }
 .reading.no-furigana rt { visibility: hidden; }
+.reading.hide-known-furigana .tok.word.is-known rt { visibility: hidden; }
+.read-copy { display: flex; gap: 8px; }
 .reading .k { color: var(--jl); cursor: pointer; border-radius: 3px; transition: background .12s; }
 .reading .k:hover { background: color-mix(in srgb, var(--jl) 14%, transparent); }
 .reading .tok.word { cursor: pointer; }
@@ -1728,7 +1740,7 @@ p.hint { margin: 8px 0 0; }
   .kanji-study-stage[data-revealed="true"] .kanji-study-answer,
   .kanji-study-progress[data-complete="true"] span,
   .info-actions .act-save[data-saved="true"], .info-actions .act-known[data-known="true"],
-  .kanji-card[data-known="true"], .compound-save[aria-pressed="true"],
+  .kanji-card[data-known="true"], .compound-save[aria-pressed="true"], .compound-known[aria-pressed="true"],
   .known-chip[data-leaving="true"], table.freq tbody tr[data-leaving="true"],
   .srs-stage[data-flip], .compound-row[data-unlocked="true"] {
     animation: none !important;
@@ -1915,15 +1927,16 @@ p.hint { margin: 8px 0 0; }
   .compound-kanji { transition: none; }
 }
 
-.compound-save {
+.compound-save, .compound-known {
   flex: 0 0 auto; min-height: 30px; padding: 4px 10px;
   color: var(--text2); font: 600 11px/1 var(--font-body); cursor: pointer;
   background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--r-pill);
   transition: border-color .18s var(--ease), background .18s var(--ease), color .18s var(--ease);
 }
-.compound-save:hover, .compound-save:focus-visible { color: var(--text); border-color: var(--border-strong); }
-.compound-save[aria-pressed="true"] {
+.compound-save:hover, .compound-save:focus-visible,
+.compound-known:hover, .compound-known:focus-visible { color: var(--text); border-color: var(--border-strong); }
+.compound-save[aria-pressed="true"], .compound-known[aria-pressed="true"] {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   border-color: var(--accent-glow);
@@ -1931,11 +1944,11 @@ p.hint { margin: 8px 0 0; }
 }
 
 @media (max-width: 780px) {
-  .compound-save { min-height: 44px; }
+  .compound-save, .compound-known { min-height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .compound-save { transition: none; }
+  .compound-save, .compound-known { transition: none; }
 }
 
 /* ---- kanji to vocabulary ------------------------------------------------------ */
