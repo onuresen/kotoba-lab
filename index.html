@@ -27,11 +27,11 @@
 </head>
 <body>
 
-<!-- Below 1081px (phone + tablet) this stays the sticky top bar: branding, the
-     six-column bottom tab bar (added via CSS from .tabs below), and the two
-     head-action buttons that never take a bottom-bar slot. At 1081px+ this
-     whole header is hidden and the .side-rail beneath it takes over — see
-     the "desktop side rail" block in japanese-reader.css. -->
+<!-- Below 1081px (phone + tablet) this is branding only — a slim sticky strip,
+     no navigation. All eleven destinations live in the single horizontally
+     scrollable .tabs bar below instead, fixed to the bottom of the viewport.
+     At 1081px+ this header is hidden and the .side-rail beneath it takes
+     over — see the "desktop side rail" block in japanese-reader.css. -->
 <header class="site-head">
   <div class="wrap head-inner">
     <button type="button" class="brand" data-tab="analyze" title="Kotoba Lab — go to Analyze (home)" aria-label="Kotoba Lab — go to Analyze (home)">
@@ -41,51 +41,39 @@
         <p class="tagline">Japanese reading, kanji exploration, and study.</p>
       </div>
     </button>
-    <div class="head-nav">
-      <nav class="tabs" aria-label="Main navigation">
-        <button class="tab is-active" data-tab="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
-        <button class="tab" data-tab="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
-        <button class="tab" data-tab="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
-        <button class="tab" data-tab="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
-        <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" data-badge="review-due" hidden></span></button>
-        <button class="tab" data-tab="words"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">Words</span></button>
-      </nav>
-      <!-- Alchemy, Deck, Achievements, Insights, and Settings are deliberately
-           not .tab: none takes a mobile bottom-bar slot, which stays at six
-           columns. Icon and label swap the same way the tabs do — text on
-           desktop, glyph on phones — so aria-label carries the name at the
-           width where the label hides. -->
-      <button type="button" class="head-action" data-tab="alchemy" title="Radical Alchemy — combine components to discover kanji" aria-label="Radical Alchemy">
-        <span class="head-action-icon" aria-hidden="true">錬</span>
-        <span class="head-action-label">Alchemy</span>
-      </button>
-      <button type="button" class="head-action" data-tab="mywords" title="Deck — your saved review cards and portable study packs" aria-label="Deck">
-        <span class="head-action-icon" aria-hidden="true">札</span>
-        <span class="head-action-label">Deck</span>
-      </button>
-      <button type="button" class="head-action" data-tab="achievements" title="Achievements — badges, XP, levels, and streaks earned from real study" aria-label="Achievements">
-        <span class="head-action-icon" aria-hidden="true">証</span>
-        <span class="head-action-label">Achievements</span>
-      </button>
-      <button type="button" class="head-action" data-tab="insights" title="Insights — your optional local usage journal and friction radar" aria-label="Insights">
-        <span class="head-action-icon" aria-hidden="true">計</span>
-        <span class="head-action-label">Insights</span>
-      </button>
-      <button type="button" class="head-action" data-tab="profile" title="Settings — profile summary, local data dashboard, backup, and import" aria-label="Settings">
-        <span class="head-action-icon" aria-hidden="true">設</span>
-        <span class="head-action-label">Settings</span>
-      </button>
-    </div>
   </div>
 </header>
 
+<!-- Below 1081px only (see japanese-reader.css): the single navigation
+     surface, fixed to the bottom of the viewport and horizontally
+     scrollable/swipeable so all eleven destinations fit without a second
+     menu sharing the header. Every button shares one data-tab vocabulary
+     with the desktop side rail below, and switchTab() already treats every
+     element sharing a data-tab as one nav group (see js/app.js), so no JS
+     wiring changes were needed to add the five formerly header-only
+     destinations here. -->
+<nav class="tabs" aria-label="Main navigation">
+  <button class="tab is-active" data-tab="analyze" aria-current="page"><span class="tab-icon" aria-hidden="true">析</span><span class="tab-label">Analyze</span></button>
+  <button class="tab" data-tab="read"><span class="tab-icon" aria-hidden="true">読</span><span class="tab-label">Read</span></button>
+  <button class="tab" data-tab="kanji"><span class="tab-icon" aria-hidden="true">漢</span><span class="tab-label">Kanji</span></button>
+  <button type="button" class="tab" data-tab="alchemy" title="Radical Alchemy — combine components to discover kanji"><span class="tab-icon" aria-hidden="true">錬</span><span class="tab-label">Alchemy</span></button>
+  <button class="tab" data-tab="relations"><span class="tab-icon" aria-hidden="true">縁</span><span class="tab-label">Relations</span></button>
+  <button class="tab" data-tab="review"><span class="tab-icon" aria-hidden="true">復</span><span class="tab-label">Review</span><span class="tab-badge" data-badge="review-due" hidden></span></button>
+  <button class="tab" data-tab="words"><span class="tab-icon" aria-hidden="true">語</span><span class="tab-label">Words</span></button>
+  <span class="tabs-divider" role="separator" aria-hidden="true"></span>
+  <button type="button" class="tab" data-tab="mywords" title="Deck — your saved review cards and portable study packs"><span class="tab-icon" aria-hidden="true">札</span><span class="tab-label">Deck</span></button>
+  <button type="button" class="tab" data-tab="achievements" title="Achievements — badges, XP, levels, and streaks earned from real study"><span class="tab-icon" aria-hidden="true">証</span><span class="tab-label">Achievements</span></button>
+  <button type="button" class="tab" data-tab="insights" title="Insights — your optional local usage journal and friction radar"><span class="tab-icon" aria-hidden="true">計</span><span class="tab-label">Insights</span></button>
+  <button type="button" class="tab" data-tab="profile" title="Settings — profile summary, local data dashboard, backup, and import"><span class="tab-icon" aria-hidden="true">設</span><span class="tab-label">Settings</span></button>
+</nav>
+
 <!-- 1081px+ only (see japanese-reader.css): the left side rail replaces the
-     header above entirely, so every destination — including the two that
-     stay off the mobile bottom bar — is a first-class, equally-sized button
-     with its own color instead of being squeezed into a pill row. Every
-     button below duplicates a data-tab value from the header; switchTab()
-     already treats every element sharing a data-tab as one nav group
-     (see js/app.js), so no JS changes were needed to add this. -->
+     header and the bottom .tabs bar outright, so every destination is a
+     first-class, equally-sized button with its own color instead of a
+     scrollable strip. Every button below duplicates a data-tab value from
+     the bottom bar above; switchTab() already treats every element sharing
+     a data-tab as one nav group (see js/app.js), so no JS changes were
+     needed to add this. -->
 <nav class="side-rail" aria-label="Main navigation">
   <button type="button" class="side-rail-brand" data-tab="analyze" title="Kotoba Lab — go to Analyze (home)" aria-label="Kotoba Lab — go to Analyze (home)">
     <span class="brand-mark" aria-hidden="true">言</span>
