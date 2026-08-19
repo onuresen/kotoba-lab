@@ -91,6 +91,26 @@ body {
 .tab-icon { display: none; font-family: var(--font-display); font-size: 21px; line-height: 1; }
 .tabs-divider { flex: 0 0 auto; align-self: center; width: 1px; height: 30px; margin-inline: 2px; background: color-mix(in srgb, var(--border) 80%, transparent); }
 
+/* Edge hint that there are more destinations to swipe to. Drawn as ::before/
+   ::after overlays on the fixed bar itself — not a mask-image on .tabs,
+   which would fade out the bar's own opaque background/blur along with the
+   tabs and leave a see-through strip at each edge. Each fade only appears
+   when app.js's updateTabsScrollFade() finds real content past that edge
+   (scrollLeft/scrollWidth), never as a static decoration a bar that already
+   shows everything would still carry. */
+.tabs::before, .tabs::after {
+  content: ''; position: absolute; top: 0; bottom: 0; z-index: 1; width: 28px;
+  pointer-events: none; opacity: 0; transition: opacity .15s var(--ease);
+}
+.tabs::before { left: 0; background: linear-gradient(to right, color-mix(in srgb, var(--surface) 94%, transparent), transparent); }
+.tabs::after { right: 0; background: linear-gradient(to left, color-mix(in srgb, var(--surface) 94%, transparent), transparent); }
+.tabs.can-scroll-left::before { opacity: 1; }
+.tabs.can-scroll-right::after { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tabs::before, .tabs::after { transition: none; }
+}
+
 @media (max-width: 1080px) {
   .tabs {
     display: flex; align-items: stretch; gap: 2px;

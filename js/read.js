@@ -3,6 +3,7 @@
 
 import { isKanji } from './script.js';
 import { levelSlug } from './jlpt.js';
+import { kanaToRomajiSegments } from './reading-forms.js';
 
 function esc(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -22,16 +23,22 @@ function colorize(surface, jlpt) {
   return out;
 }
 
+// A token's own reading, independent of display mode: the dictionary/kana
+// reading when one exists, the original surface otherwise — an unmatched
+// kanji run is never guessed, same rule tokensToKana() uses.
+function tokenKana(t) {
+  return t.reading != null ? t.reading : t.surface;
+}
+
 // `i` is the token's position in the list the caller rendered. It rides along
 // as data-i so a click can be traced back to the token, and from there to the
 // sentence it sits in (see context.js) — the reader is the only place that
-// still knows where a word came from.
-function tokenHtml(t, jlpt, i) {
+// still knows where a word came from. `mode` swaps what a word token shows
+// (kanji+furigana, plain kana, or romaji) without changing what a click
+// resolves to — the info panel always reflects the token's real data.
+function tokenHtml(t, jlpt, i, mode, romajiText) {
   if (t.kind === 'other') return esc(t.surface);
-  if (t.kind === 'kana') return `<span class="kana">${esc(t.surface)}</span>`;
-
-  const inner = colorize(t.surface, jlpt);
-  const hasKanji = [...t.surface].some(isKanji);
+  if (t.kind === 'kana') return `<span class="kana">${esc(mode === 'romaji' ? romajiText : t.surface)}</span>`;
 
   if (t.kind === 'word') {
     const attrs =
@@ -39,13 +46,18 @@ function tokenHtml(t, jlpt, i) {
       `data-reading="${t.reading == null ? '' : esc(t.reading)}" ` +
       `data-gloss="${t.gloss == null ? '' : esc(t.gloss)}" ` +
       `data-level="${t.level == null ? '' : t.level}"`;
+    if (mode === 'kana') return `<span ${attrs}>${esc(tokenKana(t))}</span>`;
+    if (mode === 'romaji') return `<span ${attrs}>${esc(romajiText)}</span>`;
+    const inner = colorize(t.surface, jlpt);
+    const hasKanji = [...t.surface].some(isKanji);
     if (t.reading && hasKanji) {
       return `<ruby ${attrs}>${inner}<rt>${esc(t.reading)}</rt></ruby>`;
     }
     return `<span ${attrs}>${inner}</span>`;
   }
-  // kind === 'kanji' (dictionary miss) — clicks resolve per-kanji
-  return `<span class="tok run" data-i="${i}">${inner}</span>`;
+  // kind === 'kanji' (dictionary miss) — no reading to substitute in any
+  // mode, so it always shows (and stays clickable as) the original glyphs.
+  return `<span class="tok run" data-i="${i}">${colorize(t.surface, jlpt)}</span>`;
 }
 
 // Re-applies "already known" styling without re-rendering tokens — cheap to
@@ -63,8 +75,16 @@ export function applyKnownClasses(container, isKnown = {}) {
 }
 
 // Render tokens into `container`. `onSelect` receives {type:'kanji'|'word', …}.
-export function renderReading(container, tokens, jlpt, onSelect, isKnown) {
-  container.innerHTML = tokens.map((t, i) => tokenHtml(t, jlpt, i)).join('');
+// `mode` is 'original' (default, kanji + furigana, the only interactive
+// mode with per-kanji color), 'kana' (plain readings, no kanji), or 'romaji'.
+// Every mode keeps the same click targets/data, so switching mode never
+// costs the tap-to-inspect info panel — only what a word visually shows.
+export function renderReading(container, tokens, jlpt, onSelect, isKnown, mode = 'original') {
+  // Romaji needs the whole text converted in one pass — a sokuon or ん right
+  // at a token boundary depends on the mora just after it, which a per-token
+  // conversion can't see on its own. See kanaToRomajiSegments() for why.
+  const romajiSegments = mode === 'romaji' ? kanaToRomajiSegments(tokens.map(tokenKana)) : null;
+  container.innerHTML = tokens.map((t, i) => tokenHtml(t, jlpt, i, mode, romajiSegments?.[i])).join('');
   applyKnownClasses(container, isKnown);
 
   container.onclick = (e) => {
