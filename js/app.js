@@ -105,7 +105,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.39.0';
+const APP_VERSION = '10.40.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -207,6 +207,13 @@ async function boot() {
         usageJournal.record('known.change');
         refreshKnownEverywhere();
         knownToast(ch, known);
+      },
+      isWordKnown: (w) => knownWords.has(w),
+      toggleWordKnown: (w) => knownWords.toggle(w),
+      onWordKnownChange: (w, known) => {
+        usageJournal.record('known.change');
+        refreshKnownEverywhere({ skipKanjiBrowser: true });
+        toast(known ? `✓ ${w} known` : `Unmarked ${w}.`, 'success');
       },
       onOpenRelationships: (ch, trigger) => openKanjiMap(ch, trigger),
       wordsFor: (ch) => wordsContaining(vocabList, ch, 6),
@@ -721,11 +728,15 @@ function infoWordsMarkup(char) {
   if (!words.length) return '';
   return `<div class="info-words">
     <span class="label">Appears in</span>
-    ${words.map((word) => `<div class="info-word-row">
+    ${words.map((word) => {
+      const known = knownWords.has(word.w);
+      return `<div class="info-word-row">
       <span class="jp jlpt-${levelSlug(word.lvl)} chip">${esc(word.w)}</span>
       ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
       <span class="info-word-gloss">${esc((word.g || '').split(';')[0].trim())}</span>
-    </div>`).join('')}
+      <button type="button" class="info-word-known" data-word-known="${esc(word.w)}" aria-pressed="${known}" title="${known ? `Unmark ${esc(word.w)} as known` : `Mark ${esc(word.w)} as known`}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(word.w)} as known">${known ? '✓' : '○'}</button>
+    </div>`;
+    }).join('')}
   </div>`;
 }
 
@@ -1611,7 +1622,9 @@ function renderStage() {
     </div>
     <div class="srs-face">
       ${face}
-      ${revealed ? `<div class="srs-back">${back}${contextRow}${kanjiRow}</div>` : ''}
+      ${revealed ? `<div class="srs-back">${back}${contextRow}${kanjiRow}
+        <div class="srs-actions">${knownBtn(knownWords.has(entry.surface))}</div>
+      </div>` : ''}
     </div>
     ${revealed
       ? `<div class="srs-grades">${GRADES.map((g, i) => `
@@ -1674,7 +1687,18 @@ function answer(grade) {
 function onReviewClick(e) {
   if (e.target.closest('.srs-show')) { reveal(); return; }
   const grade = e.target.closest('.srs-grade');
-  if (grade) answer(grade.dataset.grade);
+  if (grade) { answer(grade.dataset.grade); return; }
+  // The card being reviewed is a real word — mark-known belongs here too, the
+  // same act-known control the Read info panel uses, just scoped to this
+  // panel's own queue[0] instead of that panel's lastSel.
+  const knownEl = e.target.closest('.act-known');
+  if (knownEl && queue.length) {
+    const { entry } = queue[0];
+    const now = knownWords.toggle(entry.surface);
+    usageJournal.record('known.change');
+    toast(now ? `✓ ${entry.surface} known` : `Unmarked ${entry.surface}.`, 'success');
+    refreshKnownEverywhere();
+  }
 }
 
 function onReviewKey(e) {
@@ -2698,8 +2722,9 @@ function wireUi() {
       }
       return;
     }
-    // Word lookup / readable-compound rows: the same known toggle the kanji
-    // library card already has, mirrored onto words via knownWords.
+    // Word lookup / readable-compound rows, and the "Appears in" list inside
+    // a kanji's own info panel: the same known toggle the kanji library card
+    // already has, mirrored onto words via knownWords.
     const wordKnownToggle = event.target.closest?.('[data-word-known]');
     if (wordKnownToggle) {
       const surface = wordKnownToggle.dataset.wordKnown;
@@ -2707,6 +2732,12 @@ function wireUi() {
         const now = knownWords.toggle(surface);
         usageJournal.record('known.change');
         refreshKnownEverywhere({ skipKanjiBrowser: true });
+        // "Appears in" is drawn by showInfo() itself and isn't one of the
+        // views refreshKnownEverywhere() already knows to redraw, so the
+        // ✓/○ toggled here would otherwise sit stale until the next
+        // unrelated re-render — same "showInfo(lastSel) after a mutation"
+        // pattern onInfoAction() uses for the panel's own known/save buttons.
+        if (wordKnownToggle.closest('#info') && lastSel) showInfo(lastSel);
         toast(now ? `✓ ${surface} known` : `Unmarked ${surface}.`, 'success');
       }
       return;

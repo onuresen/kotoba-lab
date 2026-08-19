@@ -447,6 +447,7 @@ td.hint, .hint { color: var(--text3); font-size: 12px; }
 .srs-back { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); width: 100%; max-width: 460px; animation: answer-reveal .34s var(--ease) both; }
 .srs-reading { font-size: 17px; color: var(--text2); }
 .srs-gloss { font-size: 16px; font-weight: 500; max-width: 38ch; }
+.srs-actions { display: flex; gap: 8px; }
 
 /* The sentence the card was saved from. Quieter than the answer above it — it
    is evidence, not the thing being tested — with the word itself picked out. */
@@ -1712,6 +1713,7 @@ p.hint { margin: 8px 0 0; }
   .srs-word { font-size: clamp(38px, 13vw, 52px); overflow-wrap: anywhere; }
   .srs-gloss-front { font-size: 19px; }
   .srs-back { gap: 8px; padding-top: 10px; }
+  .srs-actions .btn { min-height: 44px; }
   .srs-context { max-width: 100%; padding: 8px 10px; font-size: 14px; line-height: 1.75; }
   .srs-kchar { min-width: 64px; min-height: 52px; }
   .srs-grades { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -1939,6 +1941,30 @@ p.hint { margin: 8px 0 0; }
   font-size: 11px; color: var(--text3);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.info-word-known {
+  flex: 0 0 auto; margin-left: auto;
+  width: 18px; height: 18px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; line-height: 1; color: var(--text3);
+  background: var(--surface2);
+  border: 1px solid var(--border); border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: color .16s var(--ease), background .16s var(--ease), border-color .16s var(--ease);
+}
+.info-word-known:hover { color: var(--text); border-color: var(--border-strong); }
+.info-word-known[aria-pressed="true"] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border-color: var(--accent-glow);
+}
+
+@media (max-width: 780px) {
+  .info-word-known { width: 30px; height: 30px; font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info-word-known { transition: none; }
+}
 
 /* Frequency-table kanji are doorways, not readouts. */
 .freq-kanji {
@@ -1974,6 +2000,30 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 .kt-info-word small {
   font-size: 11px; color: var(--text3);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.kt-word-known {
+  flex: 0 0 auto; margin-left: auto;
+  width: 18px; height: 18px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; line-height: 1; color: var(--text3);
+  background: var(--surface2);
+  border: 1px solid var(--border); border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: color .16s var(--ease), background .16s var(--ease), border-color .16s var(--ease);
+}
+.kt-word-known:hover { color: var(--text); border-color: var(--border-strong); }
+.kt-word-known[aria-pressed="true"] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border-color: var(--accent-glow);
+}
+
+@media (max-width: 780px) {
+  .kt-word-known { width: 30px; height: 30px; font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kt-word-known { transition: none; }
 }
 
 /* ---- word lookup --------------------------------------------------------------- */

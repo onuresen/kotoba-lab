@@ -79,6 +79,9 @@ export function createKanjiTree({
   isKnown = () => false,
   toggleKnown = null,
   onKnownChange = () => {},
+  isWordKnown = () => false,
+  toggleWordKnown = null,
+  onWordKnownChange = () => {},
   onOpenRelationships = null,
   onError = () => {},
   wordsFor = null,
@@ -159,11 +162,17 @@ export function createKanjiTree({
     if (!Array.isArray(words) || !words.length) return '';
     return `<div class="kt-info-words">
       <span class="label">Appears in</span>
-      ${words.map((word) => `<div class="kt-info-word">
+      ${words.map((word) => {
+        const known = isWordKnown(word.w);
+        return `<div class="kt-info-word">
         <span class="jp">${esc(word.w)}</span>
         ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
         <small>${esc(String(word.g || '').split(';')[0].trim())}</small>
-      </div>`).join('')}
+        ${typeof toggleWordKnown === 'function'
+          ? `<button type="button" class="kt-word-known" data-word="${esc(word.w)}" aria-pressed="${known}" title="${known ? `Unmark ${esc(word.w)} as known` : `Mark ${esc(word.w)} as known`}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(word.w)} as known">${known ? '✓' : '○'}</button>`
+          : ''}
+      </div>`;
+      }).join('')}
     </div>`;
   }
 
@@ -397,6 +406,17 @@ export function createKanjiTree({
         const known = toggleKnown(node.element);
         renderInfo(node);
         onKnownChange(node.element, known);
+      }
+      return;
+    }
+    const wordKnownBtn = event.target.closest('.kt-word-known');
+    if (wordKnownBtn) {
+      const node = currentNode();
+      const word = wordKnownBtn.dataset.word;
+      if (node && word && typeof toggleWordKnown === 'function') {
+        const known = toggleWordKnown(word);
+        renderInfo(node);
+        onWordKnownChange(word, known);
       }
       return;
     }

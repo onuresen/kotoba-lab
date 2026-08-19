@@ -2,7 +2,44 @@
 
 ## Current release and backlog
 
-- **v10.39.0 current.** Bottom-bar scroll affordance is ✓ Done: `.tabs` gets
+- **v10.40.0 current.** Known-toggle parity pass is ✓ Done: an audit of every
+  surface that displays a word (not the compound/lookup rows already fixed
+  in the reading-forms pass) found three real gaps and one deliberate
+  non-gap. (1) The Read info panel's "Appears in" list (`infoWordsMarkup()`
+  in `js/app.js`) had no action at all — not even Save — despite being a
+  place a learner routinely recognizes a word they already know. Each row
+  now carries a compact `.info-word-known` ✓/○ toggle (`[data-word-known]`,
+  same delegated handler compounds/lookup already use — no new JS wiring)
+  sized down from the full `.compound-known` pill to fit the panel's
+  existing dense baseline-aligned row. Toggling it re-invokes
+  `showInfo(lastSel)` afterward, the same "refresh button state" pattern
+  `onInfoAction()`'s own known/save buttons already use, since
+  `refreshKnownEverywhere()` doesn't know to redraw `#info` on its own. (2)
+  The Radical Tree overlay has its own separate "Appears in" list
+  (`treeWordsMarkup()` in `js/kanjitree.js`, injected via `wordsFor` — the
+  overlay keeps no dictionary of its own) and had the identical gap.
+  `createKanjiTree()` gained `isWordKnown`/`toggleWordKnown`/
+  `onWordKnownChange` options, mirroring the `isKnown`/`toggleKnown`/
+  `onKnownChange` the overlay's own kanji-known button already used; the new
+  `.kt-word-known` button and its click handling exactly parallel `.kt-known`
+  rather than reusing the Read panel's `[data-word-known]` delegated
+  handler, since the overlay is injected content living in `document.body`
+  and reusing that same attribute would have fired both handlers on one
+  click. (3) The Review card had no way to mark the word being studied known
+  — grading buttons and kanji-chip doorways, but nothing for the flashcard's
+  own surface. `renderStage()` now reuses `knownBtn()` (the same button the
+  Read info panel renders) in a `.srs-actions` row on the revealed back; a
+  new `.act-known` branch in `onReviewClick()` toggles `knownWords` for
+  `queue[0].entry.surface` and calls `refreshKnownEverywhere()`, which
+  already rebuilds the queue/stage — no separate re-render needed. (4) Text
+  Journey's per-step word list (`journeyWords()`) stays read-only
+  deliberately, not a missed spot: Text-to-Study Journey conventions already
+  state "Mark known is the only persistent action" for that ephemeral
+  feature, referring to the kanji being studied, and it already has that
+  button — adding one for the words too would contradict a documented
+  design choice, not close a gap. `APP_VERSION` bumped to 10.40.0 (cached
+  CSS/JS changed).
+- **v10.39.0.** Bottom-bar scroll affordance is ✓ Done: `.tabs` gets
   a left/right edge fade hinting there's more to swipe to, but only when
   that's actually true. Drawn as `.tabs::before`/`::after` overlays (not a
   `mask-image` on `.tabs` itself, which would fade the bar's own opaque
@@ -470,7 +507,14 @@
   behavior belongs in `kanjitree.js`.
 - `kanjitree.js` keeps no dictionary of its own. Vocabulary for the "Appears in"
   list arrives through the injected `wordsFor(char)` option, the same way
-  `kanjiInfo` and `isKnown` do, so the overlay stays a renderer.
+  `kanjiInfo` and `isKnown` do, so the overlay stays a renderer. Each word row's
+  own known state is the same injection pattern once more:
+  `isWordKnown`/`toggleWordKnown`/`onWordKnownChange` parallel
+  `isKnown`/`toggleKnown`/`onKnownChange`, and `.kt-word-known`'s click
+  handling in the overlay's own listener parallels `.kt-known`'s — do not
+  switch it to the Read info panel's `[data-word-known]` delegated handler;
+  the overlay lives in `document.body` like the rest of the page, so reusing
+  that attribute would fire both handlers on one click.
 - Every terse or icon-only control carries a `title` that names the destination
   or the consequence, not the mechanism: "Save 学生 to your Review deck", not
   "Save". `aria-label` stays the short accessible name; `title` is the sighted
