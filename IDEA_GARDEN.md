@@ -119,7 +119,10 @@ kanji, components, readings, choices, or a new profile field.
 
 Kanji Genealogy and Japanese Detective Board above remain the two unfinished
 directions from the selected first track. The additional seeds below are also
-parked until real usage evidence identifies a study problem worth solving.
+parked until real usage evidence identifies a study problem worth solving,
+except The False-Friend Museum, whose first bounded exhibit type shipped
+directly by owner request rather than from observed friction — see its own
+entry for what that covers and what is still parked.
 
 ### Kanji Mystery Casebook
 
@@ -135,6 +138,17 @@ conversational, literary, formal, and newspaper-like Japanese.
 
 Curate similar-looking kanji, deceptive shared components, homophones, and
 near-synonym traps as returning comparison exhibits.
+
+The homophones exhibit is implemented in v10.41.0 as a card in the Words tab:
+groups of committed multi-character vocabulary sharing one dictionary reading
+but not one meaning (取る・執る・捕る・採る, all とる), with a meaning-matching
+quiz and the shared word-row shape (known/save) for every member. Similar-
+looking kanji is not a separate exhibit here — it is already the existing
+Kanji Contrast Lab's shared-component sets. Deceptive shared components and
+near-synonym traps remain parked: both would require inventing a visual- or
+semantic-closeness judgment the rest of this app deliberately never makes,
+so they need a source of real evidence, not just a bounded scope, before
+they can follow the same pattern.
 
 ### Sentence Archaeology
 

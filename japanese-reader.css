@@ -2039,6 +2039,33 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
   .wl-controls .input, .wl-controls .select { flex: 1 1 100%; min-height: 44px; }
 }
 
+/* ---- false-friend museum ----------------------------------------------------
+   Homophone exhibits: words sharing one reading but not one meaning. The
+   quiz strip and reveal list below it share the exact row shape (and known/
+   save behavior) the compound list and word lookup already use. */
+.ff-exhibit { text-align: center; padding: 6px 0 18px; }
+.ff-reading { font-family: var(--font-display); font-size: 34px; color: var(--jl); margin-bottom: 10px; }
+.ff-prompt { margin: 0 0 12px; color: var(--text2); font-size: 14px; }
+.ff-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.ff-choice {
+  min-height: 44px; padding: 8px 16px;
+  font-family: var(--font-display); font-size: 18px; color: var(--text);
+  background: var(--surface);
+}
+.ff-choice:hover, .ff-choice:focus-visible { color: var(--accent); border-color: var(--accent); }
+.ff-feedback {
+  margin: 0; padding: 10px 14px;
+  font-size: 14px; border: 1px solid var(--border); border-radius: var(--r-md);
+}
+.ff-feedback[data-correct="true"] { color: var(--accent2-text); border-color: var(--accent2-text); background: var(--accent2-dim); }
+.ff-feedback[data-correct="false"] { color: var(--text); border-color: var(--accent); background: var(--accent-dim); }
+.ff-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+
+@media (max-width: 780px) {
+  .ff-footer { flex-direction: column-reverse; align-items: stretch; }
+  .ff-footer .btn { min-height: 44px; }
+}
+
 /* ---- achievements ---------------------------------------------------------- */
 /* The full game layer: XP, a level title, a review streak, and every
    achievement visible — unlocked in full color, locked grayed out with its XP
