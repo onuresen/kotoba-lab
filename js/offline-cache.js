@@ -22,6 +22,7 @@ const JS_MODULES = Object.freeze([
   'js/backup.js',
   'js/compound-words.js',
   'js/context.js',
+  'js/false-friends.js',
   'js/flashcards.js',
   'js/jlpt.js',
   'js/kanji-alchemy.js',

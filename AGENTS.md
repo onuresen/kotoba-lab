@@ -2,7 +2,73 @@
 
 ## Current release and backlog
 
-- **v10.39.0 current.** Bottom-bar scroll affordance is ✓ Done: `.tabs` gets
+- **v10.41.0 current.** The False-Friend Museum's first bounded exhibit is
+  ✓ Done, shipped directly by owner request rather than from observed study
+  friction: a new "False-Friend Museum" card at the bottom of the Words tab
+  covers the homophones exhibit type from `IDEA_GARDEN.md`'s parked idea —
+  words sharing one dictionary reading but not one meaning, the classic
+  取る・執る・捕る・採る (all とる) kind of trap. New pure, tested
+  `js/false-friends.js`: `buildHomophoneGroups()` groups committed
+  multi-character vocab by exact reading match (bare single-kanji entries
+  are excluded — that overlap is already the Kanji library's reading-family
+  view), capped at 2–4 distinct-meaning members and sorted by graded-member
+  count, mirroring `buildContrastSets()` in `kanji-labs.js` closely enough
+  to read as the same kind of lab. `homophoneQuestion()`/
+  `answerHomophoneQuestion()` build one meaning-matching question — reading
+  can never be the clue, since it is identical across every choice by
+  construction. `renderFalseFriendMuseum()` in `js/app.js` renders the
+  current exhibit's quiz strip plus every member via the existing
+  `wordRowMarkup()`, so Known/Save work with no new wiring. Exhibit choice,
+  question, answer, and score are ephemeral session state — no storage key
+  — picked with `Math.random()` rather than a date-seeded "today's exhibit"
+  the way Alchemy's brew is, since this is a lighter, exploratory browsing
+  card rather than a daily habit loop. Deliberately scoped to homophones
+  only: similar-looking kanji is already the existing Kanji Contrast Lab
+  (shared direct visual component), and deceptive-shared-components and
+  near-synonym-trap exhibits stay unbuilt, since both would require
+  inventing a visual- or semantic-closeness judgment this app otherwise
+  never makes — see the reasoning kept in `IDEA_GARDEN.md`'s own entry. The
+  opt-in journal gained one new fixed `study.falsefriends` event, recorded
+  on each answered question; it is not yet wired into any Insights feature
+  group. `APP_VERSION` bumped to 10.41.0.
+- **v10.40.0.** Known-toggle parity pass is ✓ Done: an audit of every
+  surface that displays a word (not the compound/lookup rows already fixed
+  in the reading-forms pass) found three real gaps and one deliberate
+  non-gap. (1) The Read info panel's "Appears in" list (`infoWordsMarkup()`
+  in `js/app.js`) had no action at all — not even Save — despite being a
+  place a learner routinely recognizes a word they already know. Each row
+  now carries a compact `.info-word-known` ✓/○ toggle (`[data-word-known]`,
+  same delegated handler compounds/lookup already use — no new JS wiring)
+  sized down from the full `.compound-known` pill to fit the panel's
+  existing dense baseline-aligned row. Toggling it re-invokes
+  `showInfo(lastSel)` afterward, the same "refresh button state" pattern
+  `onInfoAction()`'s own known/save buttons already use, since
+  `refreshKnownEverywhere()` doesn't know to redraw `#info` on its own. (2)
+  The Radical Tree overlay has its own separate "Appears in" list
+  (`treeWordsMarkup()` in `js/kanjitree.js`, injected via `wordsFor` — the
+  overlay keeps no dictionary of its own) and had the identical gap.
+  `createKanjiTree()` gained `isWordKnown`/`toggleWordKnown`/
+  `onWordKnownChange` options, mirroring the `isKnown`/`toggleKnown`/
+  `onKnownChange` the overlay's own kanji-known button already used; the new
+  `.kt-word-known` button and its click handling exactly parallel `.kt-known`
+  rather than reusing the Read panel's `[data-word-known]` delegated
+  handler, since the overlay is injected content living in `document.body`
+  and reusing that same attribute would have fired both handlers on one
+  click. (3) The Review card had no way to mark the word being studied known
+  — grading buttons and kanji-chip doorways, but nothing for the flashcard's
+  own surface. `renderStage()` now reuses `knownBtn()` (the same button the
+  Read info panel renders) in a `.srs-actions` row on the revealed back; a
+  new `.act-known` branch in `onReviewClick()` toggles `knownWords` for
+  `queue[0].entry.surface` and calls `refreshKnownEverywhere()`, which
+  already rebuilds the queue/stage — no separate re-render needed. (4) Text
+  Journey's per-step word list (`journeyWords()`) stays read-only
+  deliberately, not a missed spot: Text-to-Study Journey conventions already
+  state "Mark known is the only persistent action" for that ephemeral
+  feature, referring to the kanji being studied, and it already has that
+  button — adding one for the words too would contradict a documented
+  design choice, not close a gap. `APP_VERSION` bumped to 10.40.0 (cached
+  CSS/JS changed).
+- **v10.39.0.** Bottom-bar scroll affordance is ✓ Done: `.tabs` gets
   a left/right edge fade hinting there's more to swipe to, but only when
   that's actually true. Drawn as `.tabs::before`/`::after` overlays (not a
   `mask-image` on `.tabs` itself, which would fade the bar's own opaque
@@ -416,6 +482,10 @@
 - `js/compound-words.js` — pure readable-compound detection, ranking, and
   bounding from the committed JLPT vocabulary and the known-kanji set; no DOM
   or storage.
+- `js/false-friends.js` — pure homophone-group construction (identical
+  dictionary reading, distinct meanings, multi-character words only) and a
+  meaning-matching question for the False-Friend Museum's homophones
+  exhibit; no DOM, storage, or fetch.
 - `js/routing.js` — pure hash parsing, tab/route translation, and unknown-route
   fallback; no DOM, history, or fetch.
 - `js/reading-forms.js` — pure token→kana and kana→romaji (approximate
@@ -470,7 +540,14 @@
   behavior belongs in `kanjitree.js`.
 - `kanjitree.js` keeps no dictionary of its own. Vocabulary for the "Appears in"
   list arrives through the injected `wordsFor(char)` option, the same way
-  `kanjiInfo` and `isKnown` do, so the overlay stays a renderer.
+  `kanjiInfo` and `isKnown` do, so the overlay stays a renderer. Each word row's
+  own known state is the same injection pattern once more:
+  `isWordKnown`/`toggleWordKnown`/`onWordKnownChange` parallel
+  `isKnown`/`toggleKnown`/`onKnownChange`, and `.kt-word-known`'s click
+  handling in the overlay's own listener parallels `.kt-known`'s — do not
+  switch it to the Read info panel's `[data-word-known]` delegated handler;
+  the overlay lives in `document.body` like the rest of the page, so reusing
+  that attribute would fire both handlers on one click.
 - Every terse or icon-only control carries a `title` that names the destination
   or the consequence, not the mechanism: "Save 学生 to your Review deck", not
   "Save". `aria-label` stays the short accessible name; `title` is the sighted
@@ -989,6 +1066,34 @@
   Radical Tree doorway used elsewhere.
 - Contrast sessions and scores are ephemeral, filter-aware, and use no new
   storage key. Shuffle & restart clears both progress and answers.
+
+## False-Friend Museum conventions
+
+- Only the homophones exhibit type is built. A group's evidence is an exact
+  match on the committed dictionary reading — never a claimed visual or
+  semantic similarity, which is why deceptive-shared-components and
+  near-synonym-trap exhibits stay unbuilt rather than approximated; see the
+  reasoning kept in `IDEA_GARDEN.md`. Similar-looking kanji is not a
+  separate exhibit here — it is already the existing Kanji Contrast Lab.
+- Groups are multi-character words only, 2–4 members, distinct dictionary
+  meanings, sorted by graded-member count then size then reading — the same
+  shape `buildContrastSets()` already uses for the Kanji library, just keyed
+  by reading instead of shared component. A bare single-kanji entry sharing
+  an on'yomi with another is the Kanji library's own reading-family view,
+  not a false-friend exhibit.
+- The reading can never be a question's clue: it is identical across every
+  choice in a group by construction, so only the meaning distinguishes them.
+- Exhibit choice, question, answer, and score are ephemeral — no storage
+  key — and picked with `Math.random()` rather than a date-seeded "today's
+  exhibit," unlike Radical Alchemy's brew: this is a lighter, revisitable
+  browsing card in the Words tab, not a daily habit loop, and does not need
+  its own tab.
+- Every group member reuses the existing `wordRowMarkup()` row (known/save),
+  so Known and Save behave identically to every other vocabulary list in the
+  app with no dedicated wiring.
+- The optional journal may count only the fixed `study.falsefriends` event,
+  recorded once per answered question. No word, group, reading, or answer
+  choice may enter it.
 
 ## Text-to-Study Journey conventions
 

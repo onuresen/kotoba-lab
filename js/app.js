@@ -8,6 +8,7 @@ import { kanjiStats, wordStats, charMix, readability, coverage } from './analyze
 import { renderReading, applyKnownClasses } from './read.js';
 import { tokensToKana, tokensToRomaji } from './reading-forms.js';
 import { pickStudyWords, toTSV, download } from './flashcards.js';
+import { buildHomophoneGroups, homophoneQuestion, answerHomophoneQuestion } from './false-friends.js';
 import { readAozoraFile } from './aozora.js';
 import { createKnownSet, createDeck, createReviewLog, createAchievementLog } from './storage.js';
 import { serializeBackup, backupFilename, inspectBackup, backupSummary, mergeState, describeMerge } from './backup.js';
@@ -105,7 +106,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.39.0';
+const APP_VERSION = '10.41.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -137,6 +138,13 @@ let kanjiStructureIndex = null;
 let kanjiStructurePromise = null;
 let kanjiStructureError = '';
 let kanjiBrowseLimit = 60;
+// False-Friend Museum: built once from committed vocab; the rest is
+// ephemeral session state — no storage key, matching every other lab.
+let falseFriendGroups = [];
+let museumGroup = null;
+let museumQuestion = null;
+let museumAnswer = null;
+let museumScore = { correct: 0, total: 0 };
 let kanjiBrowseFamily = '';
 let kanjiBrowseActiveFamily = null;
 let kanjiBrowseFamilies = [];
@@ -198,6 +206,7 @@ async function boot() {
     dictTokenizer = createTokenizer(vocabList);
     tokenizer = dictTokenizer;
     samples = sampleData.samples || [];
+    falseFriendGroups = buildHomophoneGroups(vocabList);
     kanjiTree = createKanjiTree({
       loadData: loadKanjiVG,
       kanjiInfo: (ch) => jlpt.kanjiInfo(ch),
@@ -207,6 +216,13 @@ async function boot() {
         usageJournal.record('known.change');
         refreshKnownEverywhere();
         knownToast(ch, known);
+      },
+      isWordKnown: (w) => knownWords.has(w),
+      toggleWordKnown: (w) => knownWords.toggle(w),
+      onWordKnownChange: (w, known) => {
+        usageJournal.record('known.change');
+        refreshKnownEverywhere({ skipKanjiBrowser: true });
+        toast(known ? `✓ ${w} known` : `Unmarked ${w}.`, 'success');
       },
       onOpenRelationships: (ch, trigger) => openKanjiMap(ch, trigger),
       wordsFor: (ch) => wordsContaining(vocabList, ch, 6),
@@ -721,11 +737,15 @@ function infoWordsMarkup(char) {
   if (!words.length) return '';
   return `<div class="info-words">
     <span class="label">Appears in</span>
-    ${words.map((word) => `<div class="info-word-row">
+    ${words.map((word) => {
+      const known = knownWords.has(word.w);
+      return `<div class="info-word-row">
       <span class="jp jlpt-${levelSlug(word.lvl)} chip">${esc(word.w)}</span>
       ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
       <span class="info-word-gloss">${esc((word.g || '').split(';')[0].trim())}</span>
-    </div>`).join('')}
+      <button type="button" class="info-word-known" data-word-known="${esc(word.w)}" aria-pressed="${known}" title="${known ? `Unmark ${esc(word.w)} as known` : `Mark ${esc(word.w)} as known`}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(word.w)} as known">${known ? '✓' : '○'}</button>
+    </div>`;
+    }).join('')}
   </div>`;
 }
 
@@ -1611,7 +1631,9 @@ function renderStage() {
     </div>
     <div class="srs-face">
       ${face}
-      ${revealed ? `<div class="srs-back">${back}${contextRow}${kanjiRow}</div>` : ''}
+      ${revealed ? `<div class="srs-back">${back}${contextRow}${kanjiRow}
+        <div class="srs-actions">${knownBtn(knownWords.has(entry.surface))}</div>
+      </div>` : ''}
     </div>
     ${revealed
       ? `<div class="srs-grades">${GRADES.map((g, i) => `
@@ -1674,7 +1696,18 @@ function answer(grade) {
 function onReviewClick(e) {
   if (e.target.closest('.srs-show')) { reveal(); return; }
   const grade = e.target.closest('.srs-grade');
-  if (grade) answer(grade.dataset.grade);
+  if (grade) { answer(grade.dataset.grade); return; }
+  // The card being reviewed is a real word — mark-known belongs here too, the
+  // same act-known control the Read info panel uses, just scoped to this
+  // panel's own queue[0] instead of that panel's lastSel.
+  const knownEl = e.target.closest('.act-known');
+  if (knownEl && queue.length) {
+    const { entry } = queue[0];
+    const now = knownWords.toggle(entry.surface);
+    usageJournal.record('known.change');
+    toast(now ? `✓ ${entry.surface} known` : `Unmarked ${entry.surface}.`, 'success');
+    refreshKnownEverywhere();
+  }
 }
 
 function onReviewKey(e) {
@@ -2073,6 +2106,54 @@ function renderWordLookup() {
     : '<p class="hint">No vocabulary matches that search. Try a reading, or part of an English meaning.</p>';
 }
 
+// False-Friend Museum — the "homophones" exhibit from IDEA_GARDEN.md's
+// parked idea: words that share one dictionary reading but not one meaning
+// (取る/執る/捕る/採る, all とる). Picking an exhibit and answering its
+// meaning-matching question are both ephemeral — no storage key, and every
+// row reuses wordRowMarkup() so Known/Save work the same way they do
+// everywhere else in the Words tab.
+function newMuseumExhibit() {
+  if (!falseFriendGroups.length) return;
+  museumGroup = falseFriendGroups[Math.floor(Math.random() * falseFriendGroups.length)];
+  const targetIndex = Math.floor(Math.random() * museumGroup.rows.length);
+  museumQuestion = homophoneQuestion(museumGroup, targetIndex);
+  museumAnswer = null;
+  renderFalseFriendMuseum();
+}
+
+function answerMuseumQuestion(chosenSurface) {
+  if (!museumQuestion || museumAnswer) return;
+  museumAnswer = answerHomophoneQuestion(museumQuestion, chosenSurface);
+  museumScore = { correct: museumScore.correct + (museumAnswer.correct ? 1 : 0), total: museumScore.total + 1 };
+  usageJournal.record('study.falsefriends');
+  renderFalseFriendMuseum();
+}
+
+function renderFalseFriendMuseum() {
+  const host = $('#ff-museum');
+  if (!host) return;
+  if (!museumGroup || !museumQuestion) {
+    host.innerHTML = `<p class="hint">See a set of words that all share one reading but not one meaning — the classic 取る・執る・捕る・採る kind of trap.</p>
+      <button type="button" class="btn btn-primary" data-ff-action="new">Open an exhibit</button>`;
+    return;
+  }
+  const quizHtml = museumAnswer
+    ? `<p class="ff-feedback" data-correct="${museumAnswer.correct}">${museumAnswer.correct ? '✓ Correct — ' : '✗ Not quite — '}${esc(museumQuestion.target.w)} means “${esc(museumQuestion.clue)}.”</p>`
+    : `<p class="ff-prompt">${esc(museumQuestion.prompt)}</p>
+      <div class="ff-choices" role="group" aria-label="Word choices">${museumQuestion.choices.map((row) => `<button type="button" class="btn ff-choice" data-ff-choice="${esc(row.w)}">${esc(row.w)}</button>`).join('')}</div>`;
+
+  host.innerHTML = `
+    <div class="ff-exhibit">
+      <div class="ff-reading">${esc(museumGroup.reading)}</div>
+      ${quizHtml}
+    </div>
+    <div class="compound-list">${museumGroup.rows.map((row) => wordRowMarkup(row)).join('')}</div>
+    <div class="ff-footer">
+      <span class="hint">${museumScore.total ? `${museumScore.correct}/${museumScore.total} correct this session` : ''}</span>
+      <button type="button" class="btn btn-ghost" data-ff-action="new">New exhibit</button>
+    </div>`;
+}
+
 // Known words/kanji, words newly readable from them, and vocabulary lookup —
 // the "browse and manage what you know" half of what used to be one My Words
 // tab. Split from the deck (renderMyWords()) so each destination has one job;
@@ -2089,6 +2170,7 @@ function renderWords() {
 
   renderReadableCompounds();
   renderWordLookup();
+  renderFalseFriendMuseum();
 }
 
 // The saved review deck and Portable Study Packs — the "your collection"
@@ -2698,8 +2780,9 @@ function wireUi() {
       }
       return;
     }
-    // Word lookup / readable-compound rows: the same known toggle the kanji
-    // library card already has, mirrored onto words via knownWords.
+    // Word lookup / readable-compound rows, and the "Appears in" list inside
+    // a kanji's own info panel: the same known toggle the kanji library card
+    // already has, mirrored onto words via knownWords.
     const wordKnownToggle = event.target.closest?.('[data-word-known]');
     if (wordKnownToggle) {
       const surface = wordKnownToggle.dataset.wordKnown;
@@ -2707,10 +2790,22 @@ function wireUi() {
         const now = knownWords.toggle(surface);
         usageJournal.record('known.change');
         refreshKnownEverywhere({ skipKanjiBrowser: true });
+        // "Appears in" is drawn by showInfo() itself and isn't one of the
+        // views refreshKnownEverywhere() already knows to redraw, so the
+        // ✓/○ toggled here would otherwise sit stale until the next
+        // unrelated re-render — same "showInfo(lastSel) after a mutation"
+        // pattern onInfoAction() uses for the panel's own known/save buttons.
+        if (wordKnownToggle.closest('#info') && lastSel) showInfo(lastSel);
         toast(now ? `✓ ${surface} known` : `Unmarked ${surface}.`, 'success');
       }
       return;
     }
+    // False-Friend Museum: open/replace the current exhibit, or answer its
+    // meaning-matching question.
+    const ffAction = event.target.closest?.('[data-ff-action="new"]');
+    if (ffAction) { newMuseumExhibit(); return; }
+    const ffChoice = event.target.closest?.('[data-ff-choice]');
+    if (ffChoice) { answerMuseumQuestion(ffChoice.dataset.ffChoice); return; }
     // Batch marking from the Kanji library: toggle without opening the card.
     const knownToggle = event.target.closest?.('[data-kanji-known]');
     if (knownToggle) {
