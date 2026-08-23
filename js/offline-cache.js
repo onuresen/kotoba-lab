@@ -44,6 +44,7 @@ const JS_MODULES = Object.freeze([
   'js/srs.js',
   'js/storage.js',
   'js/study-pack.js',
+  'js/study-weather.js',
   'js/text-journey.js',
   'js/tokenizer-kuromoji.js',
   'js/tokenizer.js',

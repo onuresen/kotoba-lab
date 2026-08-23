@@ -170,6 +170,19 @@ Relations, family practice, and review as parts of the narrative.
 Express local study conditions as a playful daily forecast instead of a
 guilt-heavy streak or conventional dashboard warning.
 
+A first bounded experiment is implemented in v10.42.0: a small forecast card
+at the top of the Review tab (`js/study-weather.js`, pure and tested)
+reframes the same due/fresh/streak numbers the stat row already shows into
+one calm sentence with a weather icon — clear skies when caught up, light
+showers or steady rain for a normal or large backlog, and fog (never a
+"broken streak") when it has been several days or the deck has never been
+reviewed at all. It adds no new storage: `reviewLog` gained one read-only
+`daysSinceLast()` accessor, and the forecast itself is recomputed on every
+Review-tab render rather than persisted. Remaining open question before
+going further: whether the same forecast belongs anywhere outside the
+Review tab (e.g. on arrival at the app) now that it exists — deliberately
+left for observed use to answer.
+
 ### Zen Study Room
 
 Offer one distraction-free, explainable activity—sentence, family, mystery, or

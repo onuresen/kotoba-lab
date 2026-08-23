@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kotoba-lab",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["serve.mjs"],
+      "port": 5506
+    }
+  ]
+}

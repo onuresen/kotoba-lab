@@ -292,6 +292,8 @@
 .ui-toast--success::before { content: '✓'; background: var(--accent2); }
 .ui-toast--error   { border-color: var(--accent-glow); color: var(--accent); }
 .ui-toast--error::before { content: '!'; background: var(--accent); }
+.ui-toast--action { pointer-events: auto; }
+.ui-toast--action .btn { flex: 0 0 auto; padding: 6px 12px; }
 
 /* =============================================================================
    Scrollbar + focus ring

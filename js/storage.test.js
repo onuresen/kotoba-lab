@@ -150,6 +150,19 @@ test('an empty log has no streak and no today', (t) => {
   assert.deepEqual(log.all(), {});
 });
 
+test('daysSinceLast counts from the most recent recorded day, or null if never', (t) => {
+  t.mock.timers.enable({ apis: ['Date'], now: new Date(2026, 7, 11, 12, 0, 0) });
+  useStorage(fakeStorage());
+  const log = createReviewLog('review-log');
+  assert.equal(log.daysSinceLast(), null, 'nothing recorded yet');
+
+  log.replaceAll({ '2026-08-05': 1, '2026-08-11': 2 });
+  assert.equal(log.daysSinceLast(), 0, 'today already has an entry');
+
+  log.replaceAll({ '2026-08-05': 1 });
+  assert.equal(log.daysSinceLast(), 6);
+});
+
 // ---- achievement ledger ------------------------------------------------------
 
 test('record persists a timestamp and never overwrites an already-earned id', (t) => {

@@ -31,6 +31,7 @@ import { parseRoute, routeToHash } from './routing.js';
 import { buildReadableCompounds, wordsContaining, isReadableCompound, unlockedBy } from './compound-words.js';
 import { searchWords } from './word-browser.js';
 import { buildAchievements, evaluateNewlyUnlocked } from './achievements.js';
+import { forecast as studyForecast } from './study-weather.js';
 import { createKanjiTree } from './kanjitree.js';
 import { createKanjiMap } from './kanji-map.js';
 import { createKanjiNetworkView } from './kanji-network.js';
@@ -106,7 +107,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.41.0';
+const APP_VERSION = '10.42.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -1547,8 +1548,22 @@ function refreshReview() {
   renderStage();
 }
 
+// A calm one-line read of today's conditions, above the numeric stat row —
+// see study-weather.js for why this exists instead of just the due count.
+function renderStudyWeather(s) {
+  const host = $('#study-weather');
+  if (!host) return;
+  const f = studyForecast({
+    due: s.due, fresh: s.fresh, total: s.total,
+    streak: reviewLog.streak(), daysSinceReview: reviewLog.daysSinceLast(),
+  });
+  host.innerHTML = `<span class="weather-icon" aria-hidden="true">${f.icon}</span>
+    <div class="weather-text"><span class="weather-headline">${esc(f.headline)}</span><span class="weather-detail">${esc(f.detail)}</span></div>`;
+}
+
 function renderReviewStats() {
   const s = queueStats(deck.all());
+  renderStudyWeather(s);
   const cell = (n, label) => `<div class="stat"><span class="stat-num">${n}</span><span class="stat-label">${label}</span></div>`;
   $('#srs-stats').innerHTML =
     cell(s.due, 'reviews due') +
@@ -2546,24 +2561,32 @@ function updateTabsScrollFade() {
 }
 
 // Marking a kanji known is the most consequential action in the app and used to
-// be the quietest. Say what it actually bought: the words it just made readable.
-// Call after the toggle, so the character already counts as known.
+// be the quietest. Say what it actually bought: the words it just made readable
+// — and let one of them go straight into the review deck from here, since
+// seeing "unlocks 学校、学生" and then having to hunt through Word Lookup to
+// actually save one is exactly the gap that leaves knownKanji growing while
+// the deck never does. Call after the toggle, so the character already
+// counts as known.
 function knownToast(char, known) {
   if (!known) { toast(`${char} unmarked.`, 'success'); return; }
   const { total, words } = unlockedBy(vocabList, char, (c) => knownKanji.has(c), 3);
   if (!total) { toast(`✓ ${char} marked known.`, 'success'); return; }
   const shown = words.map((word) => word.w).join('、');
   const rest = total - words.length;
-  toast(`✓ ${char} known — unlocks ${shown}${rest > 0 ? ` and ${rest} more` : ''}`, 'success');
+  const message = `✓ ${char} known — unlocks ${shown}${rest > 0 ? ` and ${rest} more` : ''}`;
+  const unsaved = words.find((word) => !deck.has(word.w));
+  if (!unsaved) { toast(message, 'success'); return; }
+  const action = `<button type="button" class="btn btn-ghost" data-compound-save="${esc(unsaved.w)}">Save ${esc(unsaved.w)}</button>`;
+  toast(message, 'success', action);
 }
 
 let toastTimer;
-function toast(msg, kind) {
+function toast(msg, kind, actionHtml) {
   const el = $('#toast');
-  el.textContent = msg;
-  el.className = 'ui-toast is-visible' + (kind ? ' ui-toast--' + kind : '');
+  el.innerHTML = `<span>${esc(msg)}</span>${actionHtml || ''}`;
+  el.className = 'ui-toast is-visible' + (kind ? ` ui-toast--${kind}` : '') + (actionHtml ? ' ui-toast--action' : '');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (el.className = 'ui-toast'), 2600);
+  toastTimer = setTimeout(() => (el.className = 'ui-toast'), actionHtml ? 5000 : 2600);
 }
 
 function wireUi() {

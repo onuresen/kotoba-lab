@@ -107,6 +107,18 @@ export function createReviewLog(key, keepDays = 90) {
       }
       return n;
     },
+    // Days between the most recently recorded day and today, or null if
+    // nothing has ever been recorded. 0 means today already has an entry.
+    daysSinceLast() {
+      const keys = Object.keys(days);
+      if (!keys.length) return null;
+      const last = keys.sort().at(-1); // 'YYYY-MM-DD' sorts lexicographically = chronologically
+      const [y, m, d] = last.split('-').map(Number);
+      const lastLocal = new Date(y, m - 1, d);
+      const today = new Date();
+      const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      return Math.round((todayLocal - lastLocal) / 86400000);
+    },
     all: () => ({ ...days }),
     replaceAll(next) { days = { ...next }; prune(); persist(); },
     clear() { days = {}; persist(); },

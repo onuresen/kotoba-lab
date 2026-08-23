@@ -82,7 +82,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   the same sky, export its visible kanji as a private-data-free study pack, or
   try short shared-component and reading-exception challenges with no score.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
-  previews, keyboard grading, a due counter, and streak tracking.
+  previews, keyboard grading, a due counter, and streak tracking. A small
+  forecast card reframes those same numbers as calm weather — clear, showers,
+  or fog after a long gap — instead of a guilt-heavy streak warning.
 - **Consistent desktop width:** every workspace shares the same width on
   larger desktops — the one Kanji and Alchemy use — so switching tabs never
   snaps the page narrower or wider. Relations alone opts into an even wider
@@ -210,6 +212,7 @@ js/usage-journal.js      opt-in, payload-free local activity counters
 js/usage-insights.js     pure feature mix and cautious friction prompts
 js/usage-report.js       privacy-safe aggregate Markdown snapshot
 js/study-pack.js         private-data-free portable kanji pack format
+js/study-weather.js      pure Review-tab forecast: due/streak numbers as calm weather
 js/offline-cache.js      pure precache list, tiers, and cache-strategy policy
 sw.js                    thin service worker: precache, strategies, updates
 manifest.webmanifest     installable metadata
