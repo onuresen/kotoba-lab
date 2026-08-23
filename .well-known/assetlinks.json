@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.onuresen.kotobalab",
+        "sha256_cert_fingerprints": ["0E:55:96:F9:60:3B:06:CF:1A:58:07:44:3F:62:03:86:D0:1E:7E:EE:63:04:9D:3C:58:8A:B0:9B:26:A1:8C:45"]
+      }
+    }]
