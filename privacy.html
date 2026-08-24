@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy — Kotoba Lab</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="theme-color" content="#c8443c">
+<meta name="description" content="Kotoba Lab's privacy policy: a static, browser-only app with no accounts, analytics, or backend.">
+<link rel="canonical" href="https://onuresen.github.io/kotoba-lab/privacy.html">
+<style>
+  :root { --accent: #c8443c; --bg: #f4efe6; --text: #2a2420; --text2: #5c534c; --border: #ddd2c2; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  main { max-width: 700px; margin: 0 auto; }
+  a { color: var(--accent); }
+  .home { display: inline-block; margin-bottom: 24px; font-size: 14px; color: var(--text2); text-decoration: none; }
+  .home:hover { color: var(--accent); }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .updated { color: var(--text2); font-size: 13px; margin: 0 0 32px; }
+  h2 { font-size: 18px; margin: 36px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  ul { padding-left: 22px; }
+  li { margin: 6px 0; }
+  code { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 0.9em; }
+  strong { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <a class="home" href="./">← Back to Kotoba Lab</a>
+  <h1>Privacy</h1>
+  <p class="updated">Applies to the Kotoba Lab web app and its Android app, which is the same web app opened in a Trusted Web Activity — see <a href="https://github.com/onuresen/kotoba-lab">the source</a>.</p>
+
+  <p>Kotoba Lab is a static, browser-only application. It has no user accounts,
+  analytics, advertising, application backend, or cloud synchronization.</p>
+
+  <h2>Text and study data</h2>
+  <ul>
+    <li>Text you paste or import is processed in the browser and is not uploaded by Kotoba Lab.</li>
+    <li>Saved cards, review scheduling, known words, known kanji, and review history are stored in your browser's <code>localStorage</code>.</li>
+    <li>Saved cards may include the sentence in which a word was encountered.</li>
+    <li>Clearing site data removes this local state. Use <strong>Profile &amp; Data</strong>, opened from Settings in the header, if you want to retain or move it.</li>
+    <li>Full profile exports include saved sentence context because it belongs to saved cards. Portable study packs contain kanji dictionary metadata only and exclude schedules, known state, review history, pasted text, and sentences.</li>
+    <li>Profile, study-pack, and TSV files are created locally and are only sent elsewhere if you choose to share or upload them.</li>
+  </ul>
+
+  <h2>Optional usage journal</h2>
+  <ul>
+    <li>The local usage journal is off by default and can be enabled, paused, or reset from <strong>Profile &amp; Data</strong>.</li>
+    <li>When enabled, it stores daily totals for sessions, visible active minutes, and a fixed list of coarse actions such as opening a tab, Radical Tree, Relations or Atlas view, study session, export, or answering a review card.</li>
+    <li>It never stores pasted text, words, kanji, searches, filenames, answers, grades, or individual-action timestamps. Its oldest daily totals are removed after 90 days.</li>
+    <li>Journal data stays in this browser, is never transmitted, and is deliberately excluded from profile backups and portable study packs.</li>
+    <li>The friction radar derives suggestions locally from these coarse totals and the current due-card count. It does not add stored fields, retain the due-card count, or inspect study content.</li>
+    <li>The optional Markdown usage report contains overall activity totals, six feature-category counts, aggregate profile counts, and fixed suggestion text. It excludes raw journal data and event names, daily dates, individual-action timing, last-review dates, and study content. The report stays local unless you choose to copy, share, or upload it.</li>
+  </ul>
+
+  <h2>Offline storage</h2>
+  <ul>
+    <li>Kotoba Lab installs a service worker so it can open without a connection. The worker stores <strong>application files only</strong>: HTML, styles, scripts, icons, and the committed dictionary data.</li>
+    <li>It never stores pasted text, saved words, review history, or known-kanji state. Cache Storage is a separate browser feature from <code>localStorage</code> and is excluded from profile backups and portable study packs by construction.</li>
+    <li><strong>Profile &amp; Data</strong> reports what is currently stored for offline use. The optional precise tokenizer is downloaded only when you ask for it.</li>
+    <li>Because fonts are cached after the first online load, an installed copy makes <em>fewer</em> requests to Google Fonts than an uninstalled one, not more.</li>
+    <li>Clearing site data removes this cache. The application then re-downloads its files on the next online visit.</li>
+  </ul>
+
+  <h2>Network requests</h2>
+  <p>The hosted application downloads its HTML, styles, scripts, dictionaries, and vendored tokenizer from the same static site. It also requests optional fonts from Google Fonts; the application falls back to system fonts if they are not available.</p>
+  <p>As with any website, the hosting provider and font provider may receive normal request information such as an IP address and browser headers. Kotoba Lab does not transmit pasted Japanese text or study data in those requests.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy: <a href="mailto:onuresen47@gmail.com">onuresen47@gmail.com</a>.</p>
+</main>
+</body>
+</html>
