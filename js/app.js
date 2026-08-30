@@ -123,7 +123,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.45.0';
+const APP_VERSION = '10.45.1';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -277,6 +277,10 @@ async function boot() {
   renderMyWords();
   renderProfilePanel();
   refreshReview();
+  // Only now: every renderer above has its data, and wireUi() has attached the
+  // handlers the destination tab needs. On the failure path above boot() has
+  // already returned, so a deep link never lands on a tab that cannot work.
+  applyInitialRoute(initialTab);
   if (samples[0]) { $('#input').value = samples[0].text; run({ recordUsage: false }); }
   usageJournal.startSession();
   renderUsageJournal();
@@ -3493,17 +3497,30 @@ window.addEventListener('popstate', (event) => {
   switchTab(tab, false);
 });
 
-function applyInitialRoute() {
+// The initial route is claimed in two halves, deliberately.
+//
+// Claiming the history entry needs no data and must happen even if the
+// dictionaries never load, so it stays synchronous. Actually MOVING to that tab
+// runs the tab's renderer, and every renderer reads data boot() is still
+// fetching — `#review` with a saved deck used to throw here, because
+// renderStage() asks jlpt.kanjiInfo() for each kanji on the card and `jlpt` is
+// assigned inside boot(). wireUi() also runs inside boot(), so switching early
+// landed on a tab with no event handlers attached to it either way.
+function claimInitialRoute() {
   const { tab } = parseRoute(location.hash);
   // Exactly one entry for the entry point, so back from it leaves the app.
   history.replaceState({ tab }, '', routeToHash(tab));
+  return tab;
+}
+
+function applyInitialRoute(tab) {
   // boot() already renders Analyze as active; only move if the URL asks for
   // something else, so an ordinary load records no extra usage event.
   if (tab !== 'analyze') switchTab(tab, false);
   currentTab = tab;
 }
 
+const initialTab = claimInitialRoute();
 boot();
-applyInitialRoute();
 registerOfflineWorker();
 renderOfflineStatus();

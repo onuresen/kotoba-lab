@@ -2,7 +2,25 @@
 
 ## Current release and backlog
 
-- **v10.45.0 current.** **Daily Mystery** is ✓ Done: the parked "Kanji
+- **v10.45.1 current.** Deep-linking a tab no longer runs its renderer
+  before the data exists. `applyInitialRoute()` was called synchronously right
+  after `boot()`, which is `async` — so at that moment no dictionary had
+  loaded, `jlpt` was still undefined, and `wireUi()` had not attached a single
+  handler. Landing on `#review` with a saved deck threw outright
+  (`renderStage()` asks `jlpt.kanjiInfo()` for every kanji on the card, and it
+  does so whether or not the card is revealed); the other tabs survived only
+  because their renderers happen to guard on an empty catalog. The route is now
+  claimed in two halves: `claimInitialRoute()` stays synchronous, because the
+  history entry needs no data and must exist even when the dictionaries fail to
+  load, and `applyInitialRoute(tab)` moves to the tab at the END of `boot()`'s
+  success path, after every renderer has its data and the handlers are
+  attached. On the failure path `boot()` has already returned, so a deep link
+  can no longer land on a tab that cannot work. Verified across `#review`
+  (with and without a deck), `#kanji`, `#words`, `#relations`,
+  `#achievements`, and a bare load, with the single-history-entry behaviour
+  (back from the entry point leaves the app) unchanged. Fixes a bug that
+  predates the second exploration track. `APP_VERSION` bumped to 10.45.1.
+- **v10.45.0.** **Daily Mystery** is ✓ Done: the parked "Kanji
   Mystery Casebook" seed narrowed until it has an ending. One date-seeded
   kanji, five clues released one at a time, a guess allowed after any of them.
   New pure, tested `js/kanji-mystery.js`. Every clue is a committed dictionary
