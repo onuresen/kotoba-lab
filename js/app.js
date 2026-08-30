@@ -17,7 +17,7 @@ import { buildProfileMetrics, clearProfileCategory, emptyProfileState } from './
 import { createUsageJournal } from './usage-journal.js';
 import { buildUsageInsights } from './usage-insights.js';
 import { buildUsageReport, usageReportFilename } from './usage-report.js';
-import { sentenceAt, contextParts } from './context.js';
+import { sentenceAt, contextParts, clozeParts } from './context.js';
 import {
   buildTextJourney,
   createJourneySession,
@@ -46,6 +46,12 @@ import {
   isFamilyMode,
   isStructureFamilyMode,
 } from './kanji-browser.js';
+import {
+  buildComponentLookup,
+  filterComponents,
+  matchingKanji,
+  usableComponents,
+} from './component-lookup.js';
 import {
   createKanjiStudySession,
   currentStudyCard,
@@ -107,7 +113,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.42.0';
+const APP_VERSION = '10.43.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -139,6 +145,11 @@ let kanjiStructureIndex = null;
 let kanjiStructurePromise = null;
 let kanjiStructureError = '';
 let kanjiBrowseLimit = 60;
+// Component lookup: the picker's own state is entirely ephemeral — the chosen
+// shapes are a search, not a study record, so nothing here reaches storage.
+let kanjiComponentLookup = null;
+let kanjiComponentLimit = 96;
+const kanjiComponentSelection = new Set();
 // False-Friend Museum: built once from committed vocab; the rest is
 // ephemeral session state — no storage key, matching every other lab.
 let falseFriendGroups = [];
@@ -1394,14 +1405,90 @@ function onKanjiAlchemyKey(event) {
   }
 }
 
+// ---- Kanji tab: component lookup --------------------------------------------
+// The picker needs the same compact family index the structural family views
+// use, so opening it is what pays for it — the library itself still loads
+// without touching either artifact.
+function ensureComponentLookup() {
+  if (kanjiComponentLookup) return;
+  loadKanjiStructureIndex()
+    .then((structureIndex) => {
+      kanjiComponentLookup ||= buildComponentLookup(structureIndex, {
+        meaningOf: (char) => jlpt.kanjiInfo(char)?.meaning || '',
+      });
+      renderKanjiBrowser();
+    })
+    .catch((error) => {
+      console.error(error);
+      renderKanjiBrowser();
+    });
+}
+
+function componentChip(item, { selected, usable }) {
+  const label = `${item.element}${item.meaning ? ` — ${item.meaning}` : ''} · ${item.count.toLocaleString()} kanji`;
+  // A selected shape is never dimmed: it has to stay clickable to be undone.
+  const out = !selected && !usable;
+  return `<button type="button" class="kcomp${selected ? ' is-selected' : ''}${out ? ' is-out' : ''}"
+    data-component="${esc(item.element)}" aria-pressed="${selected}" ${out ? 'disabled' : ''} title="${esc(label)}">
+    <span class="kcomp-glyph" lang="ja">${esc(item.element)}</span>
+    <span class="kcomp-count">${item.count.toLocaleString()}</span>
+  </button>`;
+}
+
+function renderComponentPicker(matches) {
+  const host = $('#kanji-components-grid');
+  if (!host) return;
+  const selected = [...kanjiComponentSelection];
+  const countBadge = $('#kanji-components-count');
+  countBadge.hidden = selected.length === 0;
+  countBadge.textContent = selected.length;
+  $('#kanji-components-clear').disabled = selected.length === 0;
+  // The badge lives on the closed toggle, so it updates either way; everything
+  // below is inside the panel. renderKanjiBrowser() runs on every keystroke in
+  // the library search, and redrawing 96 invisible chips each time is waste.
+  if ($('#kanji-components').hidden) return;
+
+  const chosen = $('#kanji-components-selected');
+  chosen.hidden = selected.length === 0;
+  chosen.innerHTML = selected.map((element) => `<button type="button" class="kcomp-chosen" data-component="${esc(element)}" aria-label="Remove ${esc(element)}"><span lang="ja">${esc(element)}</span> ×</button>`).join('');
+
+  if (!kanjiComponentLookup) {
+    host.innerHTML = `<p class="hint">${kanjiStructureError
+      ? 'Could not load the offline component index. Close and reopen this panel to retry.'
+      : 'Loading the compact offline component index…'}</p>`;
+    $('#kanji-components-more').hidden = true;
+    $('#kanji-components-summary').textContent = '';
+    return;
+  }
+
+  const usable = usableComponents(kanjiComponentLookup, matches);
+  const found = filterComponents(kanjiComponentLookup, $('#kanji-component-search').value);
+  const visible = found.slice(0, kanjiComponentLimit);
+  host.innerHTML = visible.length
+    ? visible.map((item) => componentChip(item, {
+        selected: kanjiComponentSelection.has(item.element),
+        usable: usable.has(item.element),
+      })).join('')
+    : '<p class="hint">No component matches that shape or meaning. Components that are not dictionary kanji of their own — 氵, 艹, ⻖ — have no meaning to search.</p>';
+  $('#kanji-components-more').hidden = visible.length >= found.length;
+
+  $('#kanji-components-summary').textContent = selected.length
+    ? `${matches.size.toLocaleString()} kanji contain ${selected.join(' + ')}`
+    : `${kanjiComponentLookup.size.toLocaleString()} shapes, commonest first`;
+}
+
 function renderKanjiBrowser() {
   if (!kanjiCatalog.length || !$('#kanji-results')) return;
+  // null when nothing is picked, which filterKanji reads as "no such filter".
+  const componentMatches = matchingKanji(kanjiComponentLookup, kanjiComponentSelection);
+  renderComponentPicker(componentMatches);
   const rows = filterKanji(kanjiCatalog, {
     query: $('#kanji-search').value,
     levels: [...kanjiBrowseLevels],
     strokes: $('#kanji-strokes').value,
     known: $('#kanji-known').value,
     sort: $('#kanji-sort').value,
+    chars: componentMatches,
     isKnown: (char) => knownKanji.has(char),
   });
   const groupMode = $('#kanji-group').value;
@@ -1523,6 +1610,9 @@ function renderKanjiBrowser() {
 
 function resetKanjiBrowser() {
   stopKanjiStudy();
+  kanjiComponentSelection.clear();
+  kanjiComponentLimit = 96;
+  $('#kanji-component-search').value = '';
   $('#kanji-search').value = '';
   $('#kanji-strokes').value = 'all';
   $('#kanji-known').value = 'all';
@@ -1539,7 +1629,20 @@ function resetKanjiBrowser() {
 // The queue is derived from the deck, never stored: every answer writes the
 // graded card back to storage and rebuilds, so the two can't drift apart.
 const newLimit = () => Number($('#srs-new-limit').value) || 20;
-const isRecall = (entry) => $('#srs-direction').value === 'recall' && !!entry.gloss;
+
+// Which face this card shows. Direction is a way of *viewing* the one card —
+// it never changes the schedule — so every mode has to degrade rather than
+// refuse: an entry with no gloss can't be asked EN → JP, and one saved before
+// contexts existed (or from the Words tab, which has no sentence to record)
+// can't be clozed. Both fall back to plain recognition instead of a dead card.
+function cardMode(entry) {
+  const chosen = $('#srs-direction').value;
+  if (chosen === 'recall' && entry.gloss) return 'recall';
+  if (chosen === 'cloze' && clozeParts(contextOf(entry))) return 'cloze';
+  return 'recognition';
+}
+
+const contextOf = (entry) => ({ text: entry.sentence, start: entry.sentenceStart, end: entry.sentenceEnd });
 
 function refreshReview() {
   queue = buildQueue(deck.all(), { newLimit: newLimit(), lastAnswered });
@@ -1607,27 +1710,44 @@ function renderStage() {
 
   const { entry, card } = queue[0];
   stage.dataset.reviewState = revealed ? 'revealed' : 'prompt';
-  const recall = isRecall(entry);
+  const mode = cardMode(entry);
+  // Say so rather than silently showing an ordinary card: the direction is set
+  // and this one card could not honour it, which is worth one quiet word — and
+  // the word says which of the two things this entry is missing.
+  const chosen = $('#srs-direction').value;
+  const fellBack = mode === 'recognition' && chosen !== 'recognition'
+    ? (chosen === 'cloze' ? 'no sentence saved' : 'no meaning saved') : '';
   const slug = levelSlug(entry.level);
   const word = `<div class="srs-word jlpt-${slug}">${esc(entry.surface)}</div>`;
+  const reading = entry.reading ? `<div class="srs-reading">${esc(entry.reading)}</div>` : '';
   const state = isNew(card) ? 'new'
     : card.interval === 0 ? 'learning'
     : `review · ${card.interval}d · ease ${card.ease.toFixed(2)}`;
 
-  const face = recall
-    ? `<div class="srs-gloss-front">${esc(entry.gloss)}</div>`
-    : word;
-
-  const back = recall
-    ? word + (entry.reading ? `<div class="srs-reading">${esc(entry.reading)}</div>` : '')
-    : (entry.reading ? `<div class="srs-reading">${esc(entry.reading)}</div>` : '') +
-      `<div class="srs-gloss">${esc(entry.gloss || 'No meaning stored for this word.')}</div>`;
-
   // The sentence this word was saved from, with that exact occurrence marked.
-  // Back of the card only: on the front it would give away a recall answer.
-  const parts = contextParts({ text: entry.sentence, start: entry.sentenceStart, end: entry.sentenceEnd });
+  // On a recognition or recall card this is back-of-card only: on the front it
+  // would give the answer away. A cloze card front is this same sentence with
+  // the word withheld, so it is the prompt itself there — and the back showing
+  // it filled back in is the whole point of the mode.
+  const parts = contextParts(contextOf(entry));
   const contextRow = parts ? `
     <div class="srs-context" lang="ja">${esc(parts.before)}<mark>${esc(parts.word)}</mark>${esc(parts.after)}</div>` : '';
+  const clozeRow = mode === 'cloze' ? `
+    <div class="srs-context srs-cloze" lang="ja">${esc(parts.before)}<span class="srs-blank" role="img" aria-label="missing word">？</span>${esc(parts.after)}</div>` : '';
+
+  const face = mode === 'recall'
+    ? `<div class="srs-gloss-front">${esc(entry.gloss)}</div>`
+    : mode === 'cloze'
+      // The gloss comes along as the clue. Without it the prompt is "some word
+      // goes here", which has more than one right answer in most sentences.
+      ? clozeRow + (entry.gloss ? `<div class="srs-cloze-clue">${esc(entry.gloss)}</div>` : '')
+      : word;
+
+  // Recall and cloze both asked for the word, so both answer with it; only
+  // recognition, which showed the word, answers with what it means.
+  const back = mode === 'recognition'
+    ? reading + `<div class="srs-gloss">${esc(entry.gloss || 'No meaning stored for this word.')}</div>`
+    : word + reading;
 
   const kanjiChars = [...new Set([...entry.surface].filter(isKanji))];
   const kanjiRow = kanjiChars.length ? `
@@ -1642,6 +1762,7 @@ function renderStage() {
       <span class="badge" data-status="${entry.level == null ? 'archive' : 'reference'}">${levelName(entry.level)}</span>
       <span class="hint">${state}</span>
       <span class="ui-section-line"></span>
+      ${fellBack ? `<span class="hint">${fellBack}</span>` : ''}
       <span class="hint">${queue.length} in queue</span>
     </div>
     <div class="srs-face">
@@ -2676,6 +2797,40 @@ function wireUi() {
     const filters = $('#kanji-advanced-filters');
     const open = filters.classList.toggle('is-open');
     $('#kanji-filter-toggle').setAttribute('aria-expanded', String(open));
+  });
+  $('#kanji-components-toggle').addEventListener('click', () => {
+    const panel = $('#kanji-components');
+    const open = panel.hidden;
+    panel.hidden = !open;
+    $('#kanji-components-toggle').setAttribute('aria-expanded', String(open));
+    // Closing the picker does not clear the selection: it is a filter, and
+    // silently widening the results on collapse would be a worse surprise than
+    // a badge on a closed panel. The badge on the toggle says it is still on.
+    if (open) { ensureComponentLookup(); renderComponentPicker(matchingKanji(kanjiComponentLookup, kanjiComponentSelection)); }
+  });
+  $('#kanji-component-search').addEventListener('input', () => {
+    kanjiComponentLimit = 96;
+    renderComponentPicker(matchingKanji(kanjiComponentLookup, kanjiComponentSelection));
+  });
+  $('#kanji-components-more').addEventListener('click', () => {
+    kanjiComponentLimit += 96;
+    renderComponentPicker(matchingKanji(kanjiComponentLookup, kanjiComponentSelection));
+  });
+  $('#kanji-components-clear').addEventListener('click', () => {
+    if (!kanjiComponentSelection.size) return;
+    stopKanjiStudy();
+    kanjiComponentSelection.clear();
+    kanjiBrowseLimit = 60;
+    renderKanjiBrowser();
+  });
+  $('#kanji-components').addEventListener('click', (event) => {
+    const chip = event.target.closest('[data-component]');
+    if (!chip) return;
+    stopKanjiStudy();
+    const element = chip.dataset.component;
+    if (!kanjiComponentSelection.delete(element)) kanjiComponentSelection.add(element);
+    kanjiBrowseLimit = 60;
+    renderKanjiBrowser();
   });
   ['#kanji-strokes', '#kanji-known', '#kanji-sort'].forEach((selector) => {
     $(selector).addEventListener('change', () => { stopKanjiStudy(); kanjiBrowseLimit = 60; renderKanjiBrowser(); });

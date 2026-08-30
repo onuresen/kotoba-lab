@@ -7,7 +7,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sentenceAt, contextParts, MAX_CONTEXT_CHARS } from './context.js';
+import { sentenceAt, contextParts, clozeParts, MAX_CONTEXT_CHARS } from './context.js';
 import { createTokenizer } from './tokenizer.js';
 
 const VOCAB = [
@@ -162,4 +162,33 @@ test('contextParts degrades to plain text when the offsets do not fit', () => {
     { before: '本です。', word: '', after: '' });
   assert.equal(contextParts(null), null);
   assert.equal(contextParts({ text: 5 }), null);
+});
+
+// ---- clozeParts -------------------------------------------------------------
+
+test('clozeParts gives the same split a cloze prompt blanks out', () => {
+  const s = ctx('これは本です。', '本');
+  assert.deepEqual(clozeParts(s), { before: 'これは', word: '本', after: 'です。' });
+});
+
+test('clozeParts refuses an entry whose offsets no longer locate the word', () => {
+  // contextParts degrades to an unhighlighted sentence here, which would blank
+  // nothing at all — the card must fall back to an ordinary face instead.
+  assert.equal(clozeParts({ text: '本です。', start: 99, end: 200 }), null);
+  assert.equal(clozeParts({ text: '本です。' }), null);
+  assert.equal(clozeParts(null), null);
+});
+
+test('clozeParts refuses a sentence with nothing readable left around the blank', () => {
+  // Nothing would remain on the front of the card but the blank itself.
+  assert.equal(clozeParts({ text: '本', start: 0, end: 1 }), null);
+  assert.equal(clozeParts(ctx('。本。', '本')), null);   // → 本。 — a box and a full stop
+  assert.equal(clozeParts({ text: '「本」', start: 1, end: 2 }), null); // quotes are no better
+});
+
+test('clozeParts keeps an entry with context on just one side', () => {
+  const before = clozeParts({ text: 'これは本', start: 3, end: 4 });
+  assert.deepEqual(before, { before: 'これは', word: '本', after: '' });
+  const after = clozeParts({ text: '本です。', start: 0, end: 1 });
+  assert.deepEqual(after, { before: '', word: '本', after: 'です。' });
 });

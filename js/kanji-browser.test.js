@@ -29,6 +29,16 @@ test('search covers glyph, English meaning, and either kana form', () => {
   assert.deepEqual(filterKanji(catalog, { query: '語' }).map((item) => item.char), ['語']);
 });
 
+test('a candidate character set narrows the same filters further', () => {
+  // What the component picker hands in. An empty set is an active filter that
+  // nothing survived — not an absent one.
+  assert.deepEqual(filterKanji(catalog, { chars: new Set(['森', '語']) }).map((item) => item.char), ['語', '森']);
+  assert.deepEqual(filterKanji(catalog, { chars: new Set(['森', '語']), levels: ['4'] }).map((item) => item.char), ['森']);
+  assert.deepEqual(filterKanji(catalog, { chars: new Set() }), []);
+  assert.equal(filterKanji(catalog, { chars: null }).length, catalog.length);
+  assert.equal(filterKanji(catalog, { chars: ['森'] }).length, catalog.length); // not a Set: ignored
+});
+
 test('JLPT levels can be combined and ungraded stays explicit', () => {
   assert.deepEqual(filterKanji(catalog, { levels: ['4', 'ungraded'] }).map((item) => item.char), ['森', '鬱']);
 });

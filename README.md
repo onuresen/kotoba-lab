@@ -23,7 +23,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   swipeable samples and JLPT filters, tap-to-open word details, compact Kanji
   and saved-deck cards, focused Review and family-study workspaces, and a
   compact full-screen Radical Tree plus swipeable relationship lanes.
-- **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning;
+- **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning, or
+  build one out of the shapes you can see — the component picker narrows as you
+  choose and dims what cannot combine, so 木 + 目 + 心 lands on 想;
   combine JLPT, stroke-count, and known-state filters; then browse ordinary
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
   an on’yomi, kun’yomi, canonical radical, or direct visual component. On large
@@ -82,7 +84,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   the same sky, export its visible kanji as a private-data-free study pack, or
   try short shared-component and reading-exception challenges with no score.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
-  previews, keyboard grading, a due counter, and streak tracking. A small
+  previews, keyboard grading, a due counter, and streak tracking. Three
+  directions: JP → EN, EN → JP, or fill the sentence you saved the word from,
+  with the word withheld. A small
   forecast card reframes those same numbers as calm weather — clear, showers,
   or fog after a long gap — instead of a guilt-heavy streak warning.
 - **Consistent desktop width:** every workspace shares the same width on
@@ -151,6 +155,14 @@ have completed their bounded A–C and A–D experiments. Kanji Genealogy and
 Japanese Detective Board remain parked ideas rather than release promises;
 future work should follow observed study use instead of their original order.
 
+A second exploration track, added 2026-08-30, is chosen from assets the
+repository already carries and does not spend — KanjiVG's stroke paths,
+kuromoji's discarded morphology, and the browser's own speech synthesis — and
+from the observation that the application is almost entirely a recognition
+trainer. Context-First Cards and Component Lookup shipped from it; a writing
+trainer, a grammar layer, placement, and a re-measurable bookshelf are parked
+there with their first experiments written down.
+
 ## Run locally
 
 Kotoba Lab uses ES modules and fetches its dictionaries from `data/`, so it must
@@ -205,6 +217,7 @@ js/                      application modules and tests
 js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 js/kanji-atlas.js        bounded component constellation graph, layout, and UI
 js/kanji-alchemy.js      deterministic component recipes and session state
+js/component-lookup.js   transitive component index behind the Kanji picker
 assets/alchemy/           optimized backdrop and code-native SVG icon sprite
 js/backup.js             versioned full-profile export, inspection, and merge
 js/profile-dashboard.js  local data metrics and category-reset helpers

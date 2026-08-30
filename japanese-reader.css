@@ -478,6 +478,25 @@ td.hint, .hint { color: var(--text3); font-size: 12px; }
   padding: 0 2px; border-radius: 3px;
 }
 
+/* The cloze prompt is the same block promoted to the front of the card, so it
+   carries the card's weight instead of the evidence tone: bigger type, no left
+   rule, and the blank itself drawn as an empty slot the answer drops into. */
+.srs-cloze {
+  font-size: 20px; line-height: 1.95;
+  color: var(--text);
+  border-left: 0;
+  max-width: 34ch;
+}
+.srs-blank {
+  display: inline-block; min-width: 2.6em;
+  margin: 0 3px; padding: 0 6px;
+  color: var(--accent); font-weight: 600;
+  background: var(--accent-dim);
+  border-bottom: 2px solid var(--accent);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+}
+.srs-cloze-clue { font-size: 15px; color: var(--text2); max-width: 34ch; }
+
 .srs-kanji { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
 .srs-kchar {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -632,10 +651,65 @@ kbd {
   min-width: 20px; height: 20px; padding-inline: 6px; display: inline-grid; place-items: center;
   border-radius: var(--r-pill); color: var(--on-accent); background: var(--accent); font-size: 10px;
 }
+/* The class's own `display` outranks the UA rule for the `hidden` attribute,
+   so without this the badge stays on screen reading "0" whenever the count is
+   zero — visible on phones, where the toggle it sits on is the only one shown. */
+.kanji-filter-count[hidden] { display: none; }
 .kanji-filter-row {
   display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)) auto;
   gap: 10px; align-items: end;
 }
+
+/* Component lookup. Unlike "More filters" — which only collapses on phones,
+   because four selects fit a desktop toolbar — this panel stays collapsible at
+   every width: a wall of 1,431 shapes is not something to open by default. */
+.kanji-components-toggle {
+  min-height: 38px; display: flex; align-items: center; gap: 8px;
+  width: fit-content;
+}
+.kanji-components-toggle::after { content: '＋'; padding-left: 2px; font-size: 15px; }
+.kanji-components-toggle[aria-expanded="true"]::after { content: '−'; }
+.kanji-components {
+  display: flex; flex-direction: column; gap: 11px;
+  padding: 13px 14px;
+  background: linear-gradient(135deg, var(--surface-sunken), var(--surface-warm));
+  border: 1px solid var(--border-strong); border-radius: var(--r-md);
+  box-shadow: inset 0 1px 0 var(--paper-glow);
+}
+.kanji-components[hidden] { display: none; }
+.kanji-components-head { display: grid; grid-template-columns: minmax(220px, .5fr) minmax(0, 1fr); gap: 16px; align-items: end; }
+.kanji-components-find { display: flex; flex-direction: column; gap: 5px; }
+.kanji-components-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.kanji-components-selected { display: flex; flex-wrap: wrap; gap: 6px; }
+.kanji-components-selected[hidden] { display: none; }
+.kcomp-chosen {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; font-size: 13px; cursor: pointer;
+  color: var(--accent); background: var(--accent-dim);
+  border: 1px solid var(--accent); border-radius: var(--r-pill);
+}
+.kcomp-chosen span { font-family: var(--font-display); font-size: 16px; }
+/* Fixed-width cells rather than auto-fit: the grid must not reflow under the
+   finger while the search narrows it, or the shape being aimed at moves. */
+.kanji-components-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: 6px; max-height: 268px; overflow-y: auto;
+  padding-right: 2px;
+}
+.kanji-components-grid .hint { grid-column: 1 / -1; margin: 0; }
+.kcomp {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 4px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+}
+.kcomp-glyph { font-family: var(--font-display); font-size: 21px; line-height: 1.15; color: var(--text); }
+.kcomp-count { font-size: 10px; color: var(--text3); }
+.kcomp:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-dim); }
+.kcomp.is-selected { border-color: var(--accent); background: var(--accent-dim); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent); }
+.kcomp.is-selected .kcomp-glyph { color: var(--accent); }
+/* Dimmed, not hidden: a shape that cannot combine with the current selection
+   is more useful visible — that is the answer to "is it in there with this?" */
+.kcomp.is-out { opacity: .3; cursor: default; }
 .kanji-filter-row .label { display: flex; flex-direction: column; gap: 5px; }
 .kanji-family-tools {
   display: grid; grid-template-columns: minmax(220px, .55fr) minmax(0, 1fr) auto;
@@ -878,6 +952,15 @@ kbd {
   .kanji-filter-toggle[aria-expanded="true"]::after { content: '−'; }
   .kanji-filter-count { margin-left: 8px; }
   .kanji-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 2px; }
+  .kanji-components-toggle { min-height: 44px; width: 100%; justify-content: space-between; }
+  .kanji-components-toggle::after { margin-left: auto; padding-left: 8px; font-size: 16px; }
+  .kanji-components { padding: 12px; gap: 10px; }
+  .kanji-components-head { grid-template-columns: 1fr; gap: 10px; }
+  .kanji-components-find .input { min-height: 44px; }
+  .kanji-components-actions { justify-content: space-between; }
+  .kanji-components-actions .btn { min-height: 44px; }
+  .kanji-components-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); max-height: 232px; }
+  .kcomp { min-height: 48px; }
   .kanji-filter-row:not(.is-open) { display: none; }
   .kanji-filter-row > .btn { grid-column: 1 / -1; }
   .kanji-filter-row > .btn { min-height: 44px; }
@@ -1722,6 +1805,8 @@ p.hint { margin: 8px 0 0; }
   .srs-back { gap: 8px; padding-top: 10px; }
   .srs-actions .btn { min-height: 44px; }
   .srs-context { max-width: 100%; padding: 8px 10px; font-size: 14px; line-height: 1.75; }
+  .srs-cloze { font-size: 17px; line-height: 1.85; }
+  .srs-cloze-clue { font-size: 14px; }
   .srs-kchar { min-width: 64px; min-height: 52px; }
   .srs-grades { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .srs-grade, .srs-show { min-height: 54px; }

@@ -2,7 +2,66 @@
 
 ## Current release and backlog
 
-- **v10.41.0 current.** The False-Friend Museum's first bounded exhibit is
+- **v10.43.0 current.** Two quick wins from the second Idea Garden
+  exploration track (see `IDEA_GARDEN.md`), both chosen because the data they
+  need was already committed and already loaded.
+  (1) **Context-First Cards** is ✓ Done as a third `#srs-direction` option,
+  "Fill the sentence", not a new mode, feature, or tab. Deck entries have
+  stored `sentence`/`sentenceStart`/`sentenceEnd` since v5 and `renderStage()`
+  already drew them as `.srs-context` on the back of the card; cloze promotes
+  that same block to the front with the word withheld. `js/context.js` gained
+  pure, tested `clozeParts()`, which is `contextParts()` plus the two refusals
+  that matter: an entry whose offsets no longer locate the word (there is
+  nothing to blank — `contextParts()` deliberately degrades to an
+  unhighlighted sentence there), and one whose sentence has no kana or kanji
+  left outside the blank, so 本。 does not become a box and a full stop. The
+  "one readable character" rule is deliberately not a punctuation blocklist:
+  「」 are no more of a clue than 。 is. `isRecall()` in `js/app.js` became
+  `cardMode()` returning `recognition | recall | cloze`, since direction is now
+  three-way; every mode still degrades to recognition rather than refusing a
+  card, and the card meta says which of the two things the entry is missing
+  ("no sentence saved" / "no meaning saved") instead of silently showing an
+  ordinary face. The gloss rides along on the cloze front as the clue —
+  without it the prompt is "some word goes here", which most sentences answer
+  more than one way. Direction remains a way of *viewing* one card: no second
+  schedule, no new storage key, no change to `js/srs.js`.
+  (2) **Component Lookup** is ✓ Done as a collapsible "Build from components"
+  picker in the Kanji toolbar, from new pure, tested `js/component-lookup.js`.
+  It reads the same 192 KB `data/kanji-families.json` the structural family
+  views already load, so opening the picker is what pays for it and the
+  library still boots without touching either KanjiVG artifact. ONE
+  DELIBERATE DIFFERENCE from the "Shared component families" view, which is
+  direct-components-only: this index is transitive. 語's direct components are
+  言 and 吾, but 口 is plainly visible in it and a learner picking shapes off
+  the page cannot know which level of the tree a shape sits on, so components
+  are expanded through their own entries (6 ms over the whole corpus, ~4.9
+  components per kanji). Selections intersect rather than union —
+  木 + 目 + 心 → 想 — and `usableComponents()` dims (not hides) every shape
+  that cannot co-occur with the current selection, so a dead end such as
+  魚 + 言 is visible before it is chosen; a selected chip is never dimmed,
+  since it has to stay clickable to be undone. The picker is ordered by how
+  many kanji use each shape, which is a fact this index can count, unlike
+  "importance"; ties break by code point so it never reshuffles between
+  builds. `filterKanji()` gained a `chars` option (a Set, or null for "no such
+  filter" — an empty Set means one is active and nothing survived it) and the
+  picker composes with search, level, stroke, and known filters unchanged.
+  Chip search matches the glyph or, where the component is itself a
+  dictionary kanji (1,263 of 1,431 are), its meaning. The remaining 168 are
+  variant shapes — 氵, 艹, ⻖ — and they are deliberately NOT given their
+  parent's meaning: 氵 co-occurs with canonical radical 水 in 317 of 329
+  kanji, and turning 96% into "氵 means water" is exactly the kind of
+  threshold judgment this app does not make. They are reachable by browsing
+  instead, which frequency ordering already puts at the top of the grid (氵 is
+  the second chip), and the empty-state says so. Selection is ephemeral: no
+  storage key, no journal event, and `resetKanjiBrowser()` clears it.
+  Closing the picker deliberately keeps the selection — silently widening the
+  results on collapse is a worse surprise than a badge on a closed panel.
+  One adjacent CSS fix came with it: `.kanji-filter-count` sets its own
+  `display`, which outranks the UA rule for the `hidden` attribute, so both
+  badges stayed on screen reading "0" — visible on phones, where the "More
+  filters" toggle they sit on is the only one shown. `APP_VERSION` bumped to
+  10.43.0 (cached CSS/JS changed).
+- **v10.41.0.** The False-Friend Museum's first bounded exhibit is
   ✓ Done, shipped directly by owner request rather than from observed study
   friction: a new "False-Friend Museum" card at the bottom of the Words tab
   covers the homophones exhibit type from `IDEA_GARDEN.md`'s parked idea —
@@ -444,6 +503,9 @@
   reduced motion, and known-kanji control.
 - `js/kanji-browser.js` — pure dictionary catalog search, filtering, sorting,
   sections, and stroke/reading/radical/component families; no DOM or storage.
+- `js/component-lookup.js` — pure transitive component index, AND-intersection
+  selection, co-occurrence dimming, and glyph/meaning chip search; no DOM,
+  storage, fetch, or stroke paths.
 - `js/kanji-relationships.js` — pure reusable relationship index, evidence
   ranking, common-reading bounds, and deterministic neighborhood selection;
   no DOM, storage, fetch, or stroke paths.
@@ -817,6 +879,33 @@
 - The selected family is ephemeral UI state. Do not add a localStorage key for
   browsing preferences.
 
+### Component lookup
+
+- The "Build from components" picker is the one way into this library that does
+  not require naming the kanji first. It is collapsible at every width, unlike
+  "More filters", which only collapses on phones: 1,431 shapes is not a thing
+  to open by default.
+- Its index (`js/component-lookup.js`) is TRANSITIVE, and that is the single
+  place in the application where "component" means anything other than
+  KanjiVG's direct children. It is a deeper reading of the same committed
+  structure, not a looser one, and it exists because a learner picking shapes
+  off the page cannot know that 口 reaches 語 only through 吾. Keep the family
+  views direct-only; do not unify the two.
+- Selections intersect (AND). Unusable shapes are dimmed and disabled, never
+  hidden — the picker must not reflow under a finger — and a selected shape is
+  never dimmed, or it could not be undone.
+- Order by usage count, ties by code point. Do not introduce an "importance",
+  "difficulty", or "commonness" ranking this index cannot count.
+- Variant shapes with no dictionary entry of their own (氵, 艹, ⻖ — 168 of
+  1,431) get no meaning and therefore no meaning search. Do not borrow the
+  canonical radical's gloss: the association is dominant, not certain (氵 with
+  水 in 317 of 329 kanji), and promoting it would be exactly the kind of
+  threshold judgment the phonetic-signal and false-friend work refuses to make.
+- Selection is ephemeral, like the selected family. No storage key, no journal
+  event, cleared by "Reset filters" — but NOT by collapsing the picker, since a
+  filter that silently switches itself off is worse than a badge saying it is
+  still on.
+
 ## Radical Alchemy conventions
 
 - Alchemy is its own tab (`data-panel="alchemy"`, `renderAlchemyTab()`), not a
@@ -937,6 +1026,24 @@
   `isReadableCompound()` rather than a second definition.
 - Every vocabulary list uses the shared `wordRowMarkup()` so the compound card
   and the lookup stay identical and gain features together.
+
+### Review direction
+
+- `#srs-direction` picks how one card is *viewed* — `recognition`, `recall`, or
+  `cloze` — through `cardMode()`. It never touches scheduling: one deck entry
+  has one SM-2 card whichever way it is shown, and a second schedule per
+  direction would double every entry's state for a theory nobody has tested in
+  use yet.
+- Every mode degrades to recognition rather than refusing a card, since the
+  learner sets a direction once and the deck decides per entry whether it can
+  honour it: recall needs a gloss, cloze needs a sentence that survives
+  `clozeParts()`. Say which is missing in the card meta; do not silently show
+  an ordinary face.
+- The cloze front carries the gloss as its clue. Without one the prompt is
+  "some word goes here", which most sentences answer more than one way.
+- The stored sentence is otherwise still back-of-card only. Putting it on the
+  front of a recognition or recall card would give the answer away, which is
+  the whole reason it lives on the back.
 
 ## Kanji family study conventions
 
