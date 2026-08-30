@@ -120,7 +120,8 @@ kanji, components, readings, choices, or a new profile field.
 Kanji Genealogy and Japanese Detective Board above remain the two unfinished
 directions from the selected first track. The additional seeds below are also
 parked until real usage evidence identifies a study problem worth solving,
-except The False-Friend Museum, whose first bounded exhibit type shipped
+except Kanji Mystery Casebook (shipped as the Daily Mystery, v10.45.0) and
+The False-Friend Museum, whose first bounded exhibit type shipped
 directly by owner request rather than from observed friction — see its own
 entry for what that covers and what is still parked.
 
@@ -128,6 +129,13 @@ entry for what that covers and what is still parked.
 
 Identify a hidden kanji from structural, reading, stroke, JLPT, and vocabulary
 clues by investigating through Relations and Radical Tree.
+
+Shipped in v10.45.0, narrowed into a daily with an ending — see **Daily Kanji
+Mystery** in the second exploration track below, which is this seed rather
+than a separate idea. What is still unbuilt here is the *casebook* half: the
+investigation happening across Relations and Radical Tree rather than inside
+one card. Parked until the daily shows whether anyone wants to investigate
+rather than simply guess.
 
 ### Parallel Text Portal
 
