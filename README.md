@@ -30,6 +30,12 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
   an on’yomi, kun’yomi, canonical radical, or direct visual component. On large
   screens the library expands into a denser five-card workspace.
+- **Daily Mystery:** one kanji a day, at the top of the Kanji tab. Five clues —
+  stroke count, JLPT grade, canonical radical, a reading, and a real word with
+  the kanji blanked out — released one at a time, with a guess allowed after
+  any of them. Guessing is the library's own search, so working it out is the
+  same act as looking a kanji up. Nothing is stored: no streak, no history, and
+  the result you can copy carries marks and a date, never the answer.
 - **Radical Alchemy:** its own tab; practice result brewing, missing
   ingredients, reverse recipes, or short transformation chains. Every formula
   comes from an unambiguous pair of direct KanjiVG components and can be
@@ -170,10 +176,10 @@ A second exploration track, added 2026-08-30, is chosen from assets the
 repository already carries and does not spend — KanjiVG's stroke paths,
 kuromoji's discarded morphology, and the browser's own speech synthesis — and
 from the observation that the application is almost entirely a recognition
-trainer. Context-First Cards, Component Lookup, the Writing Lab, and the Grammar X-ray
-have shipped from it; placement, a re-measurable bookshelf, a daily kanji
-mystery, and a locally-spoken voice are parked there with their first
-experiments written down.
+trainer. Context-First Cards, Component Lookup, the Writing Lab, the Grammar X-ray, and
+the Daily Mystery have shipped from it; placement, a re-measurable bookshelf,
+a locally-spoken voice, typed readings, and a spot check for long-ago known
+kanji are parked there with their first experiments written down.
 
 ## Run locally
 
@@ -229,6 +235,7 @@ js/                      application modules and tests
 js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 js/kanji-atlas.js        bounded component constellation graph, layout, and UI
 js/kanji-alchemy.js      deterministic component recipes and session state
+js/kanji-mystery.js      date-seeded daily puzzle: pool, clues, guessing, result
 js/component-lookup.js   transitive component index behind the Kanji picker
 js/writing.js            stroke-order grading: order, direction, count, never shape
 js/grammar.js            the only reader of the tokenizer's IPADIC tags

@@ -2,7 +2,47 @@
 
 ## Current release and backlog
 
-- **v10.44.0 current.** The two largest seeds of the second Idea Garden
+- **v10.45.0 current.** **Daily Mystery** is ✓ Done: the parked "Kanji
+  Mystery Casebook" seed narrowed until it has an ending. One date-seeded
+  kanji, five clues released one at a time, a guess allowed after any of them.
+  New pure, tested `js/kanji-mystery.js`. Every clue is a committed dictionary
+  fact — stroke count, JLPT grade, canonical KanjiVG radical, a dictionary
+  reading, and a real vocabulary entry with the kanji itself blanked to ◯ —
+  so the puzzle cannot mislead even by accident; nothing characterises a kanji
+  in words of its own. Clue kinds and order are FIXED (vaguest first: a stroke
+  count leaves hundreds of candidates, a masked word leaves almost none) rather
+  than adaptive, so one day's path means the same thing as another's.
+  Two pool filters were added after seeing real output, and both are data
+  requirements rather than difficulty judgments. (1) A kanji that IS its own
+  canonical radical — 一, 口, 木, 人 and 121 others — is excluded, because clue
+  three would read "its canonical radical is 木" and the puzzle would be over;
+  losing some of the commonest kanji in the language is the honest cost of a
+  clue order that stays fair. (2) A kanji must appear in at least 8 committed
+  vocabulary entries: the fifth clue picks a word at random and one or two
+  candidates make it nearly fixed. That second filter also fixed a real
+  fairness problem — at 2 words the eligible pool was 48% N1, which is a
+  lottery rather than a deduction; at 8 the 688 eligible kanji are about two
+  thirds N5–N3. The skew is a consequence of how the committed vocabulary is
+  distributed, not a difficulty scale invented here. 688 kanji is ~1.9 years
+  before a repeat, and a scripted year of dates produced zero clue leaks.
+  Guessing reuses the library's own `filterKanji()`, so deducing the answer is
+  the same act as looking a kanji up — type a meaning, a reading, or paste the
+  glyph. Enter guesses only when the search has narrowed to exactly ONE
+  candidate: a guess costs a clue, and firing the first of eight silently would
+  spend one by accident (the candidates are ordinary buttons, so Tab-then-Enter
+  still reaches any of them). A wrong guess opens the next clue rather than
+  just saying no; a repeated guess costs nothing, so a mis-tap is not a
+  penalty. The card lives collapsed at the TOP of the Kanji tab — not buried
+  below the results like the False-Friend Museum, because a daily's whole
+  purpose is being a reason to open the application, and not as a tab, per this
+  file's first selection principle. State is session-only, exactly like
+  Alchemy's Today's Brew: no storage key, no streak, no history, no win rate,
+  and a reload starts today's kanji over. The share line is deliberately marks
+  only (`◆◆◇◇◇`, plus ✕ when unsolved) with no kanji, reading, meaning, or
+  score — the shape of one day's path, with nothing anywhere for it to
+  accumulate into. The opt-in journal gained one fixed `study.mystery` event.
+  `APP_VERSION` bumped to 10.45.0 (cached CSS/JS changed).
+- **v10.44.0.** The two largest seeds of the second Idea Garden
   track, both of which close an axis the application had no presence on at all.
   (1) **Writing Lab** is ✓ Done as a "Practise writing" mode inside the
   existing Radical Tree overlay — the first thing in Kotoba Lab that asks the
@@ -561,6 +601,9 @@
 - `js/component-lookup.js` — pure transitive component index, AND-intersection
   selection, co-occurrence dimming, and glyph/meaning chip search; no DOM,
   storage, fetch, or stroke paths.
+- `js/kanji-mystery.js` — pure date-seeded daily puzzle: eligibility pool, five
+  fixed clues from committed dictionary facts, guessing, and a spoiler-free
+  result line. No DOM, storage, or fetch.
 - `js/writing.js` — pure stroke-order grading from endpoints alone: order,
   direction, placement, count, and the sentence explaining a miss. No DOM,
   storage, or path parsing; never judges shape.
@@ -714,6 +757,26 @@
 - `compactPath()` must preserve negative zero. In SVG path syntax a minus sign
   can separate adjacent coordinates, so converting `3.57-0.01` to `3.60`
   silently merges two Bézier parameters and distorts the stroke.
+
+## Daily Mystery conventions
+
+- Every clue is a committed dictionary fact. Never characterise a kanji, hint
+  at its difficulty, or describe it in words of the application's own.
+- Clue kinds and order are fixed and vaguest-first. Do not make them adaptive:
+  one day's path has to mean the same thing as another's.
+- Pool filters are data requirements, not difficulty judgments, and each one
+  should name the clue it protects. A kanji that is its own canonical radical
+  has no third clue; one below the vocabulary threshold has no meaningful
+  fifth; an ungraded one has no second.
+- A guess costs a clue, so it must never happen by accident: Enter submits only
+  when the search has narrowed to exactly one candidate.
+- A wrong guess opens the next clue — the puzzle answers back. A repeated guess
+  costs nothing.
+- Session-only, like Today's Brew. No storage key, no streak, no history, no
+  win rate; a reload starts the same day's kanji over, and the date seed is
+  what makes that acceptable.
+- The share line carries marks and a date. Never the kanji, a reading, a
+  meaning, a clue, or a score out of five.
 
 ## Writing practice conventions
 

@@ -264,6 +264,21 @@
 
   <!-- KANJI -->
   <section class="panel" data-panel="kanji" data-layout="wide" id="kanji-panel">
+    <!-- Daily Mystery. Collapsed by default so it never displaces the library,
+         but at the top rather than buried below the results, because the whole
+         point of a daily is being a reason to open the application. -->
+    <section class="card mystery-card" id="mystery-card">
+      <button type="button" id="mystery-toggle" class="mystery-strip" aria-expanded="false" aria-controls="mystery-body">
+        <span class="mystery-mark" aria-hidden="true">謎</span>
+        <span class="mystery-strip-text">
+          <b>Daily Mystery</b>
+          <span class="hint" id="mystery-tagline">One kanji, five clues, one guess whenever you like.</span>
+        </span>
+        <span class="mystery-strip-state" id="mystery-strip-state" aria-hidden="true"></span>
+      </button>
+      <div id="mystery-body" class="mystery-body" hidden aria-live="polite"></div>
+    </section>
+
     <div class="card kanji-toolbar">
       <div class="kanji-intro">
         <div>

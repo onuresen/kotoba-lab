@@ -220,7 +220,7 @@ first track, status is authoritative.
 | Grammar X-ray | ✓ Shipped in v10.44.0 | Whether the conjugation label is worth translating, and by what authority |
 | Placement | Parked idea | Decide whether a seeded known set is honest enough to write |
 | Bookshelf | Parked idea | The only seed here that needs a new storage key — decide if re-measurement earns it |
-| Daily Kanji Mystery | Parked idea | Decide whether a shareable score fits an app that has stayed calm |
+| Daily Kanji Mystery | ✓ Shipped in v10.45.0 | Whether the share line is ever used, and whether a second daily crowds the first |
 | A Voice, Locally | Parked idea | Confirm a `localService` ja-JP voice is common enough to build on |
 | Type the Reading | Parked idea | Decide what "close enough" means before promising a near-miss note |
 | Old Known Kanji | Parked idea | Decide whether known-state may ever be questioned without becoming guilt |
@@ -367,10 +367,31 @@ needs no server and no account, and every clue is a committed dictionary fact,
 so it can never invent anything. It is also the only idea in this track that
 gives a reason to open the app on a day with no appetite for studying.
 
-First experiment: the loop with no score, no streak, and no share string at
-all — those are separable, and the *Japanese Weather System* entry above is
-this project's own argument for leaving them off. Add the share line only if
-the loop is worth returning to without it.
+Implemented in v10.45.0. The written first experiment held everything back —
+no score, no streak, no share string — and what shipped keeps two of those
+three: there is no streak and no score anywhere, and nothing is stored, so
+there is nothing for either to accumulate into. The share line did ship,
+because it was the half of the idea that was actually asked for and because it
+turned out to be separable from the guilt-shaped part: it carries marks and a
+date, never a kanji, a reading, a meaning, or a number. `◆◆◇◇◇` is the shape
+of one day's path, not a grade out of five.
+
+Two things only became visible once real puzzles were generated, and both are
+recorded because they are the kind of thing that looks like a difficulty
+judgment and must not become one. A kanji that is its own canonical radical
+gives itself away at clue three, so 一, 口, 木, 人 and 121 others cannot be
+puzzles — a real loss, accepted to keep the clue order fair. And a pool
+requiring only two vocabulary entries came out 48% N1, which is a lottery
+rather than a deduction; raising the requirement to eight (a data requirement
+the fifth clue needs anyway) left 688 kanji that are about two thirds N5–N3.
+Nothing in the module ranks kanji by difficulty; that distribution is the
+committed vocabulary's, not an opinion.
+
+Remaining decisions, both deliberately left to observed use: whether the share
+line is ever actually used by someone with no audience for it, and whether a
+second daily competes with Today's Brew for the same habit rather than
+reinforcing it. If the answer to the first is no after a few months, the line
+should come out — it is one button and one function.
 
 ### A Voice, Locally
 

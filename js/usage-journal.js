@@ -7,7 +7,7 @@ export const USAGE_EVENTS = Object.freeze([
   'tab.analyze', 'tab.read', 'tab.kanji', 'tab.relations', 'tab.review', 'tab.mywords', 'tab.profile',
   'tab.achievements', 'tab.alchemy', 'tab.words', 'tab.insights',
   'analyze.run', 'tree.open', 'relations.open', 'atlas.open', 'study.family', 'study.pack', 'study.atlas',
-  'study.falsefriends',
+  'study.falsefriends', 'study.mystery',
   'review.answer', 'profile.export', 'pack.export', 'known.change',
   'report.export',
 ]);
