@@ -2,7 +2,62 @@
 
 ## Current release and backlog
 
-- **v10.43.0 current.** Two quick wins from the second Idea Garden
+- **v10.44.0 current.** The two largest seeds of the second Idea Garden
+  track, both of which close an axis the application had no presence on at all.
+  (1) **Writing Lab** is ✓ Done as a "Practise writing" mode inside the
+  existing Radical Tree overlay — the first thing in Kotoba Lab that asks the
+  learner to *produce* a kanji rather than recognise one. New pure, tested
+  `js/writing.js` grades order, direction, placement, and count, and
+  deliberately NOT shape: a stroke is reduced to its two endpoints, so a wild
+  line between the right start and the right end passes. That is the honest
+  boundary — measuring how closely a drawn curve follows the real one is a
+  similarity judgment, the same kind the phonetic-signal and false-friend work
+  refuses to invent, and order/direction is both the part learners actually get
+  wrong and the part KanjiVG states outright. A wrong stroke never advances
+  (committing it would leave the drawing itself wrong), reversal is detected on
+  relative distance rather than the tolerance so it survives a stroke shorter
+  than one tolerance circle, and the default tolerance is ~22% of the 109-unit
+  box because a fingertip is a blunt instrument and a fussy grader teaches
+  nothing. Feedback is a comparison, not a score: "Stroke 3 runs the other way:
+  it starts at top left." In `js/kanjitree.js` the surface is a second SVG
+  sharing the glyph's viewBox, so a pointer position needs nothing but
+  `getScreenCTM()`; endpoints come from `getPointAtLength()` on a temporarily
+  attached path (exact, and no SVG path parser to write or test). Earned
+  strokes redraw as the real KanjiVG path rather than the learner's own line —
+  watching the kanji assemble is the reward — and a rejected stroke lingers a
+  moment as dashed evidence beside the sentence saying what was expected. An
+  optional outline guide, a hint that is counted separately from a miss, undo,
+  and restart round it out. Everything is session-only: no storage key, no
+  profile field, no journal event, and drilling into a component, going back,
+  or closing the overlay all end the session, since each means a different set
+  of strokes. One SVG gotcha worth keeping: `hidden` is an **HTMLElement**
+  property, so `svg.hidden = false` silently sets a JS expando and leaves the
+  element hidden — `toggleAttribute('hidden', …)` is the only thing that works.
+  (2) **Grammar X-ray** is ✓ Done. `mapTokens()` in
+  `js/tokenizer-kuromoji.js` had always computed a part of speech, a dictionary
+  form, and an inflection label and then discarded all three at the Token
+  boundary; the shared Token shape now documents four OPTIONAL morphology
+  fields (`pos`, `posDetail`, `lemma`, `conjugation`) that the v1 segmenter
+  leaves absent, so the swappable-tokenizer contract in `js/tokenizer.js` is
+  untouched. New pure, tested `js/grammar.js` is the only reader of those tags
+  anywhere in the application: it translates IPADIC's closed top-level 品詞 set
+  into plain English, reports `conjugated` as a comparison against the lemma
+  (never "past tense" — that is a claim about Japanese, not about the
+  analysis), and builds a whole-text profile. Three surfaces use it. The Read
+  info panel gains a Grammar row showing 読ん ← 読む plus IPADIC's own
+  inflection label; `pos_detail_1` is deliberately NOT rendered, since it is
+  almost always 自立 for a verb and would need translating for a particle,
+  which is where describing a tagset turns into teaching grammar. The Read
+  toolbar gains an optional grammar layer marking particles and auxiliaries
+  only — two tints from the palette's declared secondary (indigo), not a hue
+  per part of speech, because red already means "unknown / above your level"
+  here and the JLPT ramp owns difficulty. Analyze gains a Grammar profile card:
+  parts of speech, the particles a text leans on, and every inflected word with
+  its dictionary form. All three report their own absence on the instant
+  tokenizer rather than drawing an empty chart, which turns the 18 MB precise
+  tokenizer from a chore into an unlock. `APP_VERSION` bumped to 10.44.0
+  (cached CSS/JS changed).
+- **v10.43.0.** Two quick wins from the second Idea Garden
   exploration track (see `IDEA_GARDEN.md`), both chosen because the data they
   need was already committed and already loaded.
   (1) **Context-First Cards** is ✓ Done as a third `#srs-direction` option,
@@ -506,6 +561,12 @@
 - `js/component-lookup.js` — pure transitive component index, AND-intersection
   selection, co-occurrence dimming, and glyph/meaning chip search; no DOM,
   storage, fetch, or stroke paths.
+- `js/writing.js` — pure stroke-order grading from endpoints alone: order,
+  direction, placement, count, and the sentence explaining a miss. No DOM,
+  storage, or path parsing; never judges shape.
+- `js/grammar.js` — pure IPADIC tag reading: part-of-speech labels, dictionary
+  form comparison, and whole-text profiles. The only interpreter of morphology
+  in the application; no DOM or storage.
 - `js/kanji-relationships.js` — pure reusable relationship index, evidence
   ranking, common-reading bounds, and deterministic neighborhood selection;
   no DOM, storage, fetch, or stroke paths.
@@ -653,6 +714,58 @@
 - `compactPath()` must preserve negative zero. In SVG path syntax a minus sign
   can separate adjacent coordinates, so converting `3.57-0.01` to `3.60`
   silently merges two Bézier parameters and distorts the stroke.
+
+## Writing practice conventions
+
+- Grade order, direction, placement, and count. **Never shape.** A stroke is
+  its two endpoints; a wild line between the right start and the right end
+  passes, and the copy says as much rather than implying penmanship was judged.
+  Adding a curve-similarity score would be inventing the closeness judgment the
+  rest of this application refuses to make.
+- A wrong stroke does not advance. Committing it would leave the drawing wrong
+  from that point on, and the order is the whole exercise.
+- Check reversal before placement, on relative distance rather than the
+  tolerance, or a stroke shorter than one tolerance circle can be drawn either
+  way round and pass.
+- Keep the tolerance generous (~22% of KanjiVG's 109-unit box). A fussy grader
+  fails correct strokes and teaches only that the tool is fussy.
+- Say what was expected and what happened, in words, from a 3x3 reading of the
+  box: "Stroke 3 starts at top left; yours started at the centre." Never a
+  score, a percentage, a streak, or a grade.
+- Hints are counted separately from misses and shown as such. Neither is
+  persisted.
+- The session is ephemeral in the strongest sense: no storage key, no profile
+  field, no journal event, and it ends on drill-down, back, or close, since
+  each of those means a different set of strokes.
+- Take stroke endpoints with `getPointAtLength()` on a real path element rather
+  than parsing the `d` attribute. It is exact, needs no parser, and keeps
+  `js/writing.js` pure and testable under Node.
+- Drawing is pointer-only; that is inherent to the exercise. Keep "Show this
+  stroke" available so a keyboard user can still walk the whole kanji, and keep
+  the verdict in an `aria-live` region.
+- `hidden` is an HTMLElement property. On the practice `<svg>` use
+  `toggleAttribute('hidden', …)` — assigning `.hidden` sets a JS expando and
+  the element stays exactly as it was.
+
+## Grammar conventions
+
+- `js/grammar.js` is the only place in the application that reads a
+  morphological tag. Everything else consumes its output.
+- Describe IPADIC's own labels; never state a grammar rule the dictionary does
+  not contain. `conjugated` is a comparison with the analyser's lemma, not a
+  tense; the inflection label is shown verbatim and named as the analyser's.
+- Do not render `pos_detail_1`. It is 自立 for almost every verb and would need
+  translating for a particle, and translating a subtype is where describing a
+  tagset becomes teaching grammar. It stays on the token for a feature that has
+  a real use for it.
+- Morphology fields on the Token are OPTIONAL. The v1 segmenter emits none, so
+  every consumer must render nothing rather than something wrong, and must say
+  "not available" rather than showing an empty profile.
+- The Read grammar layer marks function words (particles, auxiliaries) only,
+  in the palette's secondary indigo. Do not give each part of speech a hue: red
+  means "unknown / above your level" in this app and the JLPT ramp owns
+  difficulty, so a third categorical scale would make the reader's own color
+  vocabulary ambiguous.
 
 ## Desktop layout conventions
 

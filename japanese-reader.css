@@ -342,6 +342,30 @@ td.hint, .hint { color: var(--text3); font-size: 12px; }
 .reading .tok.word:hover { background: var(--accent-dim); border-radius: 4px; }
 .reading .is-picked { background: color-mix(in srgb, var(--accent) 20%, transparent); border-radius: 3px; }
 .reading .kana, .reading .run { }
+/* ---- optional grammar layer ------------------------------------------------
+   Off by default and available only when a tokenizer that actually analyses
+   grammar has run. It marks FUNCTION words (particles and auxiliaries) and
+   nothing else: red already means "unknown / above your level" in this app and
+   the JLPT ramp owns difficulty, so a hue per part of speech would make a
+   reader's own color vocabulary ambiguous. Indigo is the palette's declared
+   secondary signal, which is exactly what this is. */
+.reading.show-grammar [data-pos="助詞"],
+.reading.show-grammar [data-pos="助動詞"] {
+  color: var(--accent2-text);
+  background: var(--accent2-dim);
+  border-radius: 3px;
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  padding: 0 1px;
+}
+/* Auxiliaries are the quieter of the two: they attach to a verb the reader is
+   already looking at, while a particle marks the role of the phrase before it. */
+.reading.show-grammar [data-pos="助動詞"] {
+  background: none;
+  box-shadow: inset 0 -2px 0 var(--accent2-dim);
+}
+.sw-pos { background: var(--accent2-dim); box-shadow: inset 0 0 0 1px var(--accent2); }
+.sw-pos[data-pos="助動詞"] { background: none; box-shadow: inset 0 -3px 0 var(--accent2); }
+
 /* already-known: quiet it down so unfamiliar words keep visual priority */
 .reading .k.is-known { color: var(--text3); }
 .reading .tok.word.is-known { color: var(--text3); }
@@ -357,6 +381,12 @@ td.hint, .hint { color: var(--text3); font-size: 12px; }
 .info-yomi { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
 .info-yomi div { font-size: 14px; color: var(--text2); }
 .info-yomi .label { display: inline-block; margin: 0 8px 0 0; min-width: 70px; }
+.info-grammar { margin: 10px 0 2px; padding-top: 9px; border-top: 1px solid var(--border); }
+.info-grammar-pos { margin: 4px 0 0; font-size: 14px; color: var(--text2); font-weight: 500; }
+.info-grammar-pos .hint { font-weight: 400; }
+.info-grammar-lemma { margin: 5px 0 0; font-family: var(--font-display); font-size: 17px; color: var(--text); }
+.info-grammar-lemma b { color: var(--accent2-text); }
+.info-grammar .hint { margin: 4px 0 0; }
 .info-actions { display: flex; gap: 8px; margin-top: 12px; }
 .info-kchars { margin-top: 14px; }
 .info-kchars .k { font-family: var(--font-display); font-size: 22px; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
@@ -637,6 +667,26 @@ kbd {
 
 /* ---- Kanji library -------------------------------------------------------- */
 .kanji-toolbar { display: flex; flex-direction: column; gap: 18px; }
+/* ---- Analyze: grammar profile ---------------------------------------------- */
+.gp-bars { display: flex; flex-direction: column; gap: 6px; }
+.gp-row { display: grid; grid-template-columns: minmax(130px, .3fr) minmax(0, 1fr) minmax(84px, auto); gap: 12px; align-items: center; }
+.gp-name { font-size: 13px; color: var(--text2); display: flex; align-items: baseline; gap: 6px; }
+.gp-name i { font-family: var(--font-display); font-style: normal; font-size: 12px; color: var(--text3); }
+.gp-bar { height: 9px; background: var(--surface2); border-radius: var(--r-pill); overflow: hidden; }
+/* One fill color for every row: each bar is already labelled, so a hue per
+   part of speech would spend the palette's remaining signal on decoration. */
+.gp-fill { display: block; height: 100%; background: var(--accent2); border-radius: var(--r-pill); min-width: 2px; }
+.gp-count { font-size: 12px; color: var(--text3); text-align: right; font-variant-numeric: tabular-nums; }
+.gp-group { margin-top: 13px; display: flex; flex-direction: column; gap: 6px; }
+.gp-chip {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  padding: 4px 9px; font-family: var(--font-display); font-size: 15px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-pill);
+}
+.gp-chip i { font-family: var(--font-body); font-style: normal; font-size: 11px; color: var(--text3); }
+.gp-chip b { color: var(--accent2-text); }
+.gp-lemma { font-size: 14px; }
+
 .kanji-toolbar[hidden], .kanji-results-head[hidden], .kanji-more[hidden] { display: none; }
 .kanji-intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .72fr); gap: 24px; align-items: end; }
 .kanji-intro h2 { margin: 3px 0 4px; font-family: var(--font-display); font-size: 25px; }
@@ -959,6 +1009,8 @@ kbd {
   .kanji-components-find .input { min-height: 44px; }
   .kanji-components-actions { justify-content: space-between; }
   .kanji-components-actions .btn { min-height: 44px; }
+  .gp-row { grid-template-columns: minmax(96px, .45fr) minmax(0, 1fr) auto; gap: 8px; }
+  .gp-name i { display: none; }
   .kanji-components-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); max-height: 232px; }
   .kcomp { min-height: 48px; }
   .kanji-filter-row:not(.is-open) { display: none; }
@@ -1333,6 +1385,66 @@ body.kt-open { overflow: hidden; }
 .kt-component-open:active { transform: translateY(1px) scale(.985); }
 .kt-component-open strong { font-family: var(--font-display); font-size: 22px; color: var(--kt-part-color); }
 .kt-component-open span { color: var(--text3); font-family: var(--font-mono); font-size: 10px; }
+/* ---- writing practice ------------------------------------------------------
+   Same box, same size, same place as the glyph it replaces, so entering
+   practice does not move the thing the learner is looking at. */
+.kt-trace {
+  display: block; width: min(360px, 68vw); aspect-ratio: 1;
+  border-radius: var(--r-lg);
+  background:
+    linear-gradient(var(--border) 1px, transparent 1px) 50% 50% / 100% 50%,
+    linear-gradient(90deg, var(--border) 1px, transparent 1px) 50% 50% / 50% 100%,
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+  /* Without this a finger drag scrolls the overlay instead of drawing. */
+  touch-action: none;
+  cursor: crosshair;
+}
+.kt-trace[hidden] { display: none; }
+.kt-overlay.is-writing .kt-glyph { display: none; }
+/* Decomposition and replay are meaningless mid-session — the strokes on screen
+   are the ones being graded — so the mode shows only its own controls rather
+   than a row of dead buttons beside them. */
+.kt-overlay.is-writing .kt-explode,
+.kt-overlay.is-writing .kt-replay { display: none; }
+/* The outline guide: the whole kanji, faint enough to trace over and to ignore.
+   Optional, because writing it from memory is the harder, better exercise. */
+.kt-trace-guide-stroke {
+  fill: none; stroke: var(--text); opacity: .13;
+  stroke-width: 2.35; stroke-linecap: round; stroke-linejoin: round;
+}
+/* A stroke already earned, drawn as the real path rather than as the learner's
+   own line: the reward for getting the order right is the kanji assembling. */
+.kt-trace-done {
+  fill: none; stroke: var(--text); stroke-width: 2.35;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.kt-trace[data-state="complete"] .kt-trace-done { stroke: var(--accent); }
+.kt-trace-ink {
+  fill: none; stroke: var(--accent2); stroke-width: 2.6;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .85;
+}
+/* What was actually drawn, left on screen beside the sentence explaining what
+   was expected — evidence, not a scolding, so it fades out on its own. */
+.kt-trace-miss {
+  fill: none; stroke: var(--accent); stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .5;
+  stroke-dasharray: 3 4;
+}
+.kt-trace-tools { width: min(360px, 68vw); display: flex; flex-direction: column; gap: 9px; margin-top: 12px; }
+.kt-trace-tools[hidden] { display: none; }
+.kt-trace-verdict { margin: 0; min-height: 20px; font-size: 14px; text-align: center; color: var(--text2); }
+.kt-trace-verdict[data-tone="good"] { color: var(--accent2-text); font-weight: 500; }
+.kt-trace-verdict[data-tone="warn"] { color: var(--accent); }
+.kt-trace-bar { height: 5px; background: var(--surface2); border-radius: var(--r-pill); overflow: hidden; }
+.kt-trace-fill { display: block; height: 100%; width: 0; background: var(--accent2); border-radius: var(--r-pill); transition: width .2s var(--ease); }
+.kt-overlay[data-reduced-motion="true"] .kt-trace-fill { transition: none; }
+.kt-trace-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+/* This project has no global disabled-button style — only .alchemy-actions has
+   one. These buttons genuinely switch off (hint at completion, undo at the
+   start), so they follow that same local precedent rather than looking live. */
+.kt-trace-actions .btn:disabled { opacity: .46; cursor: not-allowed; box-shadow: none; }
+
 .kt-instruction { min-height: 18px; margin: 6px 0 14px; text-align: center; }
 .kt-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .kt-info { padding: 30px 26px; background: var(--surface2); border-left: 1px solid var(--border); }
@@ -1678,6 +1790,10 @@ body.krm-open { overflow: hidden; }
   .kt-body { grid-template-columns: 1fr; }
   .kt-stage { min-height: 330px; justify-content: flex-start; padding: 12px 12px 16px; }
   .kt-glyph { width: min(230px, 64vw); }
+  .kt-trace, .kt-trace-tools { width: min(260px, 74vw); }
+  .kt-trace-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .kt-trace-actions .btn { min-height: 44px; padding-inline: 8px; white-space: normal; }
+  .kt-trace-actions .check { grid-column: 1 / -1; justify-content: center; }
   .kt-component-list {
     width: 100%; margin-top: -2px; padding: 2px 1px 6px; flex-wrap: nowrap; justify-content: flex-start;
     overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity;

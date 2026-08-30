@@ -5,7 +5,7 @@ import { createTokenizer } from './tokenizer.js';
 import { loadKuromojiTokenizer } from './tokenizer-kuromoji.js';
 import { createJlpt, LEVELS, levelName, levelSlug } from './jlpt.js';
 import { kanjiStats, wordStats, charMix, readability, coverage } from './analyze.js';
-import { renderReading, applyKnownClasses } from './read.js';
+import { renderReading, applyKnownClasses, hasGrammar } from './read.js';
 import { tokensToKana, tokensToRomaji } from './reading-forms.js';
 import { pickStudyWords, toTSV, download } from './flashcards.js';
 import { buildHomophoneGroups, homophoneQuestion, answerHomophoneQuestion } from './false-friends.js';
@@ -18,6 +18,7 @@ import { createUsageJournal } from './usage-journal.js';
 import { buildUsageInsights } from './usage-insights.js';
 import { buildUsageReport, usageReportFilename } from './usage-report.js';
 import { sentenceAt, contextParts, clozeParts } from './context.js';
+import { grammarProfile, tokenGrammar } from './grammar.js';
 import {
   buildTextJourney,
   createJourneySession,
@@ -113,7 +114,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.43.0';
+const APP_VERSION = '10.44.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -621,6 +622,7 @@ function run({ recordUsage = true } = {}) {
   textJourney = buildTextJourney(kStats.rows, tokens, kanjiCatalog, (char) => knownKanji.has(char));
 
   renderReadability(readability(text, kStats));
+  renderGrammarProfile(grammarProfile(tokens));
   renderOverview(charMix(text), kStats, wStats);
   renderDist('#kanji-dist', kStats.byLevel, kStats.ungraded, kStats.totalKanji, 'kanji');
   renderCoverage(kStats, wStats);
@@ -646,6 +648,53 @@ function renderReadingView() {
   const root = $('#reading');
   if (!current) return;
   renderReading(root, current.tokens, jlpt, showInfo, isKnown, readViewMode);
+  syncGrammarLayer();
+}
+
+// The grammar layer is offered only when the current text actually carries
+// morphology, which today means the precise tokenizer is on. Switching back to
+// the instant one leaves the checkbox ticked but disabled and the coloring off,
+// rather than silently losing the setting the reader chose.
+function syncGrammarLayer() {
+  const box = $('#grammar-layer');
+  const available = hasGrammar(current?.tokens);
+  box.disabled = !available;
+  $('#grammar-layer-label').title = available
+    ? 'Mark the particles and auxiliaries holding each sentence together'
+    : 'Needs the precise tokenizer — turn it on under the text box';
+  const on = available && box.checked;
+  $('#reading').classList.toggle('show-grammar', on);
+  $('#grammar-legend').hidden = !on;
+}
+
+// The payoff for the 18 MB precise tokenizer: what the text is made of
+// grammatically, beside the kanji profile that has always been here. Reports
+// its own absence rather than an empty chart — see grammarProfile().
+function renderGrammarProfile(profile) {
+  const host = $('#grammar-profile');
+  if (!profile.available) {
+    host.innerHTML = `<p class="hint">The instant tokenizer matches dictionary words but never analyses grammar. Turn on <b>precise tokenizer</b> under the text box and this fills in: parts of speech, the particles this text leans on, and every inflected word with its dictionary form.</p>`;
+    return;
+  }
+  const widest = Math.max(...profile.groups.map((group) => group.count), 1);
+  host.innerHTML = `
+    <div class="gp-bars">
+      ${profile.groups.map((group) => `
+        <div class="gp-row">
+          <span class="gp-name">${esc(group.label || group.pos)}<i lang="ja">${esc(group.pos)}</i></span>
+          <div class="gp-bar"><span class="gp-fill" style="width:${Math.round((group.count / widest) * 100)}%"></span></div>
+          <span class="gp-count">${group.count.toLocaleString()}${group.pct == null ? '' : ` · ${group.pct}%`}</span>
+        </div>`).join('')}
+    </div>
+    <p class="hint">${profile.total.toLocaleString()} analysed words, punctuation excluded from the percentages. Labels are the analyser's own IPADIC tags, not a grammar lesson.</p>
+    ${profile.particles.length ? `<div class="gp-group">
+      <span class="label">Particles this text leans on</span>
+      <div class="chips">${profile.particles.map((p) => `<span class="gp-chip" lang="ja">${esc(p.surface)}<i>${p.count}</i></span>`).join('')}</div>
+    </div>` : ''}
+    ${profile.conjugated.length ? `<div class="gp-group">
+      <span class="label">Inflected words and their dictionary forms</span>
+      <div class="chips">${profile.conjugated.map((c) => `<span class="gp-chip gp-lemma" lang="ja">${esc(c.surface)} ← <b>${esc(c.lemma)}</b>${c.count > 1 ? `<i>${c.count}</i>` : ''}</span>`).join('')}</div>
+    </div>` : ''}`;
 }
 
 async function copyReadingForm(kind) {
@@ -773,6 +822,28 @@ function setInfoSheet(open) {
   $('#info-scrim').classList.toggle('is-open', open);
 }
 
+// What the precise tokenizer knows about this exact token and the instant one
+// does not. Absent — not empty, not "unknown" — whenever there is no analysis:
+// the v1 segmenter matches dictionary strings and never claims a part of
+// speech, so the panel simply has one row fewer.
+function infoGrammarMarkup(index) {
+  const grammar = tokenGrammar(current?.tokens?.[index]);
+  if (!grammar) return '';
+  const name = grammar.label ? `${grammar.label} · ${grammar.pos}` : grammar.pos;
+  // grammar.detail (IPADIC's pos_detail_1) is deliberately not rendered. For a
+  // verb it is almost always 自立, which tells an English-speaking learner
+  // nothing; for a particle it is 格助詞 / 係助詞, which would need translating,
+  // and translating a subtype is where describing the tagset turns into
+  // teaching grammar. It stays available on the token for a later feature that
+  // has a real use for it.
+  return `<div class="info-grammar">
+    <span class="label">Grammar</span>
+    <p class="info-grammar-pos">${esc(name)}</p>
+    ${grammar.conjugated ? `<p class="info-grammar-lemma" lang="ja" aria-label="${esc(current.tokens[index].surface)} comes from ${esc(grammar.lemma)}">${esc(current.tokens[index].surface)} ← <b>${esc(grammar.lemma)}</b></p>` : ''}
+    ${grammar.conjugation ? `<p class="hint">Inflected form: ${esc(grammar.conjugation)} (the analyser's own label)</p>` : ''}
+  </div>`;
+}
+
 function showInfo(sel) {
   lastSel = sel;
   if (sel.type === 'kanji') {
@@ -799,6 +870,7 @@ function showInfo(sel) {
       <p class="hint">${sel.level == null
         ? 'Not in the vocab seed — segmented by script run, so no reading/meaning.'
         : 'Dictionary word, JLPT ' + levelName(sel.level) + '.'}</p>
+      ${infoGrammarMarkup(sel.index)}
       <div class="info-actions">${knownBtn(knownWords.has(sel.surface))}${saveBtn(deck.has(sel.surface))}</div>
       ${kanjiChars.length ? `<div class="info-kchars">
         <span class="label">Kanji in this word</span>
@@ -2595,6 +2667,8 @@ function showEmpty() {
   textJourney = null;
   textJourneySession = null;
   ['#readability', '#overview', '#kanji-dist'].forEach((s) => ($(s).innerHTML = ''));
+  renderGrammarProfile({ available: false });
+  syncGrammarLayer();
   $('#kanji-tbody').innerHTML = $('#word-tbody').innerHTML = '';
   $('#reading').innerHTML = `<div class="empty-state"><span class="e-icon">✍</span><div class="e-title">Paste Japanese text to begin</div></div>`;
   $('#info').innerHTML = infoHint();
@@ -2743,6 +2817,7 @@ function wireUi() {
   $('#flash-copy').addEventListener('click', () => exportFlashcards(false));
   $('#flash-download').addEventListener('click', () => exportFlashcards(true));
   $('#precise').addEventListener('change', onPreciseToggle);
+  $('#grammar-layer').addEventListener('change', syncGrammarLayer);
   $('#import-file').addEventListener('change', onImportFile);
   $('#kanji-search').addEventListener('input', () => {
     stopKanjiStudy();

@@ -30,6 +30,14 @@ function tokenKana(t) {
   return t.reading != null ? t.reading : t.surface;
 }
 
+// The token's part of speech, when the tokenizer produced one. This is what
+// the optional grammar layer colors by — nothing more is rendered from it, and
+// the instant tokenizer's tokens simply carry no attribute, so the layer has
+// nothing to light up rather than lighting up the wrong things.
+function posAttr(t) {
+  return t.pos ? ` data-pos="${esc(t.pos)}"` : '';
+}
+
 // `i` is the token's position in the list the caller rendered. It rides along
 // as data-i so a click can be traced back to the token, and from there to the
 // sentence it sits in (see context.js) — the reader is the only place that
@@ -38,11 +46,11 @@ function tokenKana(t) {
 // resolves to — the info panel always reflects the token's real data.
 function tokenHtml(t, jlpt, i, mode, romajiText) {
   if (t.kind === 'other') return esc(t.surface);
-  if (t.kind === 'kana') return `<span class="kana">${esc(mode === 'romaji' ? romajiText : t.surface)}</span>`;
+  if (t.kind === 'kana') return `<span class="kana"${posAttr(t)}>${esc(mode === 'romaji' ? romajiText : t.surface)}</span>`;
 
   if (t.kind === 'word') {
     const attrs =
-      `class="tok word" data-i="${i}" data-surface="${esc(t.surface)}" ` +
+      `class="tok word" data-i="${i}"${posAttr(t)} data-surface="${esc(t.surface)}" ` +
       `data-reading="${t.reading == null ? '' : esc(t.reading)}" ` +
       `data-gloss="${t.gloss == null ? '' : esc(t.gloss)}" ` +
       `data-level="${t.level == null ? '' : t.level}"`;
@@ -72,6 +80,12 @@ export function applyKnownClasses(container, isKnown = {}) {
   container.querySelectorAll('[data-k]').forEach((el) => {
     el.classList.toggle('is-known', knowsKanji(el.dataset.k));
   });
+}
+
+// True when this token list carries morphology at all — the caller uses it to
+// decide whether the grammar layer is offered, never to change the rendering.
+export function hasGrammar(tokens) {
+  return (tokens || []).some((t) => Boolean(t.pos));
 }
 
 // Render tokens into `container`. `onSelect` receives {type:'kanji'|'word', …}.

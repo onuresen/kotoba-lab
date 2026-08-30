@@ -7,6 +7,12 @@
 // swap between them with nothing else changing. This is exactly the seam the v1
 // tokenizer.js header promised.
 //
+// It also fills in the four OPTIONAL morphology fields the shared Token shape
+// allows (pos, posDetail, lemma, conjugation). Those are IPADIC's own labels,
+// carried through rather than interpreted; the v1 tokenizer leaves them null
+// and every consumer must treat "no analysis" as absent, never as wrong. See
+// js/grammar.js, which owns the only reading of these tags in the application.
+//
 // kuromoji loads a ~18MB dictionary once (async), so this is opt-in and lazy:
 // app.js keeps the instant dictionary segmenter as the default and only loads
 // this when the user asks for precision.
@@ -56,6 +62,9 @@ function mapTokens(raw, idx) {
     lemma: k.basic_form && k.basic_form !== '*' ? k.basic_form : k.surface_form,
     pos: k.pos,
     sub: k.pos_detail_1,
+    // IPADIC's 活用形 (e.g. 連用形, 基本形). Kept verbatim; nothing in this
+    // application translates it into a grammar rule.
+    conjugation: k.conjugated_form && k.conjugated_form !== '*' ? k.conjugated_form : null,
     kind: posToKind(k.pos),
   }));
 
@@ -68,12 +77,16 @@ function mapTokens(raw, idx) {
       prev.surface += it.surface;
       prev.reading = (prev.reading || '') + (it.reading || '') || null;
       prev.lemma = prev.surface;
+      // The merged surface is its own dictionary form, so whatever inflection
+      // either half carried no longer describes the compound.
+      prev.conjugation = null;
       continue;
     }
     if (prev && prev.pos === '接頭詞' && it.kind === 'word') {
       it.surface = prev.surface + it.surface;
       it.reading = (prev.reading || '') + (it.reading || '') || null;
       it.lemma = it.surface;
+      it.conjugation = null;
       merged[merged.length - 1] = it;
       continue;
     }
@@ -90,6 +103,10 @@ function mapTokens(raw, idx) {
       level: info ? info.lvl : null,
       gloss: info ? info.g : null,
       kind: m.kind,
+      pos: m.pos || null,
+      posDetail: m.sub && m.sub !== '*' ? m.sub : null,
+      lemma: m.lemma || null,
+      conjugation: m.conjugation,
     };
   });
 }

@@ -57,6 +57,11 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
   and drill into its decomposition using committed KanjiVG data. Each component
   also lists the words it appears in, so structure and vocabulary sit together.
+- **Writing practice:** draw the kanji back, stroke by stroke, on the same
+  KanjiVG grid. Order, direction, placement, and count are graded and explained
+  in words — *stroke 3 runs the other way: it starts at top left* — and shape
+  deliberately is not. An optional outline guide, a hint, undo, and restart;
+  works on any kanji or on a single component, and keeps nothing afterwards.
 - **Kanji Relationship Map:** explore explainable links through shared radicals,
   visual components, and dictionary readings; recenter on neighboring kanji,
   inspect the evidence, and move directly between the map and Radical Tree.
@@ -133,6 +138,12 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   decoding and common markup cleanup.
 - **Two tokenizers:** use the fast embedded-dictionary tokenizer or opt into the
   more precise vendored kuromoji tokenizer.
+- **Grammar, with the precise tokenizer on:** tap a word to see its dictionary
+  form (読ん ← 読む) and part of speech, mark the particles and auxiliaries
+  holding each sentence together, and read a grammar profile of the whole text
+  beside the kanji one. Every part of it reports its own absence on the instant
+  tokenizer instead of guessing, and it describes the analyser's labels rather
+  than teaching grammar rules.
 - **Installable and offline:** install Kotoba Lab to a phone home screen and open
   it with no connection. The application, dictionaries, and stroke data are
   stored locally after the first visit, so Radical Tree works offline whether or
@@ -159,9 +170,10 @@ A second exploration track, added 2026-08-30, is chosen from assets the
 repository already carries and does not spend — KanjiVG's stroke paths,
 kuromoji's discarded morphology, and the browser's own speech synthesis — and
 from the observation that the application is almost entirely a recognition
-trainer. Context-First Cards and Component Lookup shipped from it; a writing
-trainer, a grammar layer, placement, and a re-measurable bookshelf are parked
-there with their first experiments written down.
+trainer. Context-First Cards, Component Lookup, the Writing Lab, and the Grammar X-ray
+have shipped from it; placement, a re-measurable bookshelf, a daily kanji
+mystery, and a locally-spoken voice are parked there with their first
+experiments written down.
 
 ## Run locally
 
@@ -218,6 +230,8 @@ js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 js/kanji-atlas.js        bounded component constellation graph, layout, and UI
 js/kanji-alchemy.js      deterministic component recipes and session state
 js/component-lookup.js   transitive component index behind the Kanji picker
+js/writing.js            stroke-order grading: order, direction, count, never shape
+js/grammar.js            the only reader of the tokenizer's IPADIC tags
 assets/alchemy/           optimized backdrop and code-native SVG icon sprite
 js/backup.js             versioned full-profile export, inspection, and merge
 js/profile-dashboard.js  local data metrics and category-reset helpers

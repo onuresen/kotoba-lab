@@ -16,6 +16,15 @@
 //   level:   number | null,   // JLPT level 5..1 for matched words, else null
 //   gloss:   string | null,   // English meaning, only for dictionary-matched words
 //   kind:    'word' | 'kanji' | 'kana' | 'other'
+//
+//   // OPTIONAL morphology, present only when the tokenizer actually analysed
+//   // the text. This segmenter matches dictionary strings and cannot know any
+//   // of it, so it emits none — absent, never guessed. Consumers must render
+//   // nothing rather than something wrong; see js/grammar.js.
+//   pos?:         string | null,  // IPADIC part of speech, e.g. 動詞
+//   posDetail?:   string | null,  // IPADIC pos_detail_1, e.g. 格助詞
+//   lemma?:       string | null,  // dictionary form, e.g. 食べる for 食べた
+//   conjugation?: string | null,  // IPADIC 活用形, e.g. 連用タ接続
 // }
 
 import { charClass } from './script.js';

@@ -25,6 +25,7 @@ const JS_MODULES = Object.freeze([
   'js/context.js',
   'js/false-friends.js',
   'js/flashcards.js',
+  'js/grammar.js',
   'js/jlpt.js',
   'js/kanji-alchemy.js',
   'js/kanji-atlas.js',
@@ -53,6 +54,7 @@ const JS_MODULES = Object.freeze([
   'js/usage-journal.js',
   'js/usage-report.js',
   'js/word-browser.js',
+  'js/writing.js',
 ]);
 
 const SHELL_PATHS = Object.freeze([

@@ -2,6 +2,16 @@
 // drill-down history, and focus; the compact tree logic stays in kanjivg.js.
 
 import { createKanjiVG } from './kanjivg.js';
+import {
+  answerWritingStroke,
+  createWritingSession,
+  currentStroke,
+  explainStroke,
+  restartWritingSession,
+  revealWritingStroke,
+  undoWritingStroke,
+  writingProgress,
+} from './writing.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const DRAW_TOTAL_MS = 600;
@@ -61,10 +71,27 @@ function overlayMarkup() {
               <svg class="kt-svg" viewBox="0 0 109 109" aria-hidden="true"></svg>
             </div>
             <div class="kt-component-list" aria-label="Kanji components" hidden></div>
+            <!-- Writing practice shares the glyph's 109x109 KanjiVG box, so a
+                 drawn point needs no conversion beyond the screen CTM. It takes
+                 the glyph's place while practising (see .is-writing) and draws
+                 its own faint outline guide, rather than overlaying a stage
+                 whose strokes animate and explode independently. -->
+            <svg class="kt-trace" viewBox="0 0 109 109" hidden aria-label="Writing practice surface" role="application"></svg>
             <p class="kt-instruction hint"></p>
             <div class="kt-controls">
               <button type="button" class="btn btn-primary kt-explode">Separate components</button>
               <button type="button" class="btn btn-ghost kt-replay">Replay strokes</button>
+              <button type="button" class="btn btn-ghost kt-write">Practise writing</button>
+            </div>
+            <div class="kt-trace-tools" hidden>
+              <p class="kt-trace-verdict" role="status" aria-live="polite"></p>
+              <div class="kt-trace-bar"><span class="kt-trace-fill"></span></div>
+              <div class="kt-trace-actions">
+                <label class="check"><input type="checkbox" class="kt-trace-guide" checked> Outline guide</label>
+                <button type="button" class="btn btn-ghost kt-trace-hint">Show this stroke</button>
+                <button type="button" class="btn btn-ghost kt-trace-undo">Undo</button>
+                <button type="button" class="btn btn-ghost kt-trace-restart">Start over</button>
+              </div>
             </div>
           </div>
           <aside class="kt-info" aria-live="polite"></aside>
@@ -102,6 +129,12 @@ export function createKanjiTree({
   const closeButton = overlay.querySelector('.kt-close');
   const explodeButton = overlay.querySelector('.kt-explode');
   const replayButton = overlay.querySelector('.kt-replay');
+  const writeButton = overlay.querySelector('.kt-write');
+  const traceSvg = overlay.querySelector('.kt-trace');
+  const traceTools = overlay.querySelector('.kt-trace-tools');
+  const traceVerdict = overlay.querySelector('.kt-trace-verdict');
+  const traceFill = overlay.querySelector('.kt-trace-fill');
+  const traceGuide = overlay.querySelector('.kt-trace-guide');
   const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   let api = null;
@@ -110,6 +143,10 @@ export function createKanjiTree({
   let exploded = false;
   let openRequest = 0;
   let transitionTimer = null;
+  // Writing practice. Every one of these dies with the overlay: no storage key,
+  // no profile field, no journal event, nothing carried between kanji.
+  let writing = null;
+  let drawing = null;
 
   function setReducedMotion() {
     overlay.dataset.reducedMotion = String(motionQuery.matches);
@@ -134,6 +171,9 @@ export function createKanjiTree({
     if (!isOpen()) return;
     openRequest += 1;
     clearTimeout(transitionTimer);
+    writing = null;
+    drawing = null;
+    overlay.classList.remove('is-writing');
     overlay.hidden = true;
     body.hidden = true;
     status.textContent = '';
@@ -261,10 +301,172 @@ export function createKanjiTree({
     componentList.hidden = !exploded;
   }
 
+  // ---- writing practice -----------------------------------------------------
+  // The pure grading lives in writing.js; everything here is the surface it is
+  // graded from. A stroke is reduced to its two endpoints, taken straight off
+  // the real path with getPointAtLength() — exact, and no path parser needed.
+  function pathEndpoints(d) {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', d);
+    // Firefox and Safari need the element in a rendered tree before
+    // getPointAtLength() will answer, so it is measured inside the live SVG.
+    traceSvg.appendChild(path);
+    let points = null;
+    try {
+      const length = path.getTotalLength();
+      const start = path.getPointAtLength(0);
+      const end = path.getPointAtLength(length);
+      points = { start: { x: start.x, y: start.y }, end: { x: end.x, y: end.y }, d };
+    } catch {
+      points = null;
+    }
+    path.remove();
+    return points;
+  }
+
+  function traceElement(tag, className, attrs = {}) {
+    const element = document.createElementNS(SVG_NS, tag);
+    element.classList.add(className);
+    for (const [name, value] of Object.entries(attrs)) element.setAttribute(name, value);
+    return element;
+  }
+
+  // Redraws the practice surface from the session alone, so undo, restart, and
+  // a correct stroke all go through exactly one code path.
+  function renderTrace() {
+    traceSvg.replaceChildren();
+    if (!writing) return;
+    if (traceGuide.checked) {
+      for (const stroke of writing.strokes) {
+        traceSvg.appendChild(traceElement('path', 'kt-trace-guide-stroke', { d: stroke.d }));
+      }
+    }
+    // Strokes already earned, drawn as the real thing: the reward for getting
+    // the order right is watching the actual kanji assemble itself.
+    writing.strokes.slice(0, writing.index).forEach((stroke) => {
+      traceSvg.appendChild(traceElement('path', 'kt-trace-done', { d: stroke.d }));
+    });
+
+    const progress = writingProgress(writing);
+    traceFill.style.width = `${progress.pct}%`;
+    traceSvg.dataset.state = progress.complete ? 'complete' : 'drawing';
+    overlay.querySelector('.kt-trace-hint').disabled = progress.complete;
+    overlay.querySelector('.kt-trace-undo').disabled = writing.index === 0;
+    if (progress.complete) {
+      traceVerdict.textContent = progress.clean
+        ? `All ${progress.total} strokes, in order, first time.`
+        : `Done — ${progress.total} strokes, ${progress.misses} miss${progress.misses === 1 ? '' : 'es'}${progress.hints ? `, ${progress.hints} shown` : ''}.`;
+      traceVerdict.dataset.tone = progress.clean ? 'good' : 'plain';
+    }
+    instruction.textContent = progress.complete
+      ? 'Start over to write it again, or leave practice to keep exploring.'
+      : `Draw stroke ${progress.current} of ${progress.total}.`;
+  }
+
+  function setWriting(on) {
+    const node = currentNode();
+    if (on && !node) return;
+    if (on) {
+      setExploded(false);
+      const strokes = api.strokesOf(node).map(pathEndpoints).filter(Boolean);
+      writing = createWritingSession(strokes, { element: node.element });
+      if (!writing) { onError('KanjiVG has no strokes to practise for this character.'); return; }
+      traceVerdict.textContent = '';
+      traceVerdict.dataset.tone = 'plain';
+    } else {
+      writing = null;
+      drawing = null;
+    }
+    overlay.classList.toggle('is-writing', Boolean(writing));
+    // toggleAttribute, not .hidden: `hidden` is an HTMLElement property, and
+    // this is an SVGElement — assigning to it sets a JS expando and leaves the
+    // attribute (and so the element) exactly where it was.
+    traceSvg.toggleAttribute('hidden', !writing);
+    traceTools.hidden = !writing;
+    componentList.hidden = true;
+    explodeButton.disabled = Boolean(writing) || !node || node.children.length === 0;
+    replayButton.disabled = Boolean(writing);
+    writeButton.textContent = writing ? 'Leave practice' : 'Practise writing';
+    if (writing) renderTrace();
+    else renderNode(node, { draw: false });
+  }
+
+  // Client coordinates → the 109x109 box the strokes are stated in. The CTM
+  // handles every scale, and works the same on a phone as on a desktop.
+  function tracePoint(event) {
+    const ctm = traceSvg.getScreenCTM();
+    if (!ctm) return null;
+    const point = traceSvg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    const local = point.matrixTransform(ctm.inverse());
+    return { x: local.x, y: local.y };
+  }
+
+  function beginDrawing(event) {
+    if (!writing || writingProgress(writing).complete) return;
+    const point = tracePoint(event);
+    if (!point) return;
+    event.preventDefault();
+    traceSvg.setPointerCapture?.(event.pointerId);
+    const ink = traceElement('polyline', 'kt-trace-ink', { points: `${point.x},${point.y}` });
+    traceSvg.appendChild(ink);
+    drawing = { ink, start: point, last: point, points: [point] };
+  }
+
+  function extendDrawing(event) {
+    if (!drawing) return;
+    const point = tracePoint(event);
+    if (!point) return;
+    event.preventDefault();
+    drawing.points.push(point);
+    drawing.last = point;
+    drawing.ink.setAttribute('points', drawing.points.map((p) => `${p.x},${p.y}`).join(' '));
+  }
+
+  function endDrawing(event) {
+    if (!drawing) return;
+    const current = drawing;
+    drawing = null;
+    traceSvg.releasePointerCapture?.(event.pointerId);
+    current.ink.remove();
+    // A tap is not a stroke. Without this every stray touch would be graded,
+    // and almost every one of them would be a miss the learner did not make.
+    const travelled = Math.hypot(current.last.x - current.start.x, current.last.y - current.start.y);
+    if (travelled < 3) return;
+
+    const order = writing.index + 1;
+    const { session, verdict } = answerWritingStroke(writing, { start: current.start, end: current.last });
+    writing = session;
+    traceVerdict.textContent = explainStroke(verdict, order);
+    traceVerdict.dataset.tone = verdict?.ok ? 'good' : 'warn';
+    renderTrace();
+    if (!verdict?.ok) {
+      // The rejected stroke stays visible for a moment as its own evidence —
+      // "this is what you drew" beside a sentence saying what was expected.
+      const ghost = traceElement('polyline', 'kt-trace-miss', {
+        points: current.points.map((p) => `${p.x},${p.y}`).join(' '),
+      });
+      traceSvg.appendChild(ghost);
+      setTimeout(() => ghost.remove(), motionQuery.matches ? 1600 : 1200);
+    }
+  }
+
   function renderNode(node, { draw = true } = {}) {
     clearTimeout(transitionTimer);
     overlay.classList.remove('is-exploded');
     exploded = false;
+    // Drilling into a component, going back, or opening another kanji all mean
+    // a different set of strokes, so a practice session never survives them.
+    if (writing) {
+      writing = null;
+      drawing = null;
+      overlay.classList.remove('is-writing');
+      traceSvg.toggleAttribute('hidden', true);
+      traceTools.hidden = true;
+      writeButton.textContent = 'Practise writing';
+      replayButton.disabled = false;
+    }
     svg.replaceChildren();
     title.textContent = `${node.element} — decomposition`;
     backButton.hidden = stack.length < 2;
@@ -328,6 +530,7 @@ export function createKanjiTree({
     glyph.setAttribute('role', atomic ? 'img' : 'button');
     glyph.tabIndex = atomic ? -1 : 0;
     glyph.setAttribute('aria-label', atomic ? `Atomic kanji ${node.element}` : 'Separate kanji components');
+    writeButton.hidden = api.strokesOf(node).length === 0;
     body.hidden = false;
     status.textContent = '';
     if (draw) requestAnimationFrame(animateStrokes);
@@ -342,6 +545,9 @@ export function createKanjiTree({
     backButton.hidden = true;
     explodeButton.disabled = true;
     replayButton.disabled = true;
+    writeButton.hidden = true;
+    traceSvg.toggleAttribute('hidden', true);
+    traceTools.hidden = true;
     glyph.removeAttribute('role');
     glyph.tabIndex = -1;
     instruction.textContent = 'No KanjiVG drawing or decomposition is available.';
@@ -400,6 +606,31 @@ export function createKanjiTree({
     if (event.target.closest('.kt-close')) { close(); return; }
     if (event.target.closest('.kt-back')) { back(); return; }
     if (event.target.closest('.kt-replay')) { animateStrokes(); return; }
+    if (event.target.closest('.kt-write')) { setWriting(!writing); return; }
+    if (event.target.closest('.kt-trace-hint')) {
+      if (!writing) return;
+      const order = writing.index + 1;
+      writing = revealWritingStroke(writing);
+      traceVerdict.textContent = `Stroke ${order} shown — it counts as a hint, not a miss.`;
+      traceVerdict.dataset.tone = 'plain';
+      renderTrace();
+      return;
+    }
+    if (event.target.closest('.kt-trace-undo')) {
+      if (!writing) return;
+      writing = undoWritingStroke(writing);
+      traceVerdict.textContent = '';
+      renderTrace();
+      return;
+    }
+    if (event.target.closest('.kt-trace-restart')) {
+      if (!writing) return;
+      writing = restartWritingSession(writing);
+      traceVerdict.textContent = '';
+      traceVerdict.dataset.tone = 'plain';
+      renderTrace();
+      return;
+    }
     if (event.target.closest('.kt-known')) {
       const node = currentNode();
       if (node && kanjiInfo?.(node.element) && typeof toggleKnown === 'function') {
@@ -428,12 +659,24 @@ export function createKanjiTree({
       return;
     }
     if (event.target.closest('.kt-explode')) { setExploded(!exploded); return; }
+    // Component drill-down is off while practising: the strokes on screen are
+    // the ones being graded, so changing them mid-session would be incoherent.
+    if (writing) return;
     const componentButton = event.target.closest('.kt-component-open');
     if (componentButton) { drill(Number(componentButton.dataset.componentIndex)); return; }
     const component = event.target.closest('.kt-component');
     if (component) { drill(Number(component.dataset.componentIndex)); return; }
     if (event.target.closest('.kt-glyph') && !exploded) setExploded(true);
   });
+
+  traceGuide.addEventListener('change', renderTrace);
+  traceSvg.addEventListener('pointerdown', beginDrawing);
+  traceSvg.addEventListener('pointermove', extendDrawing);
+  traceSvg.addEventListener('pointerup', endDrawing);
+  traceSvg.addEventListener('pointercancel', endDrawing);
+  // A pointer that leaves the surface mid-stroke still ends it, or the drawn
+  // line would silently keep collecting points on the way back in.
+  traceSvg.addEventListener('pointerleave', endDrawing);
 
   overlay.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') { event.preventDefault(); close(); return; }

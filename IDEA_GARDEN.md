@@ -216,8 +216,8 @@ first track, status is authoritative.
 |---|---|---|
 | Context-First Cards | ✓ Shipped in v10.43.0 | Whether cloze deserves its own scheduling, or stays a viewing direction |
 | Component Lookup | ✓ Shipped in v10.43.0 | Whether the picker belongs anywhere outside the Kanji tab |
-| Writing Lab | Parked idea | Decide how much of a stroke is graded before it becomes a shape judgment |
-| Grammar X-ray | Parked idea | Decide whether the Token shape may grow nullable morphology fields |
+| Writing Lab | ✓ Shipped in v10.44.0 | Whether practice belongs anywhere outside the Radical Tree overlay |
+| Grammar X-ray | ✓ Shipped in v10.44.0 | Whether the conjugation label is worth translating, and by what authority |
 | Placement | Parked idea | Decide whether a seeded known set is honest enough to write |
 | Bookshelf | Parked idea | The only seed here that needs a new storage key — decide if re-measurement earns it |
 | Daily Kanji Mystery | Parked idea | Decide whether a shareable score fits an app that has stayed calm |
@@ -271,15 +271,24 @@ does offline.
 This is the largest gap in Kotoba Lab: the whole application is recognition,
 and production is where recognition is revealed to be shallower than it felt.
 
-First experiment: one Trace button inside the existing Radical Tree overlay,
-session-only, no score and no storage key, grading **only stroke order,
-direction, and count** — never shape similarity, which is exactly the
-subjective judgment the rest of this app refuses to make. If order-only
-feedback already feels useful, that is the answer; if it only feels useful
-with shape scoring, the idea needs a real source, not a heuristic.
+Implemented in v10.44.0 as a "Practise writing" mode inside the Radical Tree
+overlay, exactly as the first experiment described: session-only, no score and
+no storage key, grading only order, direction, placement, and count. The
+endpoint-only design is what keeps the shape promise literal rather than
+merely stated — see the AGENTS.md conventions for why a wrong stroke never
+advances and why reversal is checked before placement.
 
-A nearly free companion: a print stylesheet that lays the current family out
-as 原稿用紙 practice squares. Print CSS only, no PDF dependency.
+The open question the experiment was meant to answer is now a different one.
+Order-only feedback does feel useful, so the idea survives; what is undecided
+is *where* it belongs. Practice currently exists only where a learner has
+already navigated to one kanji, which is the wrong place to build a habit —
+but giving it a tab would fail this file's own first selection principle.
+Candidates worth watching real use for: a Review card that asks you to write
+the word instead of recall it, and the family-study workspace, which already
+walks a set of kanji one at a time. Deliberately not built on theory.
+
+Still parked, and still nearly free: a print stylesheet laying the current
+family out as 原稿用紙 practice squares. Print CSS only, no PDF dependency.
 
 ### Grammar X-ray
 
@@ -293,12 +302,22 @@ particles beside the kanji profile it already draws.
 Conjugation is where intermediate readers actually stall, and the app is
 currently silent about it.
 
-First experiment: the tap-to-inspect panel shows the lemma and the MeCab tag
-for one conjugated token, and nothing else changes. Everything must degrade to
-absent — not wrong — on the v1 tokenizer, which turns the 18 MB precise
-tokenizer from a chore into an unlock: switch on precision and the text grows
-a grammar layer. Describe the dictionary's tags; never state a grammar rule
-the dictionary does not contain.
+Implemented in v10.44.0, and deliberately wider than the first experiment
+written here, which was the inspect panel alone. The plumbing — four optional
+Token fields and one pure module that owns every reading of them — is the
+whole cost; once it existed, the particle layer and the Analyze profile were
+each a renderer over the same function, and holding them back would have left
+the "switch on precision and the text grows a grammar layer" promise unkept
+while still paying for the change. Recorded as a widening rather than hidden:
+the bounded-experiment principle is about validating a direction cheaply, and
+this direction was validated by the plumbing, not by the panel.
+
+The rule the module exists to keep held throughout: it reports IPADIC's
+labels, and `conjugated` is a comparison with the analyser's own lemma rather
+than a claim about tense. Remaining decision: the inflection label is shown
+verbatim (連用タ接続) because translating it is where describing a tagset turns
+into teaching grammar. If that is worth doing later it needs a source with
+authority — a cited reference grammar — not a hand-written mapping.
 
 ### Placement
 

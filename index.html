@@ -167,6 +167,11 @@
       <div id="coverage"></div>
     </div>
 
+    <section class="card" id="grammar-profile-card">
+      <div class="ui-section-header"><span class="ui-section-title">Grammar profile</span><span class="ui-section-line"></span></div>
+      <div id="grammar-profile"></div>
+    </section>
+
     <section class="card text-journey" id="text-journey" aria-live="polite">
       <div class="ui-section-header"><span class="ui-section-title">Text-to-Study Journey</span><span class="ui-section-line"></span></div>
       <div id="text-journey-content"><p class="hint">Paste Japanese text to build a personal study route.</p></div>
@@ -215,6 +220,10 @@
     <div class="read-toolbar card">
       <label class="check"><input type="checkbox" id="furigana" checked> Furigana</label>
       <label class="check"><input type="checkbox" id="furigana-hide-known"> Hide furigana for known words</label>
+      <!-- Only enabled once a tokenizer that actually analyses grammar has run;
+           the instant segmenter emits no part of speech, so there is nothing
+           honest to color. See js/grammar.js. -->
+      <label class="check" id="grammar-layer-label" title="Needs the precise tokenizer — turn it on under the text box"><input type="checkbox" id="grammar-layer" disabled> Grammar layer</label>
       <label class="label inline">View
         <select id="read-view" class="select">
           <option value="original" selected>Original + furigana</option>
@@ -225,6 +234,14 @@
       <div class="read-copy">
         <button type="button" id="copy-kana" class="btn btn-ghost">Copy furigana</button>
         <button type="button" id="copy-romaji" class="btn btn-ghost">Copy romaji</button>
+      </div>
+      <!-- Deliberately two entries, not a hue per part of speech: red already
+           means "unknown / hard" here and the JLPT ramp owns difficulty, so the
+           layer marks the function words holding a sentence together and leaves
+           every content word in the reader's existing colors. -->
+      <div class="legend" id="grammar-legend" hidden>
+        <span class="lg"><i class="sw sw-pos" data-pos="助詞"></i>particle</span>
+        <span class="lg"><i class="sw sw-pos" data-pos="助動詞"></i>auxiliary</span>
       </div>
       <div class="legend">
         <span class="lg"><i class="sw jlpt-n5"></i>N5</span>
