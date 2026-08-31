@@ -167,19 +167,18 @@ unavailable.
 ## Future idea garden
 
 The project keeps its imaginative long-term directions in
-[IDEA_GARDEN.md](IDEA_GARDEN.md). Radical Alchemy and Kanji Constellation Atlas
-have completed their bounded A–C and A–D experiments. Kanji Genealogy and
-Japanese Detective Board remain parked ideas rather than release promises;
-future work should follow observed study use instead of their original order.
+[IDEA_GARDEN.md](IDEA_GARDEN.md), reorganised on 2026-08-31 by **what brings
+someone to the application** rather than by when each idea was had: keeping what
+you love, the study loop, exploring without a goal, looking back, and a section
+for directions blocked on source material this project does not hold. Parked
+entries carry their first bounded experiment and the decision still open;
+nothing in the file is a release promise.
 
-A second exploration track, added 2026-08-30, is chosen from assets the
-repository already carries and does not spend — KanjiVG's stroke paths,
-kuromoji's discarded morphology, and the browser's own speech synthesis — and
-from the observation that the application is almost entirely a recognition
-trainer. Context-First Cards, Component Lookup, the Writing Lab, the Grammar X-ray, and
-the Daily Mystery have shipped from it; placement, a re-measurable bookshelf,
-a locally-spoken voice, typed readings, and a spot check for long-ago known
-kanji are parked there with their first experiments written down.
+The first section is the emptiest, and that is the finding. Every mark the
+application currently lets you make is a progress mark — *known*, *saved*,
+graded, counted — and there is no way to say simply "I like this one". A
+favourite that is deliberately not a progress mark, a shelf to browse it in,
+and a kanji card worth keeping are parked there.
 
 ## Run locally
 

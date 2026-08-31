@@ -1,455 +1,407 @@
 # Kotoba Lab Idea Garden
 
-This is a durable parking place for imaginative directions that should be
-considered gradually, not a promise to build all of them. Each idea should earn
-its place through a small experiment and real study use.
+A durable parking place for directions worth considering gradually — not a
+promise to build them. Each one should earn its place through a small
+experiment and real use.
 
-## First exploration track
+## How this file is organised
 
-These four directions were selected as the strongest personal favorites on
-2026-08-14. The order below is the recommended implementation sequence, based
-on shared foundations and increasing scope. Actual exploration did not follow
-that order: the Atlas was validated before Alchemy. Status, not list position,
-is authoritative.
+It used to be organised by *when an idea was had*: a first exploration track, a
+pile of loose seeds, then a second track. That made it an archaeological dig —
+to find out whether something was still open you had to read three sections and
+cross-reference the version history.
 
-| Direction | Current status | Remaining decision |
-|---|---|---|
-| Radical Alchemy | ✓ Bounded Groups A–C complete in v10.20.0 | Observe real study use before adding recipes or persistence |
-| Kanji Genealogy | Parked idea | Define a directed component → kanji → word → sentence experiment |
-| Japanese Detective Board | Parked idea | Test whether a freeform evidence canvas improves study rather than adding novelty |
-| Kanji Constellation Atlas | ✓ Bounded Groups A–D complete in v10.15.0 | Refine only from navigation, density, or practice friction |
+Reorganised on 2026-08-31 by **what brings someone to the application**,
+because that is the question an idea has to answer before anything else. The
+order of the sections is deliberate: the first one is the emptiest, and that is
+the finding.
 
-### 1. Radical Alchemy
+Implementation records for what shipped are NOT kept here. They live in
+`AGENTS.md`, in the release backlog and the per-feature conventions sections;
+this file keeps what an idea is *for* and what is still undecided about it.
 
-Combine components to discover kanji, choose a missing component, reverse a
-kanji into ingredients, or follow short alchemy chains. This is the smallest
-high-impact experiment because it can reuse Radical Tree decomposition,
-component coloring, KanjiVG, and existing family-study interactions.
+---
 
-First experiment: one daily five-question `component + component → kanji`
-challenge with explainable answers and direct Radical Tree handoff.
+## A. Keeping what you love
 
-Group A is implemented in v10.18.0 as a doorway inside the Kanji library. The
-date-seeded Today’s Brew selects one unambiguous direct-component formula from
-each JLPT level, offers four kanji choices, and explains every reveal from the
-committed compact KanjiVG index. The alchemy circle and ingredient vessels are
-code-native, responsive, and reduced-motion safe. Scores and position remain
-session-only, the full stroke artifact stays lazy until Radical Tree opens,
-and the wording describes visual structure rather than historical etymology.
+**Everything in Kotoba Lab currently assumes you are studying.** Every mark it
+lets you make is a progress mark: *known* means "I have learned this", *saved*
+means "make me practise this", the deck schedules, the review grades, the
+achievements count. There is no way to say **"I like this one"** — and no
+reason to open the application on a day you do not want to be improved.
 
-Group B is implemented in v10.19.0 as the Alchemical Visual Identity layer.
-An original text-free laboratory illustration is committed as a 78 KB WebP;
-functional flasks, crucible, formula book, seal, spark, and transmutation
-circle remain a crisp code-native SVG sprite. Ingredient bubbles, vessel pours,
-ink bloom, seal stamping, and completion sparkle add restrained feedback while
-the reduced-motion path is completely still. No meaning, component, kanji, or
-control is baked into the generated backdrop.
+That is the gap this section exists for, and it is close to empty because the
+idea only arrived on 2026-08-31. It is listed first because a tool you visit
+out of affection gets visited far more often than one you visit out of duty,
+and everything else in this file benefits from that.
 
-Group C is implemented in v10.20.0 as Expanded Recipe Studies. Missing
-Ingredient asks for one concealed direct component, Reverse Brewing asks for
-the complete two-component formula, and Transformation Chain follows a result
-only when that kanji becomes a direct ingredient in the next verified recipe.
-All modes support an unknown-only target filter, answer-level known controls,
-and the same explicit KanjiVG evidence. A session-only recipe trail can open as
-an ordinary temporary reveal-card study pass; it disappears when the learner
-leaves and adds no score, streak, storage key, or profile field.
+The shape to avoid is the one the app already has in one place: the
+Achievements tab carries XP, eight levels, and streaks, added by explicit owner
+sign-off that reversed this file's original "no points, levels, or streak
+pressure" rule (the reasoning both ways is kept in `AGENTS.md`'s Vocabulary
+conventions). Nothing in this section should reach for those. The distinction
+worth holding onto:
 
-### 2. Kanji Genealogy
+> **A collection has no bottom; a checklist does.** A shelf you add to is never
+> behind. A percentage complete always is.
 
-Show an explainable lineage from component → kanji → word → sentence, with
-reading branches and visible exceptions. This is different from the
-Relationship Map: it is a directed learning path rather than a neighborhood.
+So: collection over completion, discovery over score, presence over streak, and
+nothing that can accumulate into a number you could fall short of.
 
-First experiment: choose one direct component and render a bounded three-level
-lineage using existing dictionary and current-text data. Avoid etymology claims;
-the view describes dataset structure and usage evidence only.
+### Favourites — a mark that is not a progress mark
 
-### 3. Japanese Detective Board
+One star, on any kanji or any word, meaning *I like this* — kept completely
+apart from known-state and from the review deck. A kanji you cannot read yet
+can be a favourite. A word you know perfectly well can be a favourite. Nothing
+schedules it, nothing counts it, nothing asks about it later.
 
-Create a freeform investigation canvas where kanji, words, readings,
-components, sentences, and relationship clusters can be pinned. Kotoba Lab
-draws explainable links between the pinned evidence.
+This is the keystone of the whole section: a shelf, a keepsake card, and a
+personal note all need somewhere to hang, and this is it.
 
-First experiment: an ephemeral board with moveable kanji cards and automatic
-relationship connectors. Decide on persistence only after the interaction is
-useful; do not add a storage key merely to preserve a prototype.
+Cheap, too. `createKnownSet(key)` in `js/storage.js` is already generic by key
+and is what backs both known-kanji and known-words, so favourites are the same
+primitive with a different name — plus the backup format, the local-data
+dashboard, and the category reset, all of which already treat known sets as a
+kind.
 
-### 4. Kanji Constellation Atlas
+First experiment: the star on the Read info panel and the Kanji card only, and
+a count somewhere quiet. Do NOT surface it in coverage, achievements, or the
+friction radar — the moment a favourite affects a number it has become a
+progress mark again, which is the one thing it must not be.
 
-Turn the relationship network into an explorable knowledge sky: kanji become
-stars, components become constellations, readings become routes, known kanji
-illuminate explored space, and unfamiliar regions remain quiet or misty.
+Open question before writing anything: whether favourites belong in profile
+backups. They are personal in a way known-state is not — closer to a diary
+entry than to a study record — but losing them on a browser reset would hurt
+more than losing a known list that can be re-derived by studying.
 
-First experiment: a single bounded constellation generated from one selected
-component, with known-state lighting and a doorway back to Relations. Build the
-full atlas only after navigation, density, and phone performance feel good.
+### The Shelf
 
-Group A is implemented in v10.12.0 as an experimental third Relations view.
-It uses one direct component from the selected root, caps the visible family at
-24 deterministic stars, illuminates the existing known-kanji state, and lets a
-star return to its ordinary neighborhood. Component choice and Atlas position
-remain ephemeral; no new profile or storage format was added.
+Where favourites live: a place to browse what you kept, arranged so it reads as
+a collection rather than a list. Sortable by when you kept it, by stroke count,
+by level — never by "progress".
 
-Group B is implemented in v10.13.0 as the exploration layer. A star now opens
-an in-Atlas dictionary panel with readings, level, strokes, component evidence,
-and known-state illumination. Explicit actions can make it the new Atlas root,
-open its ordinary Relations neighborhood, or enter Radical Tree; tapping the
-star itself no longer throws the learner out of the sky. The phone version uses
-a compact sticky detail card above the touch-pannable constellation.
+The thing to get right is the absence of a target. No "12 of 100", no next
+milestone, no empty slots implying what should fill them. The Achievements tab
+deliberately renders locked badges greyed out; this must do the opposite and
+show only what is there.
 
-Group C is implemented in v10.14.0 as the living-sky layer. The selected
-component keeps its solid spokes while bounded dashed on’yomi and kun’yomi
-routes reveal reading families among visible stars. A route toggle and
-session-only 80–120% zoom support different densities on desktop and phone.
-Small route-travel, center-breathing, and known-star-twinkle cues add life
-without moving the deterministic star layout, and all motion is disabled for
-reduced-motion preferences. The Atlas still adds no profile or storage field.
+First experiment: reuse the Kanji library's existing card grid with the
+favourites set as its filter, before designing anything bespoke. If a plain
+filtered grid already feels good to browse, the shelf metaphor is decoration;
+if it feels like a search result, that is the evidence that it needs its own
+form.
 
-Group D is implemented in v10.15.0 as the study loop. Unknown visible stars can
-open as a temporary constellation study session with an explicit route back to
-the same Atlas. Every visible star can also be exported through the existing
-private-data-free study-pack format. Small, unscored challenges ask for the
-shared direct component or an exact dictionary-reading exception and explain
-the evidence after each choice. The opt-in journal adds only fixed
-`atlas.open` and `study.atlas` counts, allowing the existing friction radar and
-aggregate report to recognize exploration-to-practice handoffs without storing
-kanji, components, readings, choices, or a new profile field.
+### A kanji that finds you
 
-## Remaining creative seeds
+One button: *show me something*. It draws one kanji, stroke by stroke, with its
+meaning and one word it appears in — and then nothing. No question, no answer,
+no grading, no next. The calmest interaction the application could contain, and
+close to free: Radical Tree already animates strokes, and Relations already has
+a **Surprise me** discovery seed to model the selection on.
 
-Kanji Genealogy and Japanese Detective Board above remain the two unfinished
-directions from the selected first track. The additional seeds below are also
-parked until real usage evidence identifies a study problem worth solving,
-except Kanji Mystery Casebook (shipped as the Daily Mystery, v10.45.0) and
-The False-Friend Museum, whose first bounded exhibit type shipped
-directly by owner request rather than from observed friction — see its own
-entry for what that covers and what is still parked.
+The difference from that existing button is the intent. "Surprise me" in
+Relations is a study entry point — it hands you a neighbourhood to explore.
+This hands you nothing to do.
 
-### Kanji Mystery Casebook
+First experiment: on the Kanji tab beside the Daily Mystery, sharing its
+collapsed-strip shape. Watch whether it gets pressed twice in a row — that is
+the whole signal. A thing pressed once out of curiosity and never again is a
+novelty; a thing pressed repeatedly is a mood the application should serve.
 
-Identify a hidden kanji from structural, reading, stroke, JLPT, and vocabulary
-clues by investigating through Relations and Radical Tree.
+### A card you can keep
 
-Shipped in v10.45.0, narrowed into a daily with an ending — see **Daily Kanji
-Mystery** in the second exploration track below, which is this seed rather
-than a separate idea. What is still unbuilt here is the *casebook* half: the
-investigation happening across Relations and Radical Tree rather than inside
-one card. Parked until the daily shows whether anyone wants to investigate
-rather than simply guess.
+Export one kanji as an image worth keeping — a phone wallpaper, something to
+send to someone, something to print. Stroke paths, meaning, readings, laid out
+properly.
 
-### Parallel Text Portal
+This is the most literal reading of "useful while not studying": the
+application produces an artefact that leaves it. Everything Kotoba Lab exports
+today (Anki TSV, study packs, profile backups, the usage report) is a data
+file. Nothing it makes is nice to look at.
 
-Compare carefully authored versions of the same scene across simple,
-conversational, literary, formal, and newspaper-like Japanese.
+Feasible with what is already committed: KanjiVG paths render as SVG, and
+`<canvas>` can rasterise an SVG to PNG in-browser with no dependency and no
+service.
 
-### The False-Friend Museum
+First experiment: one kanji, one layout, PNG download, from the Radical Tree
+overlay where the strokes already are. Deliberately not a template gallery —
+one good card beats five configurable ones.
 
-Curate similar-looking kanji, deceptive shared components, homophones, and
-near-synonym traps as returning comparison exhibits.
+### Why I kept it
 
-The homophones exhibit is implemented in v10.41.0 as a card in the Words tab:
-groups of committed multi-character vocabulary sharing one dictionary reading
-but not one meaning (取る・執る・捕る・採る, all とる), with a meaning-matching
-quiz and the shared word-row shape (known/save) for every member. Similar-
-looking kanji is not a separate exhibit here — it is already the existing
-Kanji Contrast Lab's shared-component sets. Deceptive shared components and
-near-synonym traps remain parked: both would require inventing a visual- or
-semantic-closeness judgment the rest of this app deliberately never makes,
-so they need a source of real evidence, not just a bounded scope, before
-they can follow the same pattern.
+A short personal note attached to a favourite. *Saw this on a shop sign in
+Kawasaki.* *Like the way it is built.* *My name has this in it.*
+
+This is the idea that turns the application from a record of your performance
+into a record of your relationship with the language, which is a different and
+longer-lived thing. It is also the heaviest item in this section: free text
+means real storage, a real backup-format decision, and a real privacy question
+that the rest of the app has never had to ask, since it has never stored a
+sentence the user wrote themselves.
+
+Parked deliberately behind Favourites and the Shelf. If nobody stars anything,
+this never matters; if the shelf fills up, this is what makes it worth
+revisiting.
+
+### Ambient strokes
+
+The Radical Tree animation, unattended: kanji drawn one after another, slowly,
+with nothing to do. A screensaver made of the data already committed.
+
+The smallest idea here and the least justified — listed because it costs almost
+nothing and because "calm" is a claim this project keeps making and has not yet
+built anything that is purely calm. If it is built, it should be reachable and
+forgettable, never a tab.
+
+---
+
+## B. In the study loop
+
+Deliberate practice: the part of the application that already works, and where
+the remaining ideas are refinements rather than new territory.
+
+### Placement
+
+A new profile has zero known kanji, which leaves unlock feedback, readable
+compounds, personal coverage, the Words tab's own reason to exist, and most of
+Achievements rendering empty — the best ideas in the application are invisible
+at exactly the moment someone decides whether to keep it.
+
+First experiment: roughly fifteen questions binary-searching the JLPT bands
+(*do you know this one?* → reveal → yes/no), producing a **proposed** known set
+shown as an editable preview before anything is written, through the same
+inspect-then-commit shape the backup importer already uses. A cheaper sibling
+worth doing first: paste a list from WaniKani, RTK, or an Anki export into that
+same preview.
+
+The honesty question comes before the code: a seeded known set is an estimate,
+and every coverage number downstream will treat it as fact. Decide whether the
+estimate is marked as one, and for how long.
+
+Worth being clear about the audience: this is the highest-leverage change in
+the file for a *new* user and does nothing for an existing one. It matters when
+this stops being a tool for one person.
+
+### Type the Reading
+
+An optional typed answer in Review: type the kana, checked exactly against the
+stored dictionary reading. Recall beats recognition, it is fully deterministic,
+and it needs no new data. The smallest genuinely useful thing left in this
+section.
+
+First experiment: exact match only, pass/fail, no near-miss note. A "one mora
+off" message sounds friendly and is a similarity judgment in disguise; if it is
+wanted later, define it as an explicit rule (one kana substitution, or a
+long-vowel or sokuon difference) rather than a distance score.
+
+### Old known kanji
+
+Known-state is permanent and never revisited, which quietly inflates every
+coverage number the application reports. Decay would answer that and is against
+this project's grain — it is guilt with a timer.
+
+First experiment: an opt-in spot check offering five kanji marked known 90 or
+more days ago that have not appeared since, framed the way `js/study-weather.js`
+frames a backlog — *a little haze over the old district* — and reusing
+`js/srs.js` without giving kanji a permanent schedule. If it cannot be framed
+without implying failure, it should not be built.
+
+### Kanji Genealogy
+
+An explainable lineage from component → kanji → word → sentence, with reading
+branches and visible exceptions. Different from the Relationship Map: a
+directed learning path rather than a neighbourhood.
+
+First experiment: one direct component, a bounded three-level lineage from
+existing dictionary and current-text data. Avoid etymology claims; the view
+describes dataset structure and usage evidence only.
+
+Now overlaps more than it did when it was written: Component Lookup walks the
+component→kanji edge, the Words tab walks kanji→word, and Context-First Cards
+walk word→sentence. What is left that is genuinely new is the *path* — seeing
+all four levels at once as one object. Decide whether that is worth a view
+before building one.
 
 ### Sentence Archaeology
 
 Peel a sentence through word, particle, kanji-family, literal-structure,
 natural-meaning, and substitution layers.
 
+The Grammar X-ray (v10.44.0) built the first two layers' worth of data without
+meaning to: every token now carries a part of speech and a dictionary form when
+the precise tokenizer is on. The remaining layers are the hard ones, and the
+literal-meaning and substitution layers would both require inventing a reading
+of a sentence that no committed data supports — see section E.
+
+### Zen Study Room
+
+One distraction-free, explainable activity — sentence, family, mystery, or
+short review set — chosen from current local needs.
+
+Note for anyone reading the history: the commit titled "Zen Study Room"
+(f5b2762) actually shipped the Japanese Weather System forecast card. This seed
+is still unbuilt.
+
+Worth re-reading now that there are more activities to choose between than
+there were: Alchemy, family study, contrast sets, the Daily Mystery, writing
+practice, and Review are all candidates, which makes the "selected from current
+local needs" part both more useful and much harder to do honestly.
+
+---
+
+## C. Exploring without a goal
+
+Curiosity with no study intent attached — adjacent to section A, but about
+following structure rather than keeping things.
+
+### Japanese Detective Board
+
+A freeform investigation canvas where kanji, words, readings, components,
+sentences, and relationship clusters can be pinned, with explainable links
+drawn between the pinned evidence.
+
+First experiment: an ephemeral board with moveable kanji cards and automatic
+relationship connectors. Decide on persistence only after the interaction is
+useful; do not add a storage key merely to preserve a prototype.
+
+### The casebook half of Kanji Mystery
+
+The Daily Mystery (v10.45.0) shipped the *puzzle* half of the original Kanji
+Mystery Casebook seed: clues, a guess, an ending. What is still unbuilt is the
+*investigation* half — the deduction happening across Relations and Radical
+Tree rather than inside one card.
+
+Parked until the daily shows whether anyone wants to investigate rather than
+simply guess. That is a real question: guessing is fast and satisfying, and the
+casebook version asks for effort the daily deliberately does not.
+
+### A voice, locally
+
+Speak a word or a review card through `speechSynthesis`, restricted to
+`localService` ja-JP voices, with a plain "no Japanese voice installed" state
+when there is none.
+
+The restriction is the feature, not the limitation: remote voices leave the
+device, so gating to local ones keeps `PRIVACY.md` free of an asterisk.
+
+First experiment: a speaker button on the Read info panel only. Confirm first
+that a local ja-JP voice is actually present on a normal Android phone and a
+normal desktop; if it usually is not, this seed dies there rather than shipping
+a button that mostly apologises.
+
+Belongs in two sections at once: hearing a word you like is section A, and a
+hear-then-recall review direction is section B. Build the appreciation half
+first — it is smaller and it cannot fail in a way that costs anything.
+
+---
+
+## D. Looking back
+
+### Bookshelf
+
+Save the texts that were read, with the coverage snapshot from their first
+analysis, and re-measure on return: *you could read 61% of this in June; today,
+84%; these nine kanji are what is left.*
+
+Coverage is currently computed and thrown away on every paste. Progress
+measured against a real thing someone wanted to read beats every abstract
+streak in the application, and "these nine kanji are what is left" is already
+exactly the input `js/text-journey.js` takes.
+
+First experiment: save one text by explicit action only, never automatically —
+the Read tab handles material the reader may not want persisted. This needs a
+new storage key and a backup-format bump, and should be built only if the
+re-measurement moment feels as good in use as it reads here.
+
+The strongest remaining idea in the file for an existing user.
+
 ### Knowledge Time Machine
 
 Turn privacy-safe aggregate history into a visual story of how feature use and
 study collections evolved, without retaining studied content.
 
-### Living Story Route
+Still blocked on the same thing it always was: the usage journal is opt-in and
+off by default, keeps 90 days, and stores no content, so there may simply not
+be enough history to tell a story with. Check what a real journal contains
+before designing anything.
 
-Use original episodic fiction whose optional study quests open Radical Tree,
-Relations, family practice, and review as parts of the narrative.
+---
 
-### Japanese Weather System
+## E. Blocked on a source this project does not have
 
-Express local study conditions as a playful daily forecast instead of a
-guilt-heavy streak or conventional dashboard warning.
+These are not parked for scope. Each one needs *evidence or content Kotoba Lab
+does not hold*, and building it anyway would mean inventing a judgment the rest
+of the application refuses to make. Grouped together so they stop being
+re-litigated one at a time.
 
-A first bounded experiment is implemented in v10.42.0: a small forecast card
-at the top of the Review tab (`js/study-weather.js`, pure and tested)
-reframes the same due/fresh/streak numbers the stat row already shows into
-one calm sentence with a weather icon — clear skies when caught up, light
-showers or steady rain for a normal or large backlog, and fog (never a
-"broken streak") when it has been several days or the deck has never been
-reviewed at all. It adds no new storage: `reviewLog` gained one read-only
-`daysSinceLast()` accessor, and the forecast itself is recomputed on every
-Review-tab render rather than persisted. Remaining open question before
-going further: whether the same forecast belongs anywhere outside the
-Review tab (e.g. on arrival at the app) now that it exists — deliberately
-left for observed use to answer.
+- **Parallel Text Portal** — the same scene across simple, conversational,
+  literary, formal, and newspaper-like Japanese. Needs authored parallel text;
+  there is none, and generating it would be inventing the language it claims to
+  compare.
+- **Living Story Route** — original episodic fiction whose optional quests open
+  Radical Tree, Relations, family practice, and review. Needs original or
+  clearly licensed fiction, written by someone.
+- **False-Friend Museum: deceptive shared components and near-synonym traps** —
+  both need a visual- or semantic-closeness judgment the application never
+  makes. The homophones exhibit shipped (v10.41.0) precisely because exact
+  reading equality is a fact rather than a judgment; similar-looking kanji is
+  already the Kanji Contrast Lab's shared-component sets.
+- **Translating IPADIC's inflection labels** — showing 連用タ接続 verbatim is
+  describing the analyser; rendering it as "past tense" is teaching grammar.
+  Needs a citable reference grammar, not a hand-written mapping.
+- **Sentence Archaeology's literal-meaning and substitution layers** — same
+  problem: no committed data supports either reading.
 
-### Zen Study Room
+If a suitable source ever arrives, these become ordinary bounded experiments.
+Until then, listing them here is the answer.
 
-Offer one distraction-free, explainable activity—sentence, family, mystery, or
-short review set—selected from current local needs.
+---
 
-## Second exploration track — unused assets (2026-08-30)
+## Open follow-ups from what shipped
 
-The first track and the seeds above were chosen from what Kotoba Lab could
-*become*. This track was chosen from what it already *has* and does not spend.
-A review of the repository on 2026-08-30 found three assets already committed,
-already paid for, and barely used:
+Questions that only real use can settle. None is a defect.
 
-1. **KanjiVG stroke paths.** `data/kanjivg.json` carries every stroke as an
-   ordered path plus, through `strokeStart`/`strokeCount`, the stroke range
-   belonging to each component. Radical Tree only replays them.
-2. **Kuromoji's morphology.** `mapTokens()` in `js/tokenizer-kuromoji.js`
-   reads `pos`, `pos_detail_1`, and `basic_form`, uses them for the merge
-   pass, and then discards them at the Token boundary. Every grammar-shaped
-   feature is currently impossible for that one reason alone.
-3. **The browser's own speech synthesis.** No dependency, no service, and
-   filterable to `localService` voices, which is the only form that keeps
-   `PRIVACY.md` literally true.
+| From | Question |
+|---|---|
+| Context-First Cards (v10.43.0) | Should a clozed card ever carry its own SM-2 state, or stay one card viewed three ways? |
+| Component Lookup (v10.43.0) | Does the picker belong in Relations or the Atlas root chooser, which share the "name the kanji first" assumption? |
+| Writing Lab (v10.44.0) | Practice is only reachable after navigating to one kanji, which is the wrong place to build a habit. Candidates: a Review card that asks you to write the word, and the family-study workspace. |
+| Grammar X-ray (v10.44.0) | Is the inflection label worth translating, and by what authority? (See section E.) |
+| Daily Mystery (v10.45.0) | Is the share line ever used by someone with no audience for it — and does a second daily crowd Today's Brew rather than reinforce it? |
+| Japanese Weather System (v10.42.0) | Does the forecast belong anywhere outside the Review tab, now that it exists? |
+| Radical Alchemy (v10.20.0) | Observe real study use before adding recipes or persistence. |
+| Kanji Constellation Atlas (v10.15.0) | Refine only from navigation, density, or practice friction. |
 
-The same review found the app is almost entirely a *recognition* trainer:
-nothing ever asks the learner to produce a kanji, to conjugate anything, or to
-hear a word. The seeds below are grouped by which of those gaps they close.
-Ordering below is by expected value, not by planned sequence; as with the
-first track, status is authoritative.
+## What has shipped from this file
 
-| Direction | Current status | Remaining decision |
-|---|---|---|
-| Context-First Cards | ✓ Shipped in v10.43.0 | Whether cloze deserves its own scheduling, or stays a viewing direction |
-| Component Lookup | ✓ Shipped in v10.43.0 | Whether the picker belongs anywhere outside the Kanji tab |
-| Writing Lab | ✓ Shipped in v10.44.0 | Whether practice belongs anywhere outside the Radical Tree overlay |
-| Grammar X-ray | ✓ Shipped in v10.44.0 | Whether the conjugation label is worth translating, and by what authority |
-| Placement | Parked idea | Decide whether a seeded known set is honest enough to write |
-| Bookshelf | Parked idea | The only seed here that needs a new storage key — decide if re-measurement earns it |
-| Daily Kanji Mystery | ✓ Shipped in v10.45.0 | Whether the share line is ever used, and whether a second daily crowds the first |
-| A Voice, Locally | Parked idea | Confirm a `localService` ja-JP voice is common enough to build on |
-| Type the Reading | Parked idea | Decide what "close enough" means before promising a near-miss note |
-| Old Known Kanji | Parked idea | Decide whether known-state may ever be questioned without becoming guilt |
+Implementation detail and conventions live in `AGENTS.md`; this is the index.
 
-### Context-First Cards
-
-Deck entries already store `sentence`, `sentenceStart`, and `sentenceEnd`, and
-`renderStage()` already renders `.srs-context` — but only on the back of the
-card, deliberately, so it cannot give a recall answer away. Putting that same
-sentence on the *front* with the word blanked turns it into cloze practice
-over the learner's own reading, which is a stronger memory hook than either
-existing direction and needs no data the deck is not already carrying.
-
-Implemented in v10.43.0 as a third `#srs-direction` option rather than a new
-mode, feature, or tab — see the AGENTS.md release notes for what it does and
-what it deliberately does not do. Remaining decision: cloze is currently a way
-of *viewing* the same card, sharing one schedule with the other two
-directions. Whether a clozed card should ever carry its own SM-2 state is
-left for observed use; adding it would double every deck entry's schedule and
-should not happen on theory alone.
-
-### Component Lookup
-
-The Kanji library can be searched by glyph, reading, or meaning — all three of
-which assume the learner can already name the kanji. The one lookup path a
-paper-dictionary user expects, *build it out of the parts you can see*, was
-missing, even though `data/kanji-families.json` already indexes the direct
-components of all 6,392 covered kanji and the app already loads that index for
-its structural family views.
-
-Implemented in v10.43.0 as a component picker inside the Kanji toolbar. The
-picker is ordered by how many kanji actually use each component and narrows
-itself as components are chosen, so a dead end is visible before it is
-selected — both facts are read from the index, not judged. Remaining decision:
-whether the same picker belongs in Relations or the Atlas root chooser, which
-have the same "name the kanji first" assumption; deliberately not built until
-someone hits that wall for real.
-
-### Writing Lab
-
-Fade the glyph and let a finger draw it back, grading each stroke against the
-committed KanjiVG path. Because the artifact carries a stroke range per
-component, feedback can be structural rather than a red cross — *the 木 on the
-left is right; stroke 6 belongs to 交 and you drew it before finishing 木* —
-which nothing else in this app can currently say and no other browser tool
-does offline.
-
-This is the largest gap in Kotoba Lab: the whole application is recognition,
-and production is where recognition is revealed to be shallower than it felt.
-
-Implemented in v10.44.0 as a "Practise writing" mode inside the Radical Tree
-overlay, exactly as the first experiment described: session-only, no score and
-no storage key, grading only order, direction, placement, and count. The
-endpoint-only design is what keeps the shape promise literal rather than
-merely stated — see the AGENTS.md conventions for why a wrong stroke never
-advances and why reversal is checked before placement.
-
-The open question the experiment was meant to answer is now a different one.
-Order-only feedback does feel useful, so the idea survives; what is undecided
-is *where* it belongs. Practice currently exists only where a learner has
-already navigated to one kanji, which is the wrong place to build a habit —
-but giving it a tab would fail this file's own first selection principle.
-Candidates worth watching real use for: a Review card that asks you to write
-the word instead of recall it, and the family-study workspace, which already
-walks a set of kanji one at a time. Deliberately not built on theory.
-
-Still parked, and still nearly free: a print stylesheet laying the current
-family out as 原稿用紙 practice squares. Print CSS only, no PDF dependency.
-
-### Grammar X-ray
-
-Add nullable `pos`/`lemma` fields to the Token shape. The v1 dictionary
-tokenizer leaves them empty, so the swappable-tokenizer contract in
-`js/tokenizer.js` survives untouched; the kuromoji path fills them in from
-analysis it is already doing. Read can then tint particles as their own layer
-and show 食べた ← 食べる on tap, and Analyze can profile verb forms and
-particles beside the kanji profile it already draws.
-
-Conjugation is where intermediate readers actually stall, and the app is
-currently silent about it.
-
-Implemented in v10.44.0, and deliberately wider than the first experiment
-written here, which was the inspect panel alone. The plumbing — four optional
-Token fields and one pure module that owns every reading of them — is the
-whole cost; once it existed, the particle layer and the Analyze profile were
-each a renderer over the same function, and holding them back would have left
-the "switch on precision and the text grows a grammar layer" promise unkept
-while still paying for the change. Recorded as a widening rather than hidden:
-the bounded-experiment principle is about validating a direction cheaply, and
-this direction was validated by the plumbing, not by the panel.
-
-The rule the module exists to keep held throughout: it reports IPADIC's
-labels, and `conjugated` is a comparison with the analyser's own lemma rather
-than a claim about tense. Remaining decision: the inflection label is shown
-verbatim (連用タ接続) because translating it is where describing a tagset turns
-into teaching grammar. If that is worth doing later it needs a source with
-authority — a cited reference grammar — not a hand-written mapping.
-
-### Placement
-
-A new learner has zero known kanji, which means unlock feedback, readable
-compounds, personal coverage, the Words tab's own reason to exist, and most of
-Achievements all render empty — the best ideas in the application are
-invisible at exactly the moment someone decides whether to keep it.
-
-First experiment: roughly fifteen questions binary-searching the JLPT bands
-(*do you know this one?* → reveal → yes/no), producing a **proposed** known set
-shown as an editable preview before anything is written, through the same
-inspect-then-commit shape the backup importer already uses. A cheaper sibling
-worth doing first: paste a list from WaniKani, RTK, or an Anki export into
-that same preview.
-
-The honesty question comes before the code: a seeded known set is an estimate,
-and every coverage number downstream will treat it as fact. Decide whether the
-estimate is marked as one, and for how long.
-
-### Bookshelf
-
-Save the texts that were read, with the coverage snapshot from their first
-analysis, and re-measure on return: *you could read 61% of this in June;
-today, 84%; these nine kanji are what is left.*
-
-Coverage is currently computed and thrown away on every paste. Progress
-measured against a real thing the learner wanted to read beats every abstract
-streak in the app, and "these nine kanji are what is left" is already exactly
-the input `js/text-journey.js` takes.
-
-First experiment: save one text by explicit action only, never automatically —
-the Read tab handles material the learner may not want persisted. This is the
-only seed in this track that needs a new storage key and a backup-format
-bump; it should be built last of the three top picks, and only if the
-re-measurement moment feels as good in use as it reads here.
-
-### Daily Kanji Mystery
-
-The parked *Kanji Mystery Casebook* above, sharpened into a loop with an
-ending: one date-seeded kanji, clues released one at a time — stroke count,
-canonical radical, a direct component, an on'yomi, a word it appears in — and
-a guess allowed after any clue. It closes with a spoiler-free result line that
-can be pasted anywhere.
-
-Date seeding is a pattern already shipped in Alchemy's Today's Brew, so this
-needs no server and no account, and every clue is a committed dictionary fact,
-so it can never invent anything. It is also the only idea in this track that
-gives a reason to open the app on a day with no appetite for studying.
-
-Implemented in v10.45.0. The written first experiment held everything back —
-no score, no streak, no share string — and what shipped keeps two of those
-three: there is no streak and no score anywhere, and nothing is stored, so
-there is nothing for either to accumulate into. The share line did ship,
-because it was the half of the idea that was actually asked for and because it
-turned out to be separable from the guilt-shaped part: it carries marks and a
-date, never a kanji, a reading, a meaning, or a number. `◆◆◇◇◇` is the shape
-of one day's path, not a grade out of five.
-
-Two things only became visible once real puzzles were generated, and both are
-recorded because they are the kind of thing that looks like a difficulty
-judgment and must not become one. A kanji that is its own canonical radical
-gives itself away at clue three, so 一, 口, 木, 人 and 121 others cannot be
-puzzles — a real loss, accepted to keep the clue order fair. And a pool
-requiring only two vocabulary entries came out 48% N1, which is a lottery
-rather than a deduction; raising the requirement to eight (a data requirement
-the fifth clue needs anyway) left 688 kanji that are about two thirds N5–N3.
-Nothing in the module ranks kanji by difficulty; that distribution is the
-committed vocabulary's, not an opinion.
-
-Remaining decisions, both deliberately left to observed use: whether the share
-line is ever actually used by someone with no audience for it, and whether a
-second daily competes with Today's Brew for the same habit rather than
-reinforcing it. If the answer to the first is no after a few months, the line
-should come out — it is one button and one function.
-
-### A Voice, Locally
-
-Speak a word or a review card through `speechSynthesis`, restricted to
-`localService` ja-JP voices, with a plain "no Japanese voice installed" state
-when there is none. Then one new review direction: hear the reading, recall
-the word.
-
-The deck only ever tests eye → meaning. Ear → meaning is a whole missing
-modality, and the restriction is the feature, not the limitation: remote
-voices leave the device, so gating to local ones is what keeps the privacy
-promise free of an asterisk.
-
-First experiment: a speaker button on the Read info panel only. Confirm first
-that a local ja-JP voice is actually present on a normal Android phone and a
-normal desktop; if it usually is not, this seed dies there rather than
-shipping a button that mostly apologises.
-
-### Type the Reading
-
-An optional typed answer in Review: type the kana, checked exactly against the
-stored dictionary reading. Recall beats recognition, it is fully
-deterministic, and it needs no new data.
-
-First experiment: exact match only, pass/fail, no near-miss note. A
-"one mora off" message sounds friendly and is a similarity judgment in
-disguise; if it is wanted later, define it as an explicit rule (one kana
-substitution, or a long-vowel or sokuon difference) rather than a distance
-score.
-
-### Old Known Kanji
-
-Known-state is permanent and never revisited, which quietly inflates every
-coverage number the app reports. Decay would answer that and would be against
-this project's grain — it is guilt with a timer.
-
-First experiment: an opt-in spot check offering five kanji marked known 90 or
-more days ago that have not appeared since, framed the way
-`js/study-weather.js` frames a backlog — *a little haze over the old
-district* — and reusing `js/srs.js` without giving kanji a permanent schedule.
-If it cannot be framed without implying failure, it should not be built.
+| Direction | Shipped |
+|---|---|
+| Kanji Constellation Atlas | Groups A–D, v10.15.0 |
+| Radical Alchemy | Groups A–C, v10.18.0–v10.20.0 |
+| False-Friend Museum (homophones exhibit) | v10.41.0 |
+| Japanese Weather System (Review forecast) | v10.42.0 |
+| Context-First Cards | v10.43.0 |
+| Component Lookup | v10.43.0 |
+| Writing Lab | v10.44.0 |
+| Grammar X-ray | v10.44.0 |
+| Daily Kanji Mystery (from the Mystery Casebook seed) | v10.45.0 |
 
 ## Selection principles
 
-- Prefer a memorable study loop over adding another permanent tab.
+- Prefer a memorable loop over adding another permanent tab.
+- Collection over completion; discovery over score; presence over streak.
+  Nothing new should be able to make someone *behind*.
+- A mark that means "I like this" must never become a mark that means "I have
+  achieved this". The moment a favourite affects a number, it is a progress
+  mark.
 - Keep data local-first and make any new persistence an explicit decision.
 - Reuse Radical Tree, Relations, families, review, and usage insights before
   creating parallel engines.
 - Describe structural and reading evidence accurately; never present visual
-  decomposition as historical etymology without a suitable source.
+  decomposition as historical etymology, or a dictionary tag as a grammar rule,
+  without a suitable source.
 - Use original or clearly licensed story content.
 - Validate each direction as a bounded experiment on desktop and phone before
   expanding it into a larger world.

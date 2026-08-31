@@ -585,11 +585,19 @@
   sessions. Group C is ✓ Done: a previewable/copyable/downloadable Markdown
   report shares aggregate activity, feature rhythm, profile totals, and fixed
   signal labels without exposing the raw journal or study content.
-- `IDEA_GARDEN.md` is the durable creative backlog. Radical Alchemy Groups A–C
-  and Kanji Constellation Atlas Groups A–D are ✓ Done. Kanji Genealogy and
-  Japanese Detective Board remain parked, unapproved ideas. The original list
-  order is no longer an implementation queue; continue from observed study
-  friction and request approval for every new bounded experiment.
+- `IDEA_GARDEN.md` is the durable creative backlog, reorganised 2026-08-31 by
+  what brings someone to the application rather than by when an idea was had:
+  **A. Keeping what you love** (non-study affection — favourites, a shelf, a
+  keepsake card; the newest and emptiest section), **B. In the study loop**,
+  **C. Exploring without a goal**, **D. Looking back**, and **E. Blocked on a
+  source this project does not have**. Section E is the one to read before
+  proposing anything: those directions need evidence or authored content the
+  repository does not hold, and building them anyway means inventing a judgment
+  the application refuses to make. A shipped index and the open follow-ups from
+  each shipped feature live at the end of the file. Implementation records do
+  NOT go there — they belong in this file's backlog and conventions. No list
+  order is an implementation queue; continue from observed use and request
+  approval for every new bounded experiment.
 
 ## Public repository conventions
 
@@ -703,8 +711,9 @@
   Map overlays and their responsive layouts.
 - `README.md` — concise public overview, local setup, architecture, and license
   boundaries.
-- `IDEA_GARDEN.md` — public creative backlog, selected exploration track, first
-  experiments, and principles that prevent uncontrolled feature growth.
+- `IDEA_GARDEN.md` — public creative backlog grouped by what brings someone to
+  the application, with each parked entry's first bounded experiment, the
+  decision still open, and the principles that prevent uncontrolled growth.
 - `PRIVACY.md` — public description of local storage and network requests.
 - `.github/workflows/pages.yml` — tests pushes and pull requests; deploys the
   static repository root only after tests pass on `main`.
