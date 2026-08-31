@@ -23,11 +23,19 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   swipeable samples and JLPT filters, tap-to-open word details, compact Kanji
   and saved-deck cards, focused Review and family-study workspaces, and a
   compact full-screen Radical Tree plus swipeable relationship lanes.
-- **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning;
+- **Kanji:** search 6,813 dictionary entries by glyph, reading, or meaning, or
+  build one out of the shapes you can see — the component picker narrows as you
+  choose and dims what cannot combine, so 木 + 目 + 心 lands on 想;
   combine JLPT, stroke-count, and known-state filters; then browse ordinary
   cards, JLPT/stroke sections, exact stroke-count families, or kanji that share
   an on’yomi, kun’yomi, canonical radical, or direct visual component. On large
   screens the library expands into a denser five-card workspace.
+- **Daily Mystery:** one kanji a day, at the top of the Kanji tab. Five clues —
+  stroke count, JLPT grade, canonical radical, a reading, and a real word with
+  the kanji blanked out — released one at a time, with a guess allowed after
+  any of them. Guessing is the library's own search, so working it out is the
+  same act as looking a kanji up. Nothing is stored: no streak, no history, and
+  the result you can copy carries marks and a date, never the answer.
 - **Radical Alchemy:** its own tab; practice result brewing, missing
   ingredients, reverse recipes, or short transformation chains. Every formula
   comes from an unambiguous pair of direct KanjiVG components and can be
@@ -55,6 +63,11 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
   and drill into its decomposition using committed KanjiVG data. Each component
   also lists the words it appears in, so structure and vocabulary sit together.
+- **Writing practice:** draw the kanji back, stroke by stroke, on the same
+  KanjiVG grid. Order, direction, placement, and count are graded and explained
+  in words — *stroke 3 runs the other way: it starts at top left* — and shape
+  deliberately is not. An optional outline guide, a hint, undo, and restart;
+  works on any kanji or on a single component, and keeps nothing afterwards.
 - **Kanji Relationship Map:** explore explainable links through shared radicals,
   visual components, and dictionary readings; recenter on neighboring kanji,
   inspect the evidence, and move directly between the map and Radical Tree.
@@ -82,7 +95,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   the same sky, export its visible kanji as a private-data-free study pack, or
   try short shared-component and reading-exception challenges with no score.
 - **Review:** study saved words with an SM-2-inspired schedule, interval
-  previews, keyboard grading, a due counter, and streak tracking. A small
+  previews, keyboard grading, a due counter, and streak tracking. Three
+  directions: JP → EN, EN → JP, or fill the sentence you saved the word from,
+  with the word withheld. A small
   forecast card reframes those same numbers as calm weather — clear, showers,
   or fog after a long gap — instead of a guilt-heavy streak warning.
 - **Consistent desktop width:** every workspace shares the same width on
@@ -129,6 +144,12 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   decoding and common markup cleanup.
 - **Two tokenizers:** use the fast embedded-dictionary tokenizer or opt into the
   more precise vendored kuromoji tokenizer.
+- **Grammar, with the precise tokenizer on:** tap a word to see its dictionary
+  form (読ん ← 読む) and part of speech, mark the particles and auxiliaries
+  holding each sentence together, and read a grammar profile of the whole text
+  beside the kanji one. Every part of it reports its own absence on the instant
+  tokenizer instead of guessing, and it describes the analyser's labels rather
+  than teaching grammar rules.
 - **Installable and offline:** install Kotoba Lab to a phone home screen and open
   it with no connection. The application, dictionaries, and stroke data are
   stored locally after the first visit, so Radical Tree works offline whether or
@@ -150,6 +171,15 @@ The project keeps its imaginative long-term directions in
 have completed their bounded A–C and A–D experiments. Kanji Genealogy and
 Japanese Detective Board remain parked ideas rather than release promises;
 future work should follow observed study use instead of their original order.
+
+A second exploration track, added 2026-08-30, is chosen from assets the
+repository already carries and does not spend — KanjiVG's stroke paths,
+kuromoji's discarded morphology, and the browser's own speech synthesis — and
+from the observation that the application is almost entirely a recognition
+trainer. Context-First Cards, Component Lookup, the Writing Lab, the Grammar X-ray, and
+the Daily Mystery have shipped from it; placement, a re-measurable bookshelf,
+a locally-spoken voice, typed readings, and a spot check for long-ago known
+kanji are parked there with their first experiments written down.
 
 ## Run locally
 
@@ -205,6 +235,10 @@ js/                      application modules and tests
 js/kanji-network.js      bounded two-hop graph builder, layout, and UI
 js/kanji-atlas.js        bounded component constellation graph, layout, and UI
 js/kanji-alchemy.js      deterministic component recipes and session state
+js/kanji-mystery.js      date-seeded daily puzzle: pool, clues, guessing, result
+js/component-lookup.js   transitive component index behind the Kanji picker
+js/writing.js            stroke-order grading: order, direction, count, never shape
+js/grammar.js            the only reader of the tokenizer's IPADIC tags
 assets/alchemy/           optimized backdrop and code-native SVG icon sprite
 js/backup.js             versioned full-profile export, inspection, and merge
 js/profile-dashboard.js  local data metrics and category-reset helpers

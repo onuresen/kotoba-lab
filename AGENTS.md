@@ -2,7 +2,179 @@
 
 ## Current release and backlog
 
-- **v10.41.0 current.** The False-Friend Museum's first bounded exhibit is
+- **v10.45.1 current.** Deep-linking a tab no longer runs its renderer
+  before the data exists. `applyInitialRoute()` was called synchronously right
+  after `boot()`, which is `async` — so at that moment no dictionary had
+  loaded, `jlpt` was still undefined, and `wireUi()` had not attached a single
+  handler. Landing on `#review` with a saved deck threw outright
+  (`renderStage()` asks `jlpt.kanjiInfo()` for every kanji on the card, and it
+  does so whether or not the card is revealed); the other tabs survived only
+  because their renderers happen to guard on an empty catalog. The route is now
+  claimed in two halves: `claimInitialRoute()` stays synchronous, because the
+  history entry needs no data and must exist even when the dictionaries fail to
+  load, and `applyInitialRoute(tab)` moves to the tab at the END of `boot()`'s
+  success path, after every renderer has its data and the handlers are
+  attached. On the failure path `boot()` has already returned, so a deep link
+  can no longer land on a tab that cannot work. Verified across `#review`
+  (with and without a deck), `#kanji`, `#words`, `#relations`,
+  `#achievements`, and a bare load, with the single-history-entry behaviour
+  (back from the entry point leaves the app) unchanged. Fixes a bug that
+  predates the second exploration track. `APP_VERSION` bumped to 10.45.1.
+- **v10.45.0.** **Daily Mystery** is ✓ Done: the parked "Kanji
+  Mystery Casebook" seed narrowed until it has an ending. One date-seeded
+  kanji, five clues released one at a time, a guess allowed after any of them.
+  New pure, tested `js/kanji-mystery.js`. Every clue is a committed dictionary
+  fact — stroke count, JLPT grade, canonical KanjiVG radical, a dictionary
+  reading, and a real vocabulary entry with the kanji itself blanked to ◯ —
+  so the puzzle cannot mislead even by accident; nothing characterises a kanji
+  in words of its own. Clue kinds and order are FIXED (vaguest first: a stroke
+  count leaves hundreds of candidates, a masked word leaves almost none) rather
+  than adaptive, so one day's path means the same thing as another's.
+  Two pool filters were added after seeing real output, and both are data
+  requirements rather than difficulty judgments. (1) A kanji that IS its own
+  canonical radical — 一, 口, 木, 人 and 121 others — is excluded, because clue
+  three would read "its canonical radical is 木" and the puzzle would be over;
+  losing some of the commonest kanji in the language is the honest cost of a
+  clue order that stays fair. (2) A kanji must appear in at least 8 committed
+  vocabulary entries: the fifth clue picks a word at random and one or two
+  candidates make it nearly fixed. That second filter also fixed a real
+  fairness problem — at 2 words the eligible pool was 48% N1, which is a
+  lottery rather than a deduction; at 8 the 688 eligible kanji are about two
+  thirds N5–N3. The skew is a consequence of how the committed vocabulary is
+  distributed, not a difficulty scale invented here. 688 kanji is ~1.9 years
+  before a repeat, and a scripted year of dates produced zero clue leaks.
+  Guessing reuses the library's own `filterKanji()`, so deducing the answer is
+  the same act as looking a kanji up — type a meaning, a reading, or paste the
+  glyph. Enter guesses only when the search has narrowed to exactly ONE
+  candidate: a guess costs a clue, and firing the first of eight silently would
+  spend one by accident (the candidates are ordinary buttons, so Tab-then-Enter
+  still reaches any of them). A wrong guess opens the next clue rather than
+  just saying no; a repeated guess costs nothing, so a mis-tap is not a
+  penalty. The card lives collapsed at the TOP of the Kanji tab — not buried
+  below the results like the False-Friend Museum, because a daily's whole
+  purpose is being a reason to open the application, and not as a tab, per this
+  file's first selection principle. State is session-only, exactly like
+  Alchemy's Today's Brew: no storage key, no streak, no history, no win rate,
+  and a reload starts today's kanji over. The share line is deliberately marks
+  only (`◆◆◇◇◇`, plus ✕ when unsolved) with no kanji, reading, meaning, or
+  score — the shape of one day's path, with nothing anywhere for it to
+  accumulate into. The opt-in journal gained one fixed `study.mystery` event.
+  `APP_VERSION` bumped to 10.45.0 (cached CSS/JS changed).
+- **v10.44.0.** The two largest seeds of the second Idea Garden
+  track, both of which close an axis the application had no presence on at all.
+  (1) **Writing Lab** is ✓ Done as a "Practise writing" mode inside the
+  existing Radical Tree overlay — the first thing in Kotoba Lab that asks the
+  learner to *produce* a kanji rather than recognise one. New pure, tested
+  `js/writing.js` grades order, direction, placement, and count, and
+  deliberately NOT shape: a stroke is reduced to its two endpoints, so a wild
+  line between the right start and the right end passes. That is the honest
+  boundary — measuring how closely a drawn curve follows the real one is a
+  similarity judgment, the same kind the phonetic-signal and false-friend work
+  refuses to invent, and order/direction is both the part learners actually get
+  wrong and the part KanjiVG states outright. A wrong stroke never advances
+  (committing it would leave the drawing itself wrong), reversal is detected on
+  relative distance rather than the tolerance so it survives a stroke shorter
+  than one tolerance circle, and the default tolerance is ~22% of the 109-unit
+  box because a fingertip is a blunt instrument and a fussy grader teaches
+  nothing. Feedback is a comparison, not a score: "Stroke 3 runs the other way:
+  it starts at top left." In `js/kanjitree.js` the surface is a second SVG
+  sharing the glyph's viewBox, so a pointer position needs nothing but
+  `getScreenCTM()`; endpoints come from `getPointAtLength()` on a temporarily
+  attached path (exact, and no SVG path parser to write or test). Earned
+  strokes redraw as the real KanjiVG path rather than the learner's own line —
+  watching the kanji assemble is the reward — and a rejected stroke lingers a
+  moment as dashed evidence beside the sentence saying what was expected. An
+  optional outline guide, a hint that is counted separately from a miss, undo,
+  and restart round it out. Everything is session-only: no storage key, no
+  profile field, no journal event, and drilling into a component, going back,
+  or closing the overlay all end the session, since each means a different set
+  of strokes. One SVG gotcha worth keeping: `hidden` is an **HTMLElement**
+  property, so `svg.hidden = false` silently sets a JS expando and leaves the
+  element hidden — `toggleAttribute('hidden', …)` is the only thing that works.
+  (2) **Grammar X-ray** is ✓ Done. `mapTokens()` in
+  `js/tokenizer-kuromoji.js` had always computed a part of speech, a dictionary
+  form, and an inflection label and then discarded all three at the Token
+  boundary; the shared Token shape now documents four OPTIONAL morphology
+  fields (`pos`, `posDetail`, `lemma`, `conjugation`) that the v1 segmenter
+  leaves absent, so the swappable-tokenizer contract in `js/tokenizer.js` is
+  untouched. New pure, tested `js/grammar.js` is the only reader of those tags
+  anywhere in the application: it translates IPADIC's closed top-level 品詞 set
+  into plain English, reports `conjugated` as a comparison against the lemma
+  (never "past tense" — that is a claim about Japanese, not about the
+  analysis), and builds a whole-text profile. Three surfaces use it. The Read
+  info panel gains a Grammar row showing 読ん ← 読む plus IPADIC's own
+  inflection label; `pos_detail_1` is deliberately NOT rendered, since it is
+  almost always 自立 for a verb and would need translating for a particle,
+  which is where describing a tagset turns into teaching grammar. The Read
+  toolbar gains an optional grammar layer marking particles and auxiliaries
+  only — two tints from the palette's declared secondary (indigo), not a hue
+  per part of speech, because red already means "unknown / above your level"
+  here and the JLPT ramp owns difficulty. Analyze gains a Grammar profile card:
+  parts of speech, the particles a text leans on, and every inflected word with
+  its dictionary form. All three report their own absence on the instant
+  tokenizer rather than drawing an empty chart, which turns the 18 MB precise
+  tokenizer from a chore into an unlock. `APP_VERSION` bumped to 10.44.0
+  (cached CSS/JS changed).
+- **v10.43.0.** Two quick wins from the second Idea Garden
+  exploration track (see `IDEA_GARDEN.md`), both chosen because the data they
+  need was already committed and already loaded.
+  (1) **Context-First Cards** is ✓ Done as a third `#srs-direction` option,
+  "Fill the sentence", not a new mode, feature, or tab. Deck entries have
+  stored `sentence`/`sentenceStart`/`sentenceEnd` since v5 and `renderStage()`
+  already drew them as `.srs-context` on the back of the card; cloze promotes
+  that same block to the front with the word withheld. `js/context.js` gained
+  pure, tested `clozeParts()`, which is `contextParts()` plus the two refusals
+  that matter: an entry whose offsets no longer locate the word (there is
+  nothing to blank — `contextParts()` deliberately degrades to an
+  unhighlighted sentence there), and one whose sentence has no kana or kanji
+  left outside the blank, so 本。 does not become a box and a full stop. The
+  "one readable character" rule is deliberately not a punctuation blocklist:
+  「」 are no more of a clue than 。 is. `isRecall()` in `js/app.js` became
+  `cardMode()` returning `recognition | recall | cloze`, since direction is now
+  three-way; every mode still degrades to recognition rather than refusing a
+  card, and the card meta says which of the two things the entry is missing
+  ("no sentence saved" / "no meaning saved") instead of silently showing an
+  ordinary face. The gloss rides along on the cloze front as the clue —
+  without it the prompt is "some word goes here", which most sentences answer
+  more than one way. Direction remains a way of *viewing* one card: no second
+  schedule, no new storage key, no change to `js/srs.js`.
+  (2) **Component Lookup** is ✓ Done as a collapsible "Build from components"
+  picker in the Kanji toolbar, from new pure, tested `js/component-lookup.js`.
+  It reads the same 192 KB `data/kanji-families.json` the structural family
+  views already load, so opening the picker is what pays for it and the
+  library still boots without touching either KanjiVG artifact. ONE
+  DELIBERATE DIFFERENCE from the "Shared component families" view, which is
+  direct-components-only: this index is transitive. 語's direct components are
+  言 and 吾, but 口 is plainly visible in it and a learner picking shapes off
+  the page cannot know which level of the tree a shape sits on, so components
+  are expanded through their own entries (6 ms over the whole corpus, ~4.9
+  components per kanji). Selections intersect rather than union —
+  木 + 目 + 心 → 想 — and `usableComponents()` dims (not hides) every shape
+  that cannot co-occur with the current selection, so a dead end such as
+  魚 + 言 is visible before it is chosen; a selected chip is never dimmed,
+  since it has to stay clickable to be undone. The picker is ordered by how
+  many kanji use each shape, which is a fact this index can count, unlike
+  "importance"; ties break by code point so it never reshuffles between
+  builds. `filterKanji()` gained a `chars` option (a Set, or null for "no such
+  filter" — an empty Set means one is active and nothing survived it) and the
+  picker composes with search, level, stroke, and known filters unchanged.
+  Chip search matches the glyph or, where the component is itself a
+  dictionary kanji (1,263 of 1,431 are), its meaning. The remaining 168 are
+  variant shapes — 氵, 艹, ⻖ — and they are deliberately NOT given their
+  parent's meaning: 氵 co-occurs with canonical radical 水 in 317 of 329
+  kanji, and turning 96% into "氵 means water" is exactly the kind of
+  threshold judgment this app does not make. They are reachable by browsing
+  instead, which frequency ordering already puts at the top of the grid (氵 is
+  the second chip), and the empty-state says so. Selection is ephemeral: no
+  storage key, no journal event, and `resetKanjiBrowser()` clears it.
+  Closing the picker deliberately keeps the selection — silently widening the
+  results on collapse is a worse surprise than a badge on a closed panel.
+  One adjacent CSS fix came with it: `.kanji-filter-count` sets its own
+  `display`, which outranks the UA rule for the `hidden` attribute, so both
+  badges stayed on screen reading "0" — visible on phones, where the "More
+  filters" toggle they sit on is the only one shown. `APP_VERSION` bumped to
+  10.43.0 (cached CSS/JS changed).
+- **v10.41.0.** The False-Friend Museum's first bounded exhibit is
   ✓ Done, shipped directly by owner request rather than from observed study
   friction: a new "False-Friend Museum" card at the bottom of the Words tab
   covers the homophones exhibit type from `IDEA_GARDEN.md`'s parked idea —
@@ -444,6 +616,18 @@
   reduced motion, and known-kanji control.
 - `js/kanji-browser.js` — pure dictionary catalog search, filtering, sorting,
   sections, and stroke/reading/radical/component families; no DOM or storage.
+- `js/component-lookup.js` — pure transitive component index, AND-intersection
+  selection, co-occurrence dimming, and glyph/meaning chip search; no DOM,
+  storage, fetch, or stroke paths.
+- `js/kanji-mystery.js` — pure date-seeded daily puzzle: eligibility pool, five
+  fixed clues from committed dictionary facts, guessing, and a spoiler-free
+  result line. No DOM, storage, or fetch.
+- `js/writing.js` — pure stroke-order grading from endpoints alone: order,
+  direction, placement, count, and the sentence explaining a miss. No DOM,
+  storage, or path parsing; never judges shape.
+- `js/grammar.js` — pure IPADIC tag reading: part-of-speech labels, dictionary
+  form comparison, and whole-text profiles. The only interpreter of morphology
+  in the application; no DOM or storage.
 - `js/kanji-relationships.js` — pure reusable relationship index, evidence
   ranking, common-reading bounds, and deterministic neighborhood selection;
   no DOM, storage, fetch, or stroke paths.
@@ -591,6 +775,78 @@
 - `compactPath()` must preserve negative zero. In SVG path syntax a minus sign
   can separate adjacent coordinates, so converting `3.57-0.01` to `3.60`
   silently merges two Bézier parameters and distorts the stroke.
+
+## Daily Mystery conventions
+
+- Every clue is a committed dictionary fact. Never characterise a kanji, hint
+  at its difficulty, or describe it in words of the application's own.
+- Clue kinds and order are fixed and vaguest-first. Do not make them adaptive:
+  one day's path has to mean the same thing as another's.
+- Pool filters are data requirements, not difficulty judgments, and each one
+  should name the clue it protects. A kanji that is its own canonical radical
+  has no third clue; one below the vocabulary threshold has no meaningful
+  fifth; an ungraded one has no second.
+- A guess costs a clue, so it must never happen by accident: Enter submits only
+  when the search has narrowed to exactly one candidate.
+- A wrong guess opens the next clue — the puzzle answers back. A repeated guess
+  costs nothing.
+- Session-only, like Today's Brew. No storage key, no streak, no history, no
+  win rate; a reload starts the same day's kanji over, and the date seed is
+  what makes that acceptable.
+- The share line carries marks and a date. Never the kanji, a reading, a
+  meaning, a clue, or a score out of five.
+
+## Writing practice conventions
+
+- Grade order, direction, placement, and count. **Never shape.** A stroke is
+  its two endpoints; a wild line between the right start and the right end
+  passes, and the copy says as much rather than implying penmanship was judged.
+  Adding a curve-similarity score would be inventing the closeness judgment the
+  rest of this application refuses to make.
+- A wrong stroke does not advance. Committing it would leave the drawing wrong
+  from that point on, and the order is the whole exercise.
+- Check reversal before placement, on relative distance rather than the
+  tolerance, or a stroke shorter than one tolerance circle can be drawn either
+  way round and pass.
+- Keep the tolerance generous (~22% of KanjiVG's 109-unit box). A fussy grader
+  fails correct strokes and teaches only that the tool is fussy.
+- Say what was expected and what happened, in words, from a 3x3 reading of the
+  box: "Stroke 3 starts at top left; yours started at the centre." Never a
+  score, a percentage, a streak, or a grade.
+- Hints are counted separately from misses and shown as such. Neither is
+  persisted.
+- The session is ephemeral in the strongest sense: no storage key, no profile
+  field, no journal event, and it ends on drill-down, back, or close, since
+  each of those means a different set of strokes.
+- Take stroke endpoints with `getPointAtLength()` on a real path element rather
+  than parsing the `d` attribute. It is exact, needs no parser, and keeps
+  `js/writing.js` pure and testable under Node.
+- Drawing is pointer-only; that is inherent to the exercise. Keep "Show this
+  stroke" available so a keyboard user can still walk the whole kanji, and keep
+  the verdict in an `aria-live` region.
+- `hidden` is an HTMLElement property. On the practice `<svg>` use
+  `toggleAttribute('hidden', …)` — assigning `.hidden` sets a JS expando and
+  the element stays exactly as it was.
+
+## Grammar conventions
+
+- `js/grammar.js` is the only place in the application that reads a
+  morphological tag. Everything else consumes its output.
+- Describe IPADIC's own labels; never state a grammar rule the dictionary does
+  not contain. `conjugated` is a comparison with the analyser's lemma, not a
+  tense; the inflection label is shown verbatim and named as the analyser's.
+- Do not render `pos_detail_1`. It is 自立 for almost every verb and would need
+  translating for a particle, and translating a subtype is where describing a
+  tagset becomes teaching grammar. It stays on the token for a feature that has
+  a real use for it.
+- Morphology fields on the Token are OPTIONAL. The v1 segmenter emits none, so
+  every consumer must render nothing rather than something wrong, and must say
+  "not available" rather than showing an empty profile.
+- The Read grammar layer marks function words (particles, auxiliaries) only,
+  in the palette's secondary indigo. Do not give each part of speech a hue: red
+  means "unknown / above your level" in this app and the JLPT ramp owns
+  difficulty, so a third categorical scale would make the reader's own color
+  vocabulary ambiguous.
 
 ## Desktop layout conventions
 
@@ -817,6 +1073,33 @@
 - The selected family is ephemeral UI state. Do not add a localStorage key for
   browsing preferences.
 
+### Component lookup
+
+- The "Build from components" picker is the one way into this library that does
+  not require naming the kanji first. It is collapsible at every width, unlike
+  "More filters", which only collapses on phones: 1,431 shapes is not a thing
+  to open by default.
+- Its index (`js/component-lookup.js`) is TRANSITIVE, and that is the single
+  place in the application where "component" means anything other than
+  KanjiVG's direct children. It is a deeper reading of the same committed
+  structure, not a looser one, and it exists because a learner picking shapes
+  off the page cannot know that 口 reaches 語 only through 吾. Keep the family
+  views direct-only; do not unify the two.
+- Selections intersect (AND). Unusable shapes are dimmed and disabled, never
+  hidden — the picker must not reflow under a finger — and a selected shape is
+  never dimmed, or it could not be undone.
+- Order by usage count, ties by code point. Do not introduce an "importance",
+  "difficulty", or "commonness" ranking this index cannot count.
+- Variant shapes with no dictionary entry of their own (氵, 艹, ⻖ — 168 of
+  1,431) get no meaning and therefore no meaning search. Do not borrow the
+  canonical radical's gloss: the association is dominant, not certain (氵 with
+  水 in 317 of 329 kanji), and promoting it would be exactly the kind of
+  threshold judgment the phonetic-signal and false-friend work refuses to make.
+- Selection is ephemeral, like the selected family. No storage key, no journal
+  event, cleared by "Reset filters" — but NOT by collapsing the picker, since a
+  filter that silently switches itself off is worse than a badge saying it is
+  still on.
+
 ## Radical Alchemy conventions
 
 - Alchemy is its own tab (`data-panel="alchemy"`, `renderAlchemyTab()`), not a
@@ -937,6 +1220,24 @@
   `isReadableCompound()` rather than a second definition.
 - Every vocabulary list uses the shared `wordRowMarkup()` so the compound card
   and the lookup stay identical and gain features together.
+
+### Review direction
+
+- `#srs-direction` picks how one card is *viewed* — `recognition`, `recall`, or
+  `cloze` — through `cardMode()`. It never touches scheduling: one deck entry
+  has one SM-2 card whichever way it is shown, and a second schedule per
+  direction would double every entry's state for a theory nobody has tested in
+  use yet.
+- Every mode degrades to recognition rather than refusing a card, since the
+  learner sets a direction once and the deck decides per entry whether it can
+  honour it: recall needs a gloss, cloze needs a sentence that survives
+  `clozeParts()`. Say which is missing in the card meta; do not silently show
+  an ordinary face.
+- The cloze front carries the gloss as its clue. Without one the prompt is
+  "some word goes here", which most sentences answer more than one way.
+- The stored sentence is otherwise still back-of-card only. Putting it on the
+  front of a recognition or recall card would give the answer away, which is
+  the whole reason it lives on the back.
 
 ## Kanji family study conventions
 

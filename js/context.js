@@ -9,7 +9,7 @@
 // same script — `。「` is one 'other' token, so a sentence can end partway
 // through one.
 
-import { isSentenceEnd } from './script.js';
+import { isKana, isKanji, isSentenceEnd } from './script.js';
 
 // Longest sentence we'll keep whole. Beyond this the sentence is windowed
 // around the word, so one runaway paragraph can't bloat every deck entry (and
@@ -87,4 +87,25 @@ export function contextParts(sentence) {
   // Showing the sentence unhighlighted beats showing it sliced in the wrong place.
   if (start < 0 || end > text.length || start >= end) return { before: text, word: '', after: '' };
   return { before: text.slice(0, start), word: text.slice(start, end), after: text.slice(end) };
+}
+
+/**
+ * The same context, prepared for a cloze prompt: the sentence with the word
+ * itself withheld. Returns `{ before, after, word }` or null when this entry
+ * cannot be clozed.
+ *
+ * Two entries can't: one whose offsets no longer locate the word (contextParts
+ * falls back to an unhighlighted sentence, so there is nothing to blank), and
+ * one whose stored sentence is the word plus nothing readable — 本。 blanks
+ * down to a box and a full stop, which is a worse card than the ordinary one.
+ * "Readable" is one kana or kanji outside the blank, rather than a list of
+ * punctuation to ignore: brackets and quotes are no more of a clue than 。 is.
+ * Callers fall back to a normal face rather than showing an empty box.
+ */
+export function clozeParts(sentence) {
+  const parts = contextParts(sentence);
+  if (!parts || !parts.word) return null;
+  const rest = parts.before + parts.after;
+  if (![...rest].some((ch) => isKana(ch) || isKanji(ch))) return null;
+  return parts;
 }

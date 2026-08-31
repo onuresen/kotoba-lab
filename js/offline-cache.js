@@ -20,16 +20,19 @@ const JS_MODULES = Object.freeze([
   'js/aozora.js',
   'js/app.js',
   'js/backup.js',
+  'js/component-lookup.js',
   'js/compound-words.js',
   'js/context.js',
   'js/false-friends.js',
   'js/flashcards.js',
+  'js/grammar.js',
   'js/jlpt.js',
   'js/kanji-alchemy.js',
   'js/kanji-atlas.js',
   'js/kanji-browser.js',
   'js/kanji-labs.js',
   'js/kanji-map.js',
+  'js/kanji-mystery.js',
   'js/kanji-network.js',
   'js/kanji-relationships.js',
   'js/kanji-study.js',
@@ -52,6 +55,7 @@ const JS_MODULES = Object.freeze([
   'js/usage-journal.js',
   'js/usage-report.js',
   'js/word-browser.js',
+  'js/writing.js',
 ]);
 
 const SHELL_PATHS = Object.freeze([

@@ -133,8 +133,14 @@ export function filterKanji(catalog, options = {}) {
   const band = STROKE_BANDS[options.strokes] || null;
   const knownMode = options.known || 'all';
   const isKnown = typeof options.isKnown === 'function' ? options.isKnown : () => false;
+  // A pre-computed set of candidate kanji, currently the component picker's
+  // intersection (see component-lookup.js). Null means "no such filter"; an
+  // empty set means one is active and nothing survived it, which is a real
+  // result and must not be treated as absent.
+  const chars = options.chars instanceof Set ? options.chars : null;
 
   const rows = catalog.filter((item) => {
+    if (chars && !chars.has(item.char)) return false;
     if (query && !item._search.includes(query)) return false;
     if (levels.size) {
       const key = item.jlpt == null ? 'ungraded' : String(item.jlpt);

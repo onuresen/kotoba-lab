@@ -5,7 +5,7 @@ import { createTokenizer } from './tokenizer.js';
 import { loadKuromojiTokenizer } from './tokenizer-kuromoji.js';
 import { createJlpt, LEVELS, levelName, levelSlug } from './jlpt.js';
 import { kanjiStats, wordStats, charMix, readability, coverage } from './analyze.js';
-import { renderReading, applyKnownClasses } from './read.js';
+import { renderReading, applyKnownClasses, hasGrammar } from './read.js';
 import { tokensToKana, tokensToRomaji } from './reading-forms.js';
 import { pickStudyWords, toTSV, download } from './flashcards.js';
 import { buildHomophoneGroups, homophoneQuestion, answerHomophoneQuestion } from './false-friends.js';
@@ -17,7 +17,8 @@ import { buildProfileMetrics, clearProfileCategory, emptyProfileState } from './
 import { createUsageJournal } from './usage-journal.js';
 import { buildUsageInsights } from './usage-insights.js';
 import { buildUsageReport, usageReportFilename } from './usage-report.js';
-import { sentenceAt, contextParts } from './context.js';
+import { sentenceAt, contextParts, clozeParts } from './context.js';
+import { grammarProfile, tokenGrammar } from './grammar.js';
 import {
   buildTextJourney,
   createJourneySession,
@@ -46,6 +47,21 @@ import {
   isFamilyMode,
   isStructureFamilyMode,
 } from './kanji-browser.js';
+import {
+  buildDailyMystery,
+  createMysterySession,
+  guessMystery,
+  mysteryProgress,
+  mysteryShareLine,
+  revealMysteryClue,
+  visibleClues,
+} from './kanji-mystery.js';
+import {
+  buildComponentLookup,
+  filterComponents,
+  matchingKanji,
+  usableComponents,
+} from './component-lookup.js';
 import {
   createKanjiStudySession,
   currentStudyCard,
@@ -107,7 +123,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.42.0';
+const APP_VERSION = '10.45.1';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -139,6 +155,17 @@ let kanjiStructureIndex = null;
 let kanjiStructurePromise = null;
 let kanjiStructureError = '';
 let kanjiBrowseLimit = 60;
+// Daily Mystery. Session-only, exactly like Alchemy's Today's Brew: the date
+// seed makes the puzzle identical all day with no stored state, so a reload
+// starts today's kanji over rather than restoring a half-finished attempt.
+// No storage key, no streak, no history — see kanji-mystery.js.
+let mysterySession = null;
+let mysteryOpen = false;
+// Component lookup: the picker's own state is entirely ephemeral — the chosen
+// shapes are a search, not a study record, so nothing here reaches storage.
+let kanjiComponentLookup = null;
+let kanjiComponentLimit = 96;
+const kanjiComponentSelection = new Set();
 // False-Friend Museum: built once from committed vocab; the rest is
 // ephemeral session state — no storage key, matching every other lab.
 let falseFriendGroups = [];
@@ -250,6 +277,10 @@ async function boot() {
   renderMyWords();
   renderProfilePanel();
   refreshReview();
+  // Only now: every renderer above has its data, and wireUi() has attached the
+  // handlers the destination tab needs. On the failure path above boot() has
+  // already returned, so a deep link never lands on a tab that cannot work.
+  applyInitialRoute(initialTab);
   if (samples[0]) { $('#input').value = samples[0].text; run({ recordUsage: false }); }
   usageJournal.startSession();
   renderUsageJournal();
@@ -610,6 +641,7 @@ function run({ recordUsage = true } = {}) {
   textJourney = buildTextJourney(kStats.rows, tokens, kanjiCatalog, (char) => knownKanji.has(char));
 
   renderReadability(readability(text, kStats));
+  renderGrammarProfile(grammarProfile(tokens));
   renderOverview(charMix(text), kStats, wStats);
   renderDist('#kanji-dist', kStats.byLevel, kStats.ungraded, kStats.totalKanji, 'kanji');
   renderCoverage(kStats, wStats);
@@ -635,6 +667,53 @@ function renderReadingView() {
   const root = $('#reading');
   if (!current) return;
   renderReading(root, current.tokens, jlpt, showInfo, isKnown, readViewMode);
+  syncGrammarLayer();
+}
+
+// The grammar layer is offered only when the current text actually carries
+// morphology, which today means the precise tokenizer is on. Switching back to
+// the instant one leaves the checkbox ticked but disabled and the coloring off,
+// rather than silently losing the setting the reader chose.
+function syncGrammarLayer() {
+  const box = $('#grammar-layer');
+  const available = hasGrammar(current?.tokens);
+  box.disabled = !available;
+  $('#grammar-layer-label').title = available
+    ? 'Mark the particles and auxiliaries holding each sentence together'
+    : 'Needs the precise tokenizer — turn it on under the text box';
+  const on = available && box.checked;
+  $('#reading').classList.toggle('show-grammar', on);
+  $('#grammar-legend').hidden = !on;
+}
+
+// The payoff for the 18 MB precise tokenizer: what the text is made of
+// grammatically, beside the kanji profile that has always been here. Reports
+// its own absence rather than an empty chart — see grammarProfile().
+function renderGrammarProfile(profile) {
+  const host = $('#grammar-profile');
+  if (!profile.available) {
+    host.innerHTML = `<p class="hint">The instant tokenizer matches dictionary words but never analyses grammar. Turn on <b>precise tokenizer</b> under the text box and this fills in: parts of speech, the particles this text leans on, and every inflected word with its dictionary form.</p>`;
+    return;
+  }
+  const widest = Math.max(...profile.groups.map((group) => group.count), 1);
+  host.innerHTML = `
+    <div class="gp-bars">
+      ${profile.groups.map((group) => `
+        <div class="gp-row">
+          <span class="gp-name">${esc(group.label || group.pos)}<i lang="ja">${esc(group.pos)}</i></span>
+          <div class="gp-bar"><span class="gp-fill" style="width:${Math.round((group.count / widest) * 100)}%"></span></div>
+          <span class="gp-count">${group.count.toLocaleString()}${group.pct == null ? '' : ` · ${group.pct}%`}</span>
+        </div>`).join('')}
+    </div>
+    <p class="hint">${profile.total.toLocaleString()} analysed words, punctuation excluded from the percentages. Labels are the analyser's own IPADIC tags, not a grammar lesson.</p>
+    ${profile.particles.length ? `<div class="gp-group">
+      <span class="label">Particles this text leans on</span>
+      <div class="chips">${profile.particles.map((p) => `<span class="gp-chip" lang="ja">${esc(p.surface)}<i>${p.count}</i></span>`).join('')}</div>
+    </div>` : ''}
+    ${profile.conjugated.length ? `<div class="gp-group">
+      <span class="label">Inflected words and their dictionary forms</span>
+      <div class="chips">${profile.conjugated.map((c) => `<span class="gp-chip gp-lemma" lang="ja">${esc(c.surface)} ← <b>${esc(c.lemma)}</b>${c.count > 1 ? `<i>${c.count}</i>` : ''}</span>`).join('')}</div>
+    </div>` : ''}`;
 }
 
 async function copyReadingForm(kind) {
@@ -762,6 +841,28 @@ function setInfoSheet(open) {
   $('#info-scrim').classList.toggle('is-open', open);
 }
 
+// What the precise tokenizer knows about this exact token and the instant one
+// does not. Absent — not empty, not "unknown" — whenever there is no analysis:
+// the v1 segmenter matches dictionary strings and never claims a part of
+// speech, so the panel simply has one row fewer.
+function infoGrammarMarkup(index) {
+  const grammar = tokenGrammar(current?.tokens?.[index]);
+  if (!grammar) return '';
+  const name = grammar.label ? `${grammar.label} · ${grammar.pos}` : grammar.pos;
+  // grammar.detail (IPADIC's pos_detail_1) is deliberately not rendered. For a
+  // verb it is almost always 自立, which tells an English-speaking learner
+  // nothing; for a particle it is 格助詞 / 係助詞, which would need translating,
+  // and translating a subtype is where describing the tagset turns into
+  // teaching grammar. It stays available on the token for a later feature that
+  // has a real use for it.
+  return `<div class="info-grammar">
+    <span class="label">Grammar</span>
+    <p class="info-grammar-pos">${esc(name)}</p>
+    ${grammar.conjugated ? `<p class="info-grammar-lemma" lang="ja" aria-label="${esc(current.tokens[index].surface)} comes from ${esc(grammar.lemma)}">${esc(current.tokens[index].surface)} ← <b>${esc(grammar.lemma)}</b></p>` : ''}
+    ${grammar.conjugation ? `<p class="hint">Inflected form: ${esc(grammar.conjugation)} (the analyser's own label)</p>` : ''}
+  </div>`;
+}
+
 function showInfo(sel) {
   lastSel = sel;
   if (sel.type === 'kanji') {
@@ -788,6 +889,7 @@ function showInfo(sel) {
       <p class="hint">${sel.level == null
         ? 'Not in the vocab seed — segmented by script run, so no reading/meaning.'
         : 'Dictionary word, JLPT ' + levelName(sel.level) + '.'}</p>
+      ${infoGrammarMarkup(sel.index)}
       <div class="info-actions">${knownBtn(knownWords.has(sel.surface))}${saveBtn(deck.has(sel.surface))}</div>
       ${kanjiChars.length ? `<div class="info-kchars">
         <span class="label">Kanji in this word</span>
@@ -1394,14 +1496,267 @@ function onKanjiAlchemyKey(event) {
   }
 }
 
+// ---- Kanji tab: Daily Mystery -----------------------------------------------
+// The puzzle needs the same compact family index the structural views use (for
+// the radical clue), so opening the card is what pays for it.
+function ensureMystery() {
+  if (mysterySession) return;
+  loadKanjiStructureIndex()
+    .then((structureIndex) => {
+      if (mysterySession) return;
+      const mystery = buildDailyMystery(kanjiCatalog, structureIndex, vocabList, {
+        describe: (char) => jlpt.kanjiInfo(char)?.meaning || '',
+      });
+      mysterySession = createMysterySession(mystery);
+      renderMystery();
+    })
+    .catch((error) => {
+      console.error(error);
+      renderMystery();
+    });
+}
+
+// Candidates for the guess box. Deliberately the library's own search, so
+// deducing the answer is the same act as looking a kanji up — type a meaning,
+// a reading, or paste the glyph itself.
+function mysteryCandidates(query) {
+  if (!query.trim()) return [];
+  return filterKanji(kanjiCatalog, { query }).slice(0, 8);
+}
+
+function mysteryAnswerMarkup(session) {
+  const { answer } = session;
+  return `<div class="mystery-answer" data-solved="${session.solved}">
+    <div class="mystery-answer-head">
+      <span class="mystery-answer-glyph jlpt-${levelSlug(answer.jlpt)}">${esc(answer.char)}</span>
+      <div>
+        <p class="mystery-answer-meaning">${esc(answer.meaning)}</p>
+        <p class="hint">${answer.on ? `On'yomi ${esc(answer.on)}` : ''}${answer.on && answer.kun ? ' · ' : ''}${answer.kun ? `Kun'yomi ${esc(answer.kun)}` : ''}</p>
+      </div>
+      <span class="badge" data-status="${answer.jlpt == null ? 'archive' : 'reference'}">${levelName(answer.jlpt)}</span>
+    </div>
+    <div class="mystery-answer-actions">
+      ${knownBtn(knownKanji.has(answer.char))}
+      <button type="button" class="btn btn-ghost" data-kanji-tree="${esc(answer.char)}">Radical Tree</button>
+      <button type="button" class="btn btn-ghost" data-kanji-map="${esc(answer.char)}">Relationship Map</button>
+    </div>
+  </div>`;
+}
+
+function renderMystery() {
+  const host = $('#mystery-body');
+  if (!host) return;
+  const state = $('#mystery-strip-state');
+  if (!mysterySession) {
+    state.textContent = '';
+    if (mysteryOpen) {
+      host.innerHTML = `<p class="hint">${kanjiStructureError
+        ? 'Could not load the offline radical index, so today’s clues cannot be built. Close and reopen this card to retry.'
+        : 'Building today’s puzzle…'}</p>`;
+    }
+    return;
+  }
+
+  const progress = mysteryProgress(mysterySession);
+  state.textContent = progress.over
+    ? (progress.solved ? 'solved' : 'revealed')
+    : `${progress.revealed}/${progress.total}`;
+  $('#mystery-tagline').textContent = progress.over
+    ? 'Today’s kanji is out. A new one tomorrow.'
+    : `Clue ${progress.revealed} of ${progress.total} — guess whenever you like.`;
+  if (!mysteryOpen) return;
+
+  // renderKanjiBrowser() calls this on every library keystroke and after any
+  // known-state change, and the body is rebuilt wholesale — so a half-typed
+  // guess (and the caret in it) has to survive that.
+  const typed = $('#mystery-guess');
+  const carried = typed ? { value: typed.value, focused: document.activeElement === typed } : null;
+
+  const clues = visibleClues(mysterySession).map((clue, index) => `
+    <li class="mystery-clue">
+      <span class="mystery-clue-n">${index + 1}</span>
+      <span class="mystery-clue-label">${esc(clue.label)}</span>
+      <span class="mystery-clue-text" lang="ja">${esc(clue.text)}</span>
+    </li>`).join('');
+
+  const wrong = mysterySession.guesses.filter((char) => char !== mysterySession.char);
+  const guessRow = wrong.length ? `<div class="mystery-guesses">
+    <span class="label">Ruled out</span>
+    <div class="chips">${wrong.map((char) => `<span class="mystery-guess" lang="ja">${esc(char)}</span>`).join('')}</div>
+  </div>` : '';
+
+  host.innerHTML = `
+    <ol class="mystery-clues">${clues}</ol>
+    ${guessRow}
+    ${progress.over ? `
+      <p class="mystery-verdict" data-tone="${mysterySession.solved ? 'good' : 'plain'}">${mysterySession.solved
+        ? `Solved on clue ${progress.revealed}.`
+        : 'Out of clues — here it is.'}</p>
+      ${mysteryAnswerMarkup(mysterySession)}
+      <div class="mystery-share">
+        <pre class="mystery-share-line">${esc(mysteryShareLine(mysterySession))}</pre>
+        <button type="button" class="btn btn-ghost" data-mystery-action="copy">Copy result</button>
+      </div>
+      <p class="hint">Nothing here is stored: no streak, no history, and reloading starts today’s kanji over.</p>`
+    : `
+      <div class="mystery-guess-row">
+        <label class="label mystery-guess-field">Your guess
+          <input id="mystery-guess" class="input" type="search" autocomplete="off" placeholder="Meaning, reading, or the kanji itself">
+        </label>
+        <button type="button" class="btn btn-ghost" data-mystery-action="clue" ${progress.remaining ? '' : 'disabled'}>
+          ${progress.remaining ? 'Open another clue' : 'No clues left'}
+        </button>
+      </div>
+      <div id="mystery-candidates" class="mystery-candidates"></div>
+      <p class="hint">A wrong guess opens the next clue. Search the way you would in the library — by meaning, by reading, or by pasting the glyph.</p>`}`;
+  if (progress.over) return;
+  const field = $('#mystery-guess');
+  if (field && carried) field.value = carried.value;
+  renderMysteryCandidates(Boolean(carried?.focused));
+}
+
+function renderMysteryCandidates(focus = false) {
+  const host = $('#mystery-candidates');
+  const field = $('#mystery-guess');
+  if (!host || !field) return;
+  const rows = mysteryCandidates(field.value);
+  host.innerHTML = rows.length
+    ? rows.map((row) => `<button type="button" class="mystery-candidate jlpt-${levelSlug(row.jlpt)}" data-mystery-guess="${esc(row.char)}" title="${esc(row.meaning)}">
+        <span lang="ja">${esc(row.char)}</span><i>${esc(row.meaning.split(';')[0].trim())}</i>
+      </button>`).join('')
+    : field.value.trim() ? '<p class="hint">Nothing in the dictionary matches that.</p>' : '';
+  if (focus) field.focus();
+}
+
+function answerMystery(char) {
+  if (!mysterySession || mysterySession.over) return;
+  const { session, verdict } = guessMystery(mysterySession, char);
+  mysterySession = session;
+  if (verdict === 'repeat') { toast('Already ruled that one out.', 'error'); return; }
+  usageJournal.record('study.mystery');
+  renderMystery();
+  if (verdict === 'correct') toast('That is today’s kanji.', 'success');
+  const field = $('#mystery-guess');
+  if (field) { field.value = ''; renderMysteryCandidates(true); }
+}
+
+function onMysteryClick(event) {
+  if (event.target.closest('#mystery-toggle')) {
+    mysteryOpen = !mysteryOpen;
+    $('#mystery-body').hidden = !mysteryOpen;
+    $('#mystery-toggle').setAttribute('aria-expanded', String(mysteryOpen));
+    if (mysteryOpen) { ensureMystery(); renderMystery(); }
+    return;
+  }
+  const guess = event.target.closest('[data-mystery-guess]');
+  if (guess) { answerMystery(guess.dataset.mysteryGuess); return; }
+  // The revealed answer offers the same known toggle every other kanji surface
+  // does. knownBtn() only draws it; each panel owns the click, scoped to its
+  // own subject — here the day's kanji rather than the Read panel's lastSel.
+  if (event.target.closest('.act-known') && mysterySession?.over) {
+    const char = mysterySession.char;
+    const known = knownKanji.toggle(char);
+    usageJournal.record('known.change');
+    knownToast(char, known);
+    refreshKnownEverywhere(); // rebuilds the Kanji tab, and with it this card
+    return;
+  }
+  const action = event.target.closest('[data-mystery-action]')?.dataset.mysteryAction;
+  if (action === 'clue' && mysterySession) {
+    mysterySession = revealMysteryClue(mysterySession);
+    renderMystery();
+  } else if (action === 'copy') {
+    navigator.clipboard.writeText(mysteryShareLine(mysterySession))
+      .then(() => toast('Result copied — it gives nothing away.', 'success'))
+      .catch(() => toast('Clipboard blocked — the line above can be selected by hand.', 'error'));
+  }
+}
+
+// ---- Kanji tab: component lookup --------------------------------------------
+// The picker needs the same compact family index the structural family views
+// use, so opening it is what pays for it — the library itself still loads
+// without touching either artifact.
+function ensureComponentLookup() {
+  if (kanjiComponentLookup) return;
+  loadKanjiStructureIndex()
+    .then((structureIndex) => {
+      kanjiComponentLookup ||= buildComponentLookup(structureIndex, {
+        meaningOf: (char) => jlpt.kanjiInfo(char)?.meaning || '',
+      });
+      renderKanjiBrowser();
+    })
+    .catch((error) => {
+      console.error(error);
+      renderKanjiBrowser();
+    });
+}
+
+function componentChip(item, { selected, usable }) {
+  const label = `${item.element}${item.meaning ? ` — ${item.meaning}` : ''} · ${item.count.toLocaleString()} kanji`;
+  // A selected shape is never dimmed: it has to stay clickable to be undone.
+  const out = !selected && !usable;
+  return `<button type="button" class="kcomp${selected ? ' is-selected' : ''}${out ? ' is-out' : ''}"
+    data-component="${esc(item.element)}" aria-pressed="${selected}" ${out ? 'disabled' : ''} title="${esc(label)}">
+    <span class="kcomp-glyph" lang="ja">${esc(item.element)}</span>
+    <span class="kcomp-count">${item.count.toLocaleString()}</span>
+  </button>`;
+}
+
+function renderComponentPicker(matches) {
+  const host = $('#kanji-components-grid');
+  if (!host) return;
+  const selected = [...kanjiComponentSelection];
+  const countBadge = $('#kanji-components-count');
+  countBadge.hidden = selected.length === 0;
+  countBadge.textContent = selected.length;
+  $('#kanji-components-clear').disabled = selected.length === 0;
+  // The badge lives on the closed toggle, so it updates either way; everything
+  // below is inside the panel. renderKanjiBrowser() runs on every keystroke in
+  // the library search, and redrawing 96 invisible chips each time is waste.
+  if ($('#kanji-components').hidden) return;
+
+  const chosen = $('#kanji-components-selected');
+  chosen.hidden = selected.length === 0;
+  chosen.innerHTML = selected.map((element) => `<button type="button" class="kcomp-chosen" data-component="${esc(element)}" aria-label="Remove ${esc(element)}"><span lang="ja">${esc(element)}</span> ×</button>`).join('');
+
+  if (!kanjiComponentLookup) {
+    host.innerHTML = `<p class="hint">${kanjiStructureError
+      ? 'Could not load the offline component index. Close and reopen this panel to retry.'
+      : 'Loading the compact offline component index…'}</p>`;
+    $('#kanji-components-more').hidden = true;
+    $('#kanji-components-summary').textContent = '';
+    return;
+  }
+
+  const usable = usableComponents(kanjiComponentLookup, matches);
+  const found = filterComponents(kanjiComponentLookup, $('#kanji-component-search').value);
+  const visible = found.slice(0, kanjiComponentLimit);
+  host.innerHTML = visible.length
+    ? visible.map((item) => componentChip(item, {
+        selected: kanjiComponentSelection.has(item.element),
+        usable: usable.has(item.element),
+      })).join('')
+    : '<p class="hint">No component matches that shape or meaning. Components that are not dictionary kanji of their own — 氵, 艹, ⻖ — have no meaning to search.</p>';
+  $('#kanji-components-more').hidden = visible.length >= found.length;
+
+  $('#kanji-components-summary').textContent = selected.length
+    ? `${matches.size.toLocaleString()} kanji contain ${selected.join(' + ')}`
+    : `${kanjiComponentLookup.size.toLocaleString()} shapes, commonest first`;
+}
+
 function renderKanjiBrowser() {
   if (!kanjiCatalog.length || !$('#kanji-results')) return;
+  renderMystery();
+  // null when nothing is picked, which filterKanji reads as "no such filter".
+  const componentMatches = matchingKanji(kanjiComponentLookup, kanjiComponentSelection);
+  renderComponentPicker(componentMatches);
   const rows = filterKanji(kanjiCatalog, {
     query: $('#kanji-search').value,
     levels: [...kanjiBrowseLevels],
     strokes: $('#kanji-strokes').value,
     known: $('#kanji-known').value,
     sort: $('#kanji-sort').value,
+    chars: componentMatches,
     isKnown: (char) => knownKanji.has(char),
   });
   const groupMode = $('#kanji-group').value;
@@ -1523,6 +1878,9 @@ function renderKanjiBrowser() {
 
 function resetKanjiBrowser() {
   stopKanjiStudy();
+  kanjiComponentSelection.clear();
+  kanjiComponentLimit = 96;
+  $('#kanji-component-search').value = '';
   $('#kanji-search').value = '';
   $('#kanji-strokes').value = 'all';
   $('#kanji-known').value = 'all';
@@ -1539,7 +1897,20 @@ function resetKanjiBrowser() {
 // The queue is derived from the deck, never stored: every answer writes the
 // graded card back to storage and rebuilds, so the two can't drift apart.
 const newLimit = () => Number($('#srs-new-limit').value) || 20;
-const isRecall = (entry) => $('#srs-direction').value === 'recall' && !!entry.gloss;
+
+// Which face this card shows. Direction is a way of *viewing* the one card —
+// it never changes the schedule — so every mode has to degrade rather than
+// refuse: an entry with no gloss can't be asked EN → JP, and one saved before
+// contexts existed (or from the Words tab, which has no sentence to record)
+// can't be clozed. Both fall back to plain recognition instead of a dead card.
+function cardMode(entry) {
+  const chosen = $('#srs-direction').value;
+  if (chosen === 'recall' && entry.gloss) return 'recall';
+  if (chosen === 'cloze' && clozeParts(contextOf(entry))) return 'cloze';
+  return 'recognition';
+}
+
+const contextOf = (entry) => ({ text: entry.sentence, start: entry.sentenceStart, end: entry.sentenceEnd });
 
 function refreshReview() {
   queue = buildQueue(deck.all(), { newLimit: newLimit(), lastAnswered });
@@ -1607,27 +1978,44 @@ function renderStage() {
 
   const { entry, card } = queue[0];
   stage.dataset.reviewState = revealed ? 'revealed' : 'prompt';
-  const recall = isRecall(entry);
+  const mode = cardMode(entry);
+  // Say so rather than silently showing an ordinary card: the direction is set
+  // and this one card could not honour it, which is worth one quiet word — and
+  // the word says which of the two things this entry is missing.
+  const chosen = $('#srs-direction').value;
+  const fellBack = mode === 'recognition' && chosen !== 'recognition'
+    ? (chosen === 'cloze' ? 'no sentence saved' : 'no meaning saved') : '';
   const slug = levelSlug(entry.level);
   const word = `<div class="srs-word jlpt-${slug}">${esc(entry.surface)}</div>`;
+  const reading = entry.reading ? `<div class="srs-reading">${esc(entry.reading)}</div>` : '';
   const state = isNew(card) ? 'new'
     : card.interval === 0 ? 'learning'
     : `review · ${card.interval}d · ease ${card.ease.toFixed(2)}`;
 
-  const face = recall
-    ? `<div class="srs-gloss-front">${esc(entry.gloss)}</div>`
-    : word;
-
-  const back = recall
-    ? word + (entry.reading ? `<div class="srs-reading">${esc(entry.reading)}</div>` : '')
-    : (entry.reading ? `<div class="srs-reading">${esc(entry.reading)}</div>` : '') +
-      `<div class="srs-gloss">${esc(entry.gloss || 'No meaning stored for this word.')}</div>`;
-
   // The sentence this word was saved from, with that exact occurrence marked.
-  // Back of the card only: on the front it would give away a recall answer.
-  const parts = contextParts({ text: entry.sentence, start: entry.sentenceStart, end: entry.sentenceEnd });
+  // On a recognition or recall card this is back-of-card only: on the front it
+  // would give the answer away. A cloze card front is this same sentence with
+  // the word withheld, so it is the prompt itself there — and the back showing
+  // it filled back in is the whole point of the mode.
+  const parts = contextParts(contextOf(entry));
   const contextRow = parts ? `
     <div class="srs-context" lang="ja">${esc(parts.before)}<mark>${esc(parts.word)}</mark>${esc(parts.after)}</div>` : '';
+  const clozeRow = mode === 'cloze' ? `
+    <div class="srs-context srs-cloze" lang="ja">${esc(parts.before)}<span class="srs-blank" role="img" aria-label="missing word">？</span>${esc(parts.after)}</div>` : '';
+
+  const face = mode === 'recall'
+    ? `<div class="srs-gloss-front">${esc(entry.gloss)}</div>`
+    : mode === 'cloze'
+      // The gloss comes along as the clue. Without it the prompt is "some word
+      // goes here", which has more than one right answer in most sentences.
+      ? clozeRow + (entry.gloss ? `<div class="srs-cloze-clue">${esc(entry.gloss)}</div>` : '')
+      : word;
+
+  // Recall and cloze both asked for the word, so both answer with it; only
+  // recognition, which showed the word, answers with what it means.
+  const back = mode === 'recognition'
+    ? reading + `<div class="srs-gloss">${esc(entry.gloss || 'No meaning stored for this word.')}</div>`
+    : word + reading;
 
   const kanjiChars = [...new Set([...entry.surface].filter(isKanji))];
   const kanjiRow = kanjiChars.length ? `
@@ -1642,6 +2030,7 @@ function renderStage() {
       <span class="badge" data-status="${entry.level == null ? 'archive' : 'reference'}">${levelName(entry.level)}</span>
       <span class="hint">${state}</span>
       <span class="ui-section-line"></span>
+      ${fellBack ? `<span class="hint">${fellBack}</span>` : ''}
       <span class="hint">${queue.length} in queue</span>
     </div>
     <div class="srs-face">
@@ -2474,6 +2863,8 @@ function showEmpty() {
   textJourney = null;
   textJourneySession = null;
   ['#readability', '#overview', '#kanji-dist'].forEach((s) => ($(s).innerHTML = ''));
+  renderGrammarProfile({ available: false });
+  syncGrammarLayer();
   $('#kanji-tbody').innerHTML = $('#word-tbody').innerHTML = '';
   $('#reading').innerHTML = `<div class="empty-state"><span class="e-icon">✍</span><div class="e-title">Paste Japanese text to begin</div></div>`;
   $('#info').innerHTML = infoHint();
@@ -2622,6 +3013,7 @@ function wireUi() {
   $('#flash-copy').addEventListener('click', () => exportFlashcards(false));
   $('#flash-download').addEventListener('click', () => exportFlashcards(true));
   $('#precise').addEventListener('change', onPreciseToggle);
+  $('#grammar-layer').addEventListener('change', syncGrammarLayer);
   $('#import-file').addEventListener('change', onImportFile);
   $('#kanji-search').addEventListener('input', () => {
     stopKanjiStudy();
@@ -2676,6 +3068,57 @@ function wireUi() {
     const filters = $('#kanji-advanced-filters');
     const open = filters.classList.toggle('is-open');
     $('#kanji-filter-toggle').setAttribute('aria-expanded', String(open));
+  });
+  $('#mystery-card').addEventListener('click', onMysteryClick);
+  $('#mystery-card').addEventListener('input', (event) => {
+    if (event.target.id === 'mystery-guess') renderMysteryCandidates();
+  });
+  // Enter guesses only when the search has narrowed to exactly one kanji —
+  // typing the glyph itself, or a meaning only one entry has. With eight
+  // candidates on screen it would fire the first one silently, and a guess
+  // costs a clue, so it must never be something the hand did by accident. The
+  // candidates are ordinary buttons, so Tab-then-Enter still reaches any of
+  // them without a mouse.
+  $('#mystery-card').addEventListener('keydown', (event) => {
+    if (event.target.id !== 'mystery-guess' || event.key !== 'Enter') return;
+    event.preventDefault();
+    const options = $('#mystery-candidates')?.querySelectorAll('[data-mystery-guess]') || [];
+    if (options.length === 1) answerMystery(options[0].dataset.mysteryGuess);
+    else if (options.length) toast('Narrow it to one kanji, or pick one below.', 'error');
+  });
+  $('#kanji-components-toggle').addEventListener('click', () => {
+    const panel = $('#kanji-components');
+    const open = panel.hidden;
+    panel.hidden = !open;
+    $('#kanji-components-toggle').setAttribute('aria-expanded', String(open));
+    // Closing the picker does not clear the selection: it is a filter, and
+    // silently widening the results on collapse would be a worse surprise than
+    // a badge on a closed panel. The badge on the toggle says it is still on.
+    if (open) { ensureComponentLookup(); renderComponentPicker(matchingKanji(kanjiComponentLookup, kanjiComponentSelection)); }
+  });
+  $('#kanji-component-search').addEventListener('input', () => {
+    kanjiComponentLimit = 96;
+    renderComponentPicker(matchingKanji(kanjiComponentLookup, kanjiComponentSelection));
+  });
+  $('#kanji-components-more').addEventListener('click', () => {
+    kanjiComponentLimit += 96;
+    renderComponentPicker(matchingKanji(kanjiComponentLookup, kanjiComponentSelection));
+  });
+  $('#kanji-components-clear').addEventListener('click', () => {
+    if (!kanjiComponentSelection.size) return;
+    stopKanjiStudy();
+    kanjiComponentSelection.clear();
+    kanjiBrowseLimit = 60;
+    renderKanjiBrowser();
+  });
+  $('#kanji-components').addEventListener('click', (event) => {
+    const chip = event.target.closest('[data-component]');
+    if (!chip) return;
+    stopKanjiStudy();
+    const element = chip.dataset.component;
+    if (!kanjiComponentSelection.delete(element)) kanjiComponentSelection.add(element);
+    kanjiBrowseLimit = 60;
+    renderKanjiBrowser();
   });
   ['#kanji-strokes', '#kanji-known', '#kanji-sort'].forEach((selector) => {
     $(selector).addEventListener('change', () => { stopKanjiStudy(); kanjiBrowseLimit = 60; renderKanjiBrowser(); });
@@ -3054,17 +3497,30 @@ window.addEventListener('popstate', (event) => {
   switchTab(tab, false);
 });
 
-function applyInitialRoute() {
+// The initial route is claimed in two halves, deliberately.
+//
+// Claiming the history entry needs no data and must happen even if the
+// dictionaries never load, so it stays synchronous. Actually MOVING to that tab
+// runs the tab's renderer, and every renderer reads data boot() is still
+// fetching — `#review` with a saved deck used to throw here, because
+// renderStage() asks jlpt.kanjiInfo() for each kanji on the card and `jlpt` is
+// assigned inside boot(). wireUi() also runs inside boot(), so switching early
+// landed on a tab with no event handlers attached to it either way.
+function claimInitialRoute() {
   const { tab } = parseRoute(location.hash);
   // Exactly one entry for the entry point, so back from it leaves the app.
   history.replaceState({ tab }, '', routeToHash(tab));
+  return tab;
+}
+
+function applyInitialRoute(tab) {
   // boot() already renders Analyze as active; only move if the URL asks for
   // something else, so an ordinary load records no extra usage event.
   if (tab !== 'analyze') switchTab(tab, false);
   currentTab = tab;
 }
 
+const initialTab = claimInitialRoute();
 boot();
-applyInitialRoute();
 registerOfflineWorker();
 renderOfflineStatus();

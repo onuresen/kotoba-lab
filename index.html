@@ -167,6 +167,11 @@
       <div id="coverage"></div>
     </div>
 
+    <section class="card" id="grammar-profile-card">
+      <div class="ui-section-header"><span class="ui-section-title">Grammar profile</span><span class="ui-section-line"></span></div>
+      <div id="grammar-profile"></div>
+    </section>
+
     <section class="card text-journey" id="text-journey" aria-live="polite">
       <div class="ui-section-header"><span class="ui-section-title">Text-to-Study Journey</span><span class="ui-section-line"></span></div>
       <div id="text-journey-content"><p class="hint">Paste Japanese text to build a personal study route.</p></div>
@@ -215,6 +220,10 @@
     <div class="read-toolbar card">
       <label class="check"><input type="checkbox" id="furigana" checked> Furigana</label>
       <label class="check"><input type="checkbox" id="furigana-hide-known"> Hide furigana for known words</label>
+      <!-- Only enabled once a tokenizer that actually analyses grammar has run;
+           the instant segmenter emits no part of speech, so there is nothing
+           honest to color. See js/grammar.js. -->
+      <label class="check" id="grammar-layer-label" title="Needs the precise tokenizer — turn it on under the text box"><input type="checkbox" id="grammar-layer" disabled> Grammar layer</label>
       <label class="label inline">View
         <select id="read-view" class="select">
           <option value="original" selected>Original + furigana</option>
@@ -225,6 +234,14 @@
       <div class="read-copy">
         <button type="button" id="copy-kana" class="btn btn-ghost">Copy furigana</button>
         <button type="button" id="copy-romaji" class="btn btn-ghost">Copy romaji</button>
+      </div>
+      <!-- Deliberately two entries, not a hue per part of speech: red already
+           means "unknown / hard" here and the JLPT ramp owns difficulty, so the
+           layer marks the function words holding a sentence together and leaves
+           every content word in the reader's existing colors. -->
+      <div class="legend" id="grammar-legend" hidden>
+        <span class="lg"><i class="sw sw-pos" data-pos="助詞"></i>particle</span>
+        <span class="lg"><i class="sw sw-pos" data-pos="助動詞"></i>auxiliary</span>
       </div>
       <div class="legend">
         <span class="lg"><i class="sw jlpt-n5"></i>N5</span>
@@ -247,12 +264,27 @@
 
   <!-- KANJI -->
   <section class="panel" data-panel="kanji" data-layout="wide" id="kanji-panel">
+    <!-- Daily Mystery. Collapsed by default so it never displaces the library,
+         but at the top rather than buried below the results, because the whole
+         point of a daily is being a reason to open the application. -->
+    <section class="card mystery-card" id="mystery-card">
+      <button type="button" id="mystery-toggle" class="mystery-strip" aria-expanded="false" aria-controls="mystery-body">
+        <span class="mystery-mark" aria-hidden="true">謎</span>
+        <span class="mystery-strip-text">
+          <b>Daily Mystery</b>
+          <span class="hint" id="mystery-tagline">One kanji, five clues, one guess whenever you like.</span>
+        </span>
+        <span class="mystery-strip-state" id="mystery-strip-state" aria-hidden="true"></span>
+      </button>
+      <div id="mystery-body" class="mystery-body" hidden aria-live="polite"></div>
+    </section>
+
     <div class="card kanji-toolbar">
       <div class="kanji-intro">
         <div>
           <span class="label">Kanji library</span>
           <h2>Browse all 6,813 kanji</h2>
-          <p class="hint">Search the dictionary or explore stroke, reading, radical, and component families, then study a family or open any result in the Radical Tree.</p>
+          <p class="hint">Search the dictionary, build a kanji from the components you can see, or explore stroke, reading, radical, and component families, then study a family or open any result in the Radical Tree.</p>
         </div>
         <label class="kanji-search">
           <span class="label">Search</span>
@@ -271,6 +303,28 @@
           <button type="button" class="btn kanji-level" data-kanji-level="1" aria-pressed="false">N1</button>
           <button type="button" class="btn kanji-level" data-kanji-level="ungraded" aria-pressed="false">Ungraded</button>
         </div>
+      </div>
+
+      <!-- Component lookup: the one way into this library that does not need
+           the learner to name the kanji first. Selected shapes intersect (see
+           js/component-lookup.js) and unusable ones are dimmed rather than
+           hidden, so the picker keeps its shape as the search narrows. -->
+      <button type="button" id="kanji-components-toggle" class="btn btn-ghost kanji-components-toggle" aria-expanded="false" aria-controls="kanji-components">
+        <span>Build from components</span><span id="kanji-components-count" class="kanji-filter-count" hidden></span>
+      </button>
+      <div id="kanji-components" class="kanji-components" hidden>
+        <div class="kanji-components-head">
+          <label class="label kanji-components-find">Find a component
+            <input id="kanji-component-search" class="input" type="search" autocomplete="off" placeholder="Shape or meaning — 木, tree">
+          </label>
+          <div class="kanji-components-actions">
+            <span id="kanji-components-summary" class="hint"></span>
+            <button type="button" id="kanji-components-clear" class="btn btn-ghost" disabled>Clear components</button>
+          </div>
+        </div>
+        <div id="kanji-components-selected" class="kanji-components-selected" hidden aria-live="polite"></div>
+        <div id="kanji-components-grid" class="kanji-components-grid" role="group" aria-label="Filter by component"></div>
+        <button type="button" id="kanji-components-more" class="btn btn-ghost kanji-more" hidden>Show more components</button>
       </div>
 
       <button type="button" id="kanji-filter-toggle" class="btn btn-ghost kanji-filter-toggle" aria-expanded="false" aria-controls="kanji-advanced-filters">
@@ -425,6 +479,7 @@
           <select id="srs-direction" class="select">
             <option value="recognition" selected>JP → EN</option>
             <option value="recall">EN → JP</option>
+            <option value="cloze">Fill the sentence</option>
           </select>
         </label>
       </div>
