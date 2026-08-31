@@ -109,7 +109,11 @@ export function createKanjiTree({
   isWordKnown = () => false,
   toggleWordKnown = null,
   onWordKnownChange = () => {},
+  isWordSaved = () => false,
+  toggleWordSaved = null,
+  onWordSavedChange = () => {},
   onOpenRelationships = null,
+  onSeeAllWords = null,
   onError = () => {},
   wordsFor = null,
 }) {
@@ -197,13 +201,18 @@ export function createKanjiTree({
 
   // The tree explains what a kanji is made of; this says where it is actually
   // used. Injected rather than imported so this module keeps no dictionary of
-  // its own.
-  function treeWordsMarkup(words) {
+  // its own. `result` is wordsContaining()'s own { total, words } shape, so
+  // the "N of M" line and the doorway to the rest never need a second pass
+  // over the vocabulary.
+  function treeWordsMarkup(result) {
+    const words = result?.words;
     if (!Array.isArray(words) || !words.length) return '';
+    const total = Number.isFinite(result.total) ? result.total : words.length;
     return `<div class="kt-info-words">
-      <span class="label">Appears in</span>
+      <span class="label">Appears in${total > words.length ? ` · ${words.length} of ${total.toLocaleString()}` : ''}</span>
       ${words.map((word) => {
         const known = isWordKnown(word.w);
+        const saved = isWordSaved(word.w);
         return `<div class="kt-info-word">
         <span class="jp">${esc(word.w)}</span>
         ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
@@ -211,8 +220,14 @@ export function createKanjiTree({
         ${typeof toggleWordKnown === 'function'
           ? `<button type="button" class="kt-word-known" data-word="${esc(word.w)}" aria-pressed="${known}" title="${known ? `Unmark ${esc(word.w)} as known` : `Mark ${esc(word.w)} as known`}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(word.w)} as known">${known ? '✓' : '○'}</button>`
           : ''}
+        ${typeof toggleWordSaved === 'function'
+          ? `<button type="button" class="kt-word-save" data-word="${esc(word.w)}" aria-pressed="${saved}" title="${saved ? `Remove ${esc(word.w)} from your Review deck` : `Save ${esc(word.w)} to your Review deck`}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★' : '☆'}</button>`
+          : ''}
       </div>`;
       }).join('')}
+      ${total > words.length && typeof onSeeAllWords === 'function'
+        ? `<button type="button" class="kt-words-more">See all ${total.toLocaleString()} words →</button>`
+        : ''}
     </div>`;
   }
 
@@ -649,6 +664,24 @@ export function createKanjiTree({
         renderInfo(node);
         onWordKnownChange(word, known);
       }
+      return;
+    }
+    const wordSaveBtn = event.target.closest('.kt-word-save');
+    if (wordSaveBtn) {
+      const node = currentNode();
+      const word = wordSaveBtn.dataset.word;
+      if (node && word && typeof toggleWordSaved === 'function') {
+        const saved = toggleWordSaved(word);
+        renderInfo(node);
+        onWordSavedChange(word, saved);
+      }
+      return;
+    }
+    if (event.target.closest('.kt-words-more') && typeof onSeeAllWords === 'function') {
+      const char = currentNode()?.element;
+      const target = returnFocus;
+      close();
+      if (char) onSeeAllWords(char, target);
       return;
     }
     if (event.target.closest('.kt-relationships') && typeof onOpenRelationships === 'function') {

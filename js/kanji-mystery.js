@@ -136,7 +136,7 @@ function buildClues(item, structureIndex, vocab, random, describe) {
   const radical = radicals[0];
   const onReading = firstReading(item.on);
   const kunReading = firstReading(item.kun);
-  const words = wordsContaining(vocab, item.char, 8);
+  const { words } = wordsContaining(vocab, item.char, 8);
   const word = words[Math.floor(random() * words.length)] || null;
   const radicalMeaning = describe ? describe(radical) : '';
 

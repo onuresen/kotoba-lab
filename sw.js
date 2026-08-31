@@ -15,7 +15,7 @@ import {
 
 // Must match APP_VERSION in js/app.js and version in package.json. Bump it on
 // any release that changes a cached file, or installs serve stale forever.
-const APP_VERSION = '10.46.0';
+const APP_VERSION = '10.47.0';
 const CACHE = cacheNameFor(APP_VERSION);
 
 self.addEventListener('install', (event) => {
