@@ -1033,6 +1033,24 @@ kbd {
 /* Both card actions share the corner, so batch marking never means opening
    each kanji first. */
 .kanji-card-actions { position: absolute; right: 10px; bottom: 9px; display: flex; gap: 6px; }
+/* The heart is icon-only here: the row already carries two labelled buttons and
+   a third label does not fit a card this size. Vermilion when filled, because
+   this is the one place in the app where red means affection rather than
+   "unknown / above your level" — and it is a glyph, not a status wash. */
+.kanji-card-fav { padding-inline: 8px; font-size: 13px; line-height: 1; }
+.kanji-card-fav.is-fav { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.compound-fav { padding-inline: 9px; }
+.compound-fav.is-fav { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.act-fav.is-fav { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.kanji-favorites { display: inline-flex; align-items: center; gap: 7px; width: fit-content; }
+.kanji-favorites.is-active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+/* The Shelf. A collection, so it has a count and no target: no "of", no
+   percentage, no empty slots implying what should fill them. */
+.shelf-card { display: flex; flex-direction: column; }
+.shelf-group { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+.shelf-group .kanji-grid { margin-top: 2px; }
+.shelf-group .compound-list { margin-top: 2px; }
 
 .kanji-card-known {
   min-height: 30px; padding: 4px 9px;
@@ -1077,6 +1095,7 @@ kbd {
   .kanji-filter-toggle[aria-expanded="true"]::after { content: '−'; }
   .kanji-filter-count { margin-left: 8px; }
   .kanji-filter-row { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 2px; }
+  .kanji-favorites { min-height: 44px; width: 100%; justify-content: center; }
   .kanji-components-toggle { min-height: 44px; width: 100%; justify-content: space-between; }
   .kanji-components-toggle::after { margin-left: auto; padding-left: 8px; font-size: 16px; }
   .kanji-components { padding: 12px; gap: 10px; }

@@ -109,6 +109,11 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   entirely in kanji you have marked known — what those kanji combine into,
   rather than what they break down from. Ranked easiest-first, and every kanji
   opens its Radical Tree. Save any of them straight into the review deck.
+- **Favorites:** a ♡ on any kanji or word meaning simply *I like this* — kept
+  apart from known-state and the review deck, so a kanji you cannot read yet
+  can be one. Nothing schedules it and nothing counts it. Filter the Kanji
+  library down to what you kept, or browse the whole collection on the
+  Favorites shelf in the Deck tab. It travels in your profile backup.
 - **Achievements:** its own tab tracks 24 achievements across kanji, reading,
   words, saved cards, review days, and review streaks. Each carries XP toward
   one of 8 levels, locked ones stay visible (grayed, with their XP value), and
@@ -167,19 +172,18 @@ unavailable.
 ## Future idea garden
 
 The project keeps its imaginative long-term directions in
-[IDEA_GARDEN.md](IDEA_GARDEN.md). Radical Alchemy and Kanji Constellation Atlas
-have completed their bounded A–C and A–D experiments. Kanji Genealogy and
-Japanese Detective Board remain parked ideas rather than release promises;
-future work should follow observed study use instead of their original order.
+[IDEA_GARDEN.md](IDEA_GARDEN.md), reorganised on 2026-08-31 by **what brings
+someone to the application** rather than by when each idea was had: keeping what
+you love, the study loop, exploring without a goal, looking back, and a section
+for directions blocked on source material this project does not hold. Parked
+entries carry their first bounded experiment and the decision still open;
+nothing in the file is a release promise.
 
-A second exploration track, added 2026-08-30, is chosen from assets the
-repository already carries and does not spend — KanjiVG's stroke paths,
-kuromoji's discarded morphology, and the browser's own speech synthesis — and
-from the observation that the application is almost entirely a recognition
-trainer. Context-First Cards, Component Lookup, the Writing Lab, the Grammar X-ray, and
-the Daily Mystery have shipped from it; placement, a re-measurable bookshelf,
-a locally-spoken voice, typed readings, and a spot check for long-ago known
-kanji are parked there with their first experiments written down.
+The first section is the emptiest, and that is the finding. Every mark the
+application currently lets you make is a progress mark — *known*, *saved*,
+graded, counted — and there is no way to say simply "I like this one". A
+favorite that is deliberately not a progress mark, a shelf to browse it in,
+and a kanji card worth keeping are parked there.
 
 ## Run locally
 
@@ -257,13 +261,17 @@ vendor/kuromoji/         vendored tokenizer and dictionary
 serve.mjs / serve.cmd    dependency-free local server
 ```
 
-User state is stored under five `localStorage` keys. The usage journal is
-optional, off by default, and deliberately excluded from profile backups:
+User state is stored under eight `localStorage` keys. The usage journal is
+optional, off by default, and deliberately excluded from profile backups;
+everything else travels in one:
 
 - `kotoba-lab:deck`
 - `kotoba-lab:known-words`
 - `kotoba-lab:known-kanji`
+- `kotoba-lab:favorite-kanji`
+- `kotoba-lab:favorite-words`
 - `kotoba-lab:review-log`
+- `kotoba-lab:achievements`
 - `kotoba-lab:usage-journal`
 
 ## Data and licensing

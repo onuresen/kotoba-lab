@@ -123,7 +123,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.45.1';
+const APP_VERSION = '10.46.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -161,6 +161,8 @@ let kanjiBrowseLimit = 60;
 // No storage key, no streak, no history — see kanji-mystery.js.
 let mysterySession = null;
 let mysteryOpen = false;
+// Ephemeral, like every other browsing preference in the Kanji tab.
+let kanjiFavoritesOnly = false;
 // Component lookup: the picker's own state is entirely ephemeral — the chosen
 // shapes are a search, not a study record, so nothing here reaches storage.
 let kanjiComponentLookup = null;
@@ -188,6 +190,13 @@ const kanjiBrowseLevels = new Set();
 // persisted, personal — survive across sessions in this browser only
 const knownWords = createKnownSet('known-words');
 const knownKanji = createKnownSet('known-kanji');
+// Favorites: "I like this", kept deliberately apart from known-state and the
+// deck. Nothing schedules a favorite, nothing counts it toward coverage or an
+// achievement, and a kanji you cannot read yet can be one. Split into two sets
+// for the same reason known-state is: 水 the kanji you like the shape of and 水
+// the word you like are different marks. See IDEA_GARDEN.md section A.
+const favoriteKanji = createKnownSet('favorite-kanji');
+const favoriteWords = createKnownSet('favorite-words');
 const deck = createDeck('deck');
 const reviewLog = createReviewLog('review-log');
 const achievementLog = createAchievementLog('achievements');
@@ -832,6 +841,15 @@ function infoWordsMarkup(char) {
 function knownBtn(known) {
   return `<button class="btn btn-ghost act-known" data-known="${known}" title="${known ? 'Unmark this as known' : 'Mark as known — dims it while reading and updates your coverage meter'}">${known ? '✓ Known' : 'Mark known'}</button>`;
 }
+// The third mark, and the only one that means nothing but "I like this".
+// ✓ Known is progress and ★ Save is intent to practise; this is neither, so it
+// gets its own glyph and its own wording — "keep", never "learn" or "study".
+function favBtn(fav, what = 'this') {
+  return `<button class="btn btn-ghost act-fav${fav ? ' is-fav' : ''}" data-fav="${fav}" aria-pressed="${fav}" title="${fav
+    ? `Remove ${esc(what)} from your favorites`
+    : `Keep ${esc(what)} as a favorite — nothing schedules it and nothing counts it`}"><span aria-hidden="true">${fav ? '♥' : '♡'}</span> ${fav ? 'Favorite' : 'Favorite'}</button>`;
+}
+
 function saveBtn(saved) {
   return `<button class="btn ${saved ? '' : 'btn-ghost'} act-save" data-saved="${saved}" title="${saved ? 'Remove from your Review deck' : 'Save to your Review deck with its sentence — due for review now'}">${saved ? '★ Saved' : '☆ Save'}</button>`;
 }
@@ -878,7 +896,7 @@ function showInfo(sel) {
       ${info?.strokes ? `<p class="hint">${info.strokes} strokes</p>` : ''}
       ${!info ? `<p class="hint">Not in the kanji dictionary (very rare character).</p>` : ''}
       ${infoWordsMarkup(sel.ch)}
-      <div class="info-actions">${knownBtn(knownKanji.has(sel.ch))}<button type="button" class="btn btn-ghost" data-kanji-map="${esc(sel.ch)}">Relationship Map</button></div>`;
+      <div class="info-actions">${knownBtn(knownKanji.has(sel.ch))}${favBtn(favoriteKanji.has(sel.ch), sel.ch)}<button type="button" class="btn btn-ghost" data-kanji-map="${esc(sel.ch)}">Relationship Map</button></div>`;
   } else {
     const kanjiChars = [...new Set([...sel.surface].filter(isKanji))];
     $('#info').innerHTML = `
@@ -890,7 +908,7 @@ function showInfo(sel) {
         ? 'Not in the vocab seed — segmented by script run, so no reading/meaning.'
         : 'Dictionary word, JLPT ' + levelName(sel.level) + '.'}</p>
       ${infoGrammarMarkup(sel.index)}
-      <div class="info-actions">${knownBtn(knownWords.has(sel.surface))}${saveBtn(deck.has(sel.surface))}</div>
+      <div class="info-actions">${knownBtn(knownWords.has(sel.surface))}${saveBtn(deck.has(sel.surface))}${favBtn(favoriteWords.has(sel.surface), sel.surface)}</div>
       ${kanjiChars.length ? `<div class="info-kchars">
         <span class="label">Kanji in this word</span>
         <div class="chips">${kanjiChars.map((c) => `<span class="info-kpair jlpt-${levelSlug(jlpt.kanjiLevel(c))}"><button type="button" class="k info-kchar" data-k="${esc(c)}" data-kanji-tree="${esc(c)}" title="Open the Radical Tree for ${esc(c)}" aria-label="Open radical tree for ${esc(c)}">${esc(c)}</button><button type="button" class="info-kmap" data-kanji-map="${esc(c)}" title="Open the Relationship Map for ${esc(c)}" aria-label="Open relationship map for ${esc(c)}">↗</button></span>`).join('')}</div>
@@ -911,8 +929,21 @@ function onInfoAction(e) {
   }
   const knownEl = e.target.closest('.act-known');
   const saveEl = e.target.closest('.act-save');
-  if (!knownEl && !saveEl) return;
+  const favEl = e.target.closest('.act-fav');
+  if (!knownEl && !saveEl && !favEl) return;
   if (!lastSel) return;
+
+  if (favEl) {
+    const set = lastSel.type === 'kanji' ? favoriteKanji : favoriteWords;
+    const key = lastSel.type === 'kanji' ? lastSel.ch : lastSel.surface;
+    const now = set.toggle(key);
+    // No journal event and no toast wording about progress: keeping something
+    // is not a study action, and the only feedback it needs is the filled heart.
+    toast(now ? `♥ ${key}` : `Removed ${key} from favorites.`, 'success');
+    refreshFavoritesEverywhere();
+    showInfo(lastSel);
+    return;
+  }
 
   if (knownEl) {
     const isK = lastSel.type === 'kanji' ? knownKanji : knownWords;
@@ -966,6 +997,15 @@ function refreshKnownEverywhere({ skipKanjiBrowser = false } = {}) {
   relationsNetwork?.update();
   relationsAtlas?.update();
   renderRelationsSeeds();
+}
+
+// Deliberately much smaller than refreshKnownEverywhere(): a favorite changes
+// no coverage meter, no unlock list, no review queue and no achievement, so
+// only the two places that actually draw a heart need redrawing.
+function refreshFavoritesEverywhere() {
+  renderShelf();
+  renderKanjiBrowser();
+  renderProfilePanel();
 }
 
 function journeyWords(item) {
@@ -1048,6 +1088,7 @@ function kanjiCard(item) {
   const level = levelName(item.jlpt);
   const reading = [item.on && `On ${item.on}`, item.kun && `Kun ${item.kun}`].filter(Boolean).join(' · ');
   const known = knownKanji.has(item.char);
+  const fav = favoriteKanji.has(item.char);
   const aria = `Open ${item.char} — ${item.meaning || 'meaning unavailable'}, ${level}, ${item.strokes} strokes`;
   return `<div class="kanji-card-wrap jlpt-${levelSlug(item.jlpt)}"><button type="button" class="kanji-card" data-kanji-tree="${esc(item.char)}" data-known="${known}" aria-label="${esc(aria)}">
     <span class="kanji-card-glyph">${esc(item.char)}</span>
@@ -1057,7 +1098,7 @@ function kanjiCard(item) {
       <span class="kanji-card-meta" data-strokes="${item.strokes}">${item.strokes} strokes${known ? ' · ✓ Known' : ''}</span>
     </span>
     <span class="badge" data-status="${item.jlpt == null ? 'archive' : 'reference'}">${level}</span>
-  </button><div class="kanji-card-actions"><button type="button" class="kanji-card-known" data-kanji-known="${esc(item.char)}" title="${known ? `Unmark ${esc(item.char)} as known` : `Mark ${esc(item.char)} as known — updates your coverage meter and Words you can now read`}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(item.char)} as known"><span aria-hidden="true">✓</span> Known</button><button type="button" class="kanji-card-map" data-kanji-map="${esc(item.char)}" title="Open the Relationship Map for ${esc(item.char)}" aria-label="Open relationship map for ${esc(item.char)}"><span aria-hidden="true">↗</span> Map</button></div></div>`;
+  </button><div class="kanji-card-actions"><button type="button" class="kanji-card-known" data-kanji-known="${esc(item.char)}" title="${known ? `Unmark ${esc(item.char)} as known` : `Mark ${esc(item.char)} as known — updates your coverage meter and Words you can now read`}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(item.char)} as known"><span aria-hidden="true">✓</span> Known</button><button type="button" class="kanji-card-fav${fav ? ' is-fav' : ''}" data-kanji-fav="${esc(item.char)}" title="${fav ? `Remove ${esc(item.char)} from your favorites` : `Keep ${esc(item.char)} as a favorite — nothing schedules it and nothing counts it`}" aria-pressed="${fav}" aria-label="${fav ? 'Remove' : 'Keep'} ${esc(item.char)} ${fav ? 'from' : 'as'} a favorite">${fav ? '♥' : '♡'}</button><button type="button" class="kanji-card-map" data-kanji-map="${esc(item.char)}" title="Open the Relationship Map for ${esc(item.char)}" aria-label="Open relationship map for ${esc(item.char)}"><span aria-hidden="true">↗</span> Map</button></div></div>`;
 }
 
 function renderFamilyMixSetup(workspace) {
@@ -1496,6 +1537,50 @@ function onKanjiAlchemyKey(event) {
   }
 }
 
+// ---- Deck tab: the Shelf ----------------------------------------------------
+// Where favorites live. Kanji reuse the library's card grid and words reuse
+// wordRowMarkup(), so this is an arrangement of existing parts rather than a
+// new one — and it stays that way until browsing it proves it needs its own
+// form (see IDEA_GARDEN.md section A).
+function renderShelf() {
+  const host = $('#shelf-body');
+  if (!host) return;
+  const kanji = favoriteKanji.all();
+  const words = favoriteWords.all();
+  const total = kanji.length + words.length;
+  // A count, never a target: no "of", no percentage, no next milestone.
+  $('#shelf-count').textContent = total
+    ? `${total} kept · ${kanji.length} kanji, ${words.length} word${words.length === 1 ? '' : 's'}`
+    : '';
+
+  if (!total) {
+    host.innerHTML = `<div class="empty-state"><span class="e-icon">♡</span>
+      <div class="e-title">Nothing kept yet</div>
+      <div class="e-sub">Tap ♡ on a kanji card, or on any kanji or word in the Read tab, when you simply like it. It does not have to be one you are studying.</div></div>`;
+    return;
+  }
+
+  // Newest first: a shelf reads as what you added recently, not as a catalog.
+  // createKnownSet preserves insertion order, so this needs no timestamp.
+  const rows = [...kanji].reverse().map((char) => kanjiCatalog.find((item) => item.char === char)).filter(Boolean);
+  const missing = kanji.length - rows.length;
+  const wordRows = [...words].reverse().map((word) => {
+    const entry = vocabList.find((item) => item.w === word);
+    return entry || { w: word, r: '', g: 'Not in the committed vocabulary', lvl: null };
+  });
+
+  host.innerHTML = `
+    ${rows.length ? `<div class="shelf-group">
+      <span class="label">Kanji</span>
+      <div class="kanji-grid">${rows.map(kanjiCard).join('')}</div>
+    </div>` : ''}
+    ${missing ? `<p class="hint">${missing} kept kanji ${missing === 1 ? 'is' : 'are'} not in this build's dictionary and cannot be drawn as a card.</p>` : ''}
+    ${wordRows.length ? `<div class="shelf-group">
+      <span class="label">Words</span>
+      <div class="compound-list">${wordRows.map((word) => wordRowMarkup(word)).join('')}</div>
+    </div>` : ''}`;
+}
+
 // ---- Kanji tab: Daily Mystery -----------------------------------------------
 // The puzzle needs the same compact family index the structural views use (for
 // the radical clue), so opening the card is what pays for it.
@@ -1750,15 +1835,27 @@ function renderKanjiBrowser() {
   // null when nothing is picked, which filterKanji reads as "no such filter".
   const componentMatches = matchingKanji(kanjiComponentLookup, kanjiComponentSelection);
   renderComponentPicker(componentMatches);
+  // Two candidate sets can narrow the grid; when both are on, the intersection
+  // is what survives, which is what filterKanji's single `chars` option means.
+  const favoriteChars = kanjiFavoritesOnly ? new Set(favoriteKanji.all()) : null;
+  const chars = componentMatches && favoriteChars
+    ? new Set([...componentMatches].filter((char) => favoriteChars.has(char)))
+    : (componentMatches || favoriteChars);
   const rows = filterKanji(kanjiCatalog, {
     query: $('#kanji-search').value,
     levels: [...kanjiBrowseLevels],
     strokes: $('#kanji-strokes').value,
     known: $('#kanji-known').value,
     sort: $('#kanji-sort').value,
-    chars: componentMatches,
+    chars,
     isKnown: (char) => knownKanji.has(char),
   });
+  const favCount = favoriteKanji.count();
+  $('#kanji-favorites').setAttribute('aria-pressed', String(kanjiFavoritesOnly));
+  $('#kanji-favorites').classList.toggle('is-active', kanjiFavoritesOnly);
+  $('#kanji-favorites').firstElementChild.textContent = kanjiFavoritesOnly ? '♥' : '♡';
+  $('#kanji-favorites-count').hidden = favCount === 0;
+  $('#kanji-favorites-count').textContent = favCount;
   const groupMode = $('#kanji-group').value;
   const familyMode = isFamilyMode(groupMode);
   const structureMode = isStructureFamilyMode(groupMode);
@@ -1878,6 +1975,7 @@ function renderKanjiBrowser() {
 
 function resetKanjiBrowser() {
   stopKanjiStudy();
+  kanjiFavoritesOnly = false;
   kanjiComponentSelection.clear();
   kanjiComponentLimit = 96;
   $('#kanji-component-search').value = '';
@@ -2145,6 +2243,7 @@ function profileSummaryMarkup(summary) {
     ['Saved cards', summary.cards],
     ['Known words', summary.knownWords],
     ['Known kanji', summary.knownKanji],
+    ['Favorites', summary.favorites ?? 0],
     ['Review days', summary.reviewDays],
   ].map(([label, value]) => `<span><b>${Number(value).toLocaleString()}</b><small>${label}</small></span>`).join('');
 }
@@ -2160,6 +2259,8 @@ function renderProfileDashboard(state) {
     { key: 'deck', glyph: '語', title: 'Saved cards', count: metrics.cards, detail: `${metrics.newCards} new · ${metrics.dueCards} due · ${metrics.scheduledCards} scheduled` },
     { key: 'knownWords', glyph: '言', title: 'Known words', count: metrics.knownWords, detail: 'Personal reading coverage' },
     { key: 'knownKanji', glyph: '漢', title: 'Known kanji', count: metrics.knownKanji, detail: 'Kanji coverage and study context' },
+    { key: 'favoriteKanji', glyph: '愛', title: 'Favorite kanji', count: metrics.favoriteKanji, detail: 'Kept because you liked them, not studied' },
+    { key: 'favoriteWords', glyph: '愛', title: 'Favorite words', count: metrics.favoriteWords, detail: 'Kept because you liked them, not studied' },
     { key: 'reviewLog', glyph: '復', title: 'Review history', count: metrics.reviewDays, detail: `${metrics.reviewAnswers} answers across ${metrics.reviewDays} days` },
   ];
   $('#profile-categories').innerHTML = categories.map((category) => `<article class="profile-category">
@@ -2409,6 +2510,7 @@ const WORD_LOOKUP_LIMIT = 30;
 function wordRowMarkup(word, justUnlocked = false) {
   const saved = deck.has(word.w);
   const known = knownWords.has(word.w);
+  const fav = favoriteWords.has(word.w);
   return `<div class="compound-row"${justUnlocked ? ' data-unlocked="true"' : ''}>
       <div class="compound-word jp">${[...word.w].map((char) => (isKanji(char)
         ? `<button type="button" class="compound-kanji" data-kanji-tree="${esc(char)}" title="Open the Radical Tree for ${esc(char)}" aria-label="Open radical tree for ${esc(char)}">${esc(char)}</button>`
@@ -2420,6 +2522,7 @@ function wordRowMarkup(word, justUnlocked = false) {
       <span class="badge" data-status="${word.lvl == null ? 'archive' : 'reference'}">${levelName(word.lvl)}</span>
       <button type="button" class="compound-known" data-word-known="${esc(word.w)}" title="${known ? `Unmark ${esc(word.w)} as known` : `Mark ${esc(word.w)} as known — dims it while reading and updates your coverage meter`}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(word.w)} as known">${known ? '✓ Known' : 'Mark known'}</button>
       <button type="button" class="compound-save" data-compound-save="${esc(word.w)}" title="${saved ? `Remove ${esc(word.w)} from your Review deck` : `Save ${esc(word.w)} to your Review deck — it becomes due immediately`}" aria-pressed="${saved}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★ Saved' : '☆ Save'}</button>
+      <button type="button" class="compound-fav${fav ? ' is-fav' : ''}" data-word-fav="${esc(word.w)}" title="${fav ? `Remove ${esc(word.w)} from your favorites` : `Keep ${esc(word.w)} as a favorite — nothing schedules it and nothing counts it`}" aria-pressed="${fav}" aria-label="${fav ? 'Remove' : 'Keep'} ${esc(word.w)} ${fav ? 'from' : 'as'} a favorite">${fav ? '♥' : '♡'}</button>
     </div>`;
 }
 
@@ -2467,6 +2570,20 @@ function renderReadableCompounds() {
 
 // Updates just the card that was toggled. Mirrors the known-state parts of the
 // card template above; if that markup changes, change this with it.
+// The heart's own in-place update, mirroring patchKanjiCardKnown(): rebuilding
+// the whole grid to fill in one glyph would lose the scroll position, which on
+// a 6,813-card library is the expensive part.
+function patchKanjiCardFav(button, fav) {
+  const char = button.dataset.kanjiFav;
+  button.classList.toggle('is-fav', fav);
+  button.textContent = fav ? '♥' : '♡';
+  button.setAttribute('aria-pressed', String(fav));
+  button.setAttribute('aria-label', `${fav ? 'Remove' : 'Keep'} ${char} ${fav ? 'from' : 'as'} a favorite`);
+  button.setAttribute('title', fav
+    ? `Remove ${char} from your favorites`
+    : `Keep ${char} as a favorite — nothing schedules it and nothing counts it`);
+}
+
 function patchKanjiCardKnown(button, char) {
   const wrap = button.closest('.kanji-card-wrap');
   if (!wrap) return;
@@ -2581,6 +2698,7 @@ function renderWords() {
 // half. Deliberately does not touch known/readable/lookup state; see
 // renderWords() above for that half.
 function renderMyWords() {
+  renderShelf();
   const rows = deck.all();
   $('#mw-deck-count').textContent = `${rows.length} card${rows.length === 1 ? '' : 's'}`;
   $('#mw-deck-tbody').innerHTML = rows.length
@@ -2600,7 +2718,10 @@ function onMyWordsClick(e) {
   const categoryClear = e.target.closest('[data-profile-clear]');
   if (categoryClear) {
     const category = categoryClear.dataset.profileClear;
-    const names = { deck: 'saved cards and schedules', knownWords: 'known words', knownKanji: 'known kanji', reviewLog: 'review history' };
+    const names = {
+      deck: 'saved cards and schedules', knownWords: 'known words', knownKanji: 'known kanji',
+      favoriteKanji: 'favorite kanji', favoriteWords: 'favorite words', reviewLog: 'review history',
+    };
     if (!names[category] || !confirm(`Clear ${names[category]} from this browser? Export a profile first if you may need them later.`)) return;
     writeProfileState(clearProfileCategory(currentState(), category));
     toast(`Cleared ${names[category]}.`, 'success');
@@ -2647,6 +2768,8 @@ function currentState() {
     deck: deck.all(),
     knownWords: knownWords.all(),
     knownKanji: knownKanji.all(),
+    favoriteKanji: favoriteKanji.all(),
+    favoriteWords: favoriteWords.all(),
     reviewLog: reviewLog.all(),
     achievements: achievementLog.all(),
   };
@@ -2654,7 +2777,8 @@ function currentState() {
 
 function downloadBackup() {
   const state = currentState();
-  if (!state.deck.length && !state.knownWords.length && !state.knownKanji.length && !Object.keys(state.reviewLog).length) {
+  if (!state.deck.length && !state.knownWords.length && !state.knownKanji.length
+    && !state.favoriteKanji.length && !state.favoriteWords.length && !Object.keys(state.reviewLog).length) {
     toast('Nothing to back up yet — save a word first.', 'error');
     return;
   }
@@ -2699,6 +2823,8 @@ function writeProfileState(state) {
   deck.replaceAll(state.deck);
   knownWords.replaceAll(state.knownWords);
   knownKanji.replaceAll(state.knownKanji);
+  favoriteKanji.replaceAll(state.favoriteKanji || []);
+  favoriteWords.replaceAll(state.favoriteWords || []);
   reviewLog.replaceAll(state.reviewLog);
   achievementLog.replaceAll(state.achievements || {});
   sessionCount = 0;
@@ -3069,6 +3195,12 @@ function wireUi() {
     const open = filters.classList.toggle('is-open');
     $('#kanji-filter-toggle').setAttribute('aria-expanded', String(open));
   });
+  $('#kanji-favorites').addEventListener('click', () => {
+    stopKanjiStudy();
+    kanjiFavoritesOnly = !kanjiFavoritesOnly;
+    kanjiBrowseLimit = 60;
+    renderKanjiBrowser();
+  });
   $('#mystery-card').addEventListener('click', onMysteryClick);
   $('#mystery-card').addEventListener('input', (event) => {
     if (event.target.id === 'mystery-guess') renderMysteryCandidates();
@@ -3159,6 +3291,13 @@ function wireUi() {
   // covers both, matched by class, same as switchTab() covers every nav copy.
   $('#words-panel').addEventListener('click', onMyWordsClick);
   $('#mywords-panel').addEventListener('click', onMyWordsClick);
+  // The local-data dashboard renders its per-category Clear buttons into
+  // #profile-categories, which lives in the Settings panel — so the handler
+  // that owns [data-profile-clear] has to be bound here too. Without this the
+  // buttons rendered but did nothing, silently, since before favorites existed.
+  // Every other branch of onMyWordsClick is guarded by its own closest(), so
+  // sharing it across panels cannot misfire.
+  $('#profile-panel').addEventListener('click', onMyWordsClick);
   $('#achievements-panel').addEventListener('click', onAchievementsClick);
   // Friction-radar suggestion buttons ("go do X"), generated inside
   // renderUsageJournal(). Previously unwired — this panel had no delegated
@@ -3249,6 +3388,21 @@ function wireUi() {
     // Word lookup / readable-compound rows, and the "Appears in" list inside
     // a kanji's own info panel: the same known toggle the kanji library card
     // already has, mirrored onto words via knownWords.
+    const wordFavToggle = event.target.closest?.('[data-word-fav]');
+    if (wordFavToggle) {
+      const surface = wordFavToggle.dataset.wordFav;
+      if (surface) {
+        const now = favoriteWords.toggle(surface);
+        // Every surface that draws a word row draws the heart, so unlike the
+        // kanji grid there is no cheap in-place patch worth having here.
+        renderWords();
+        renderShelf();
+        renderProfilePanel();
+        if (wordFavToggle.closest('#info') && lastSel) showInfo(lastSel);
+        toast(now ? `♥ ${surface}` : `Removed ${surface} from favorites.`, 'success');
+      }
+      return;
+    }
     const wordKnownToggle = event.target.closest?.('[data-word-known]');
     if (wordKnownToggle) {
       const surface = wordKnownToggle.dataset.wordKnown;
@@ -3285,6 +3439,21 @@ function wireUi() {
         if (!filtered) patchKanjiCardKnown(knownToggle, target);
         refreshKnownEverywhere({ skipKanjiBrowser: !filtered });
         knownToast(target, knownKanji.has(target));
+      }
+      return;
+    }
+    // Keeping a kanji from the library grid, without opening it.
+    const favToggle = event.target.closest?.('[data-kanji-fav]');
+    if (favToggle) {
+      const target = favToggle.dataset.kanjiFav;
+      if (target && [...target].length === 1) {
+        const now = favoriteKanji.toggle(target);
+        // Same reasoning as the known toggle above: only a favorites filter
+        // changes which cards belong in the grid at all.
+        const filtered = $('#kanji-favorites')?.getAttribute('aria-pressed') === 'true';
+        if (filtered) refreshFavoritesEverywhere();
+        else { patchKanjiCardFav(favToggle, now); renderShelf(); renderProfilePanel(); }
+        toast(now ? `♥ ${target}` : `Removed ${target} from favorites.`, 'success');
       }
       return;
     }

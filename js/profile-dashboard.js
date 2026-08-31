@@ -7,6 +7,8 @@ export const EMPTY_PROFILE = Object.freeze({
   deck: Object.freeze([]),
   knownWords: Object.freeze([]),
   knownKanji: Object.freeze([]),
+  favoriteKanji: Object.freeze([]),
+  favoriteWords: Object.freeze([]),
   reviewLog: Object.freeze({}),
   achievements: Object.freeze({}),
 });
@@ -16,6 +18,8 @@ function normalizedState(state = {}) {
     deck: Array.isArray(state.deck) ? state.deck : [],
     knownWords: Array.isArray(state.knownWords) ? state.knownWords : [],
     knownKanji: Array.isArray(state.knownKanji) ? state.knownKanji : [],
+    favoriteKanji: Array.isArray(state.favoriteKanji) ? state.favoriteKanji : [],
+    favoriteWords: Array.isArray(state.favoriteWords) ? state.favoriteWords : [],
     reviewLog: state.reviewLog && typeof state.reviewLog === 'object' && !Array.isArray(state.reviewLog) ? state.reviewLog : {},
     achievements: state.achievements && typeof state.achievements === 'object' && !Array.isArray(state.achievements) ? state.achievements : {},
   };
@@ -42,6 +46,11 @@ export function buildProfileMetrics(state, now = Date.now()) {
     scheduledCards,
     knownWords: clean.knownWords.length,
     knownKanji: clean.knownKanji.length,
+    favoriteKanji: clean.favoriteKanji.length,
+    favoriteWords: clean.favoriteWords.length,
+    // Reported as one number because it is one collection to the person who
+    // made it, however the two sets are stored.
+    favorites: clean.favoriteKanji.length + clean.favoriteWords.length,
     reviewDays: reviewDays.length,
     reviewAnswers,
     lastReview: reviewDays.at(-1) || '',
@@ -59,5 +68,8 @@ export function clearProfileCategory(state, category) {
 }
 
 export function emptyProfileState() {
-  return { deck: [], knownWords: [], knownKanji: [], reviewLog: {}, achievements: {} };
+  return {
+    deck: [], knownWords: [], knownKanji: [], favoriteKanji: [], favoriteWords: [],
+    reviewLog: {}, achievements: {},
+  };
 }

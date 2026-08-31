@@ -2,7 +2,44 @@
 
 ## Current release and backlog
 
-- **v10.45.1 current.** Deep-linking a tab no longer runs its renderer
+- **v10.46.0 current.** **Favorites and the Shelf** are ✓ Done — the first
+  thing in Kotoba Lab that is not about progress. Until now every mark the
+  application offered was a progress mark: *known* means "I have learned this",
+  *saved* means "make me practise this", and the deck, Review, coverage, and
+  Achievements all count. A favorite means only "I like this". A kanji you
+  cannot read yet can be one; nothing schedules it, nothing counts it toward
+  coverage or an achievement, and no journal event records it. See
+  `IDEA_GARDEN.md` section A for the reasoning and the rest of that direction.
+  Two new `localStorage` keys (the seventh and eighth), `favorite-kanji` and
+  `favorite-words`, both from the existing generic `createKnownSet(key)` — split
+  for exactly the reason known-state is split: 水 the kanji you like the shape
+  of and 水 the word you like are different marks. **Favorites are carried in
+  profile backups by owner decision** (`BACKUP_VERSION` 3 → 4): they are the one
+  collection here that cannot be re-derived, since a known list comes back by
+  studying and a deck comes back by reading, but nothing reconstructs which
+  kanji someone liked. Merge unions them like the known sets and never
+  un-keeps — there is no timestamp to tell a deliberate removal from a device
+  that simply never had it, so the safe direction is to keep both. v1–v3 files
+  import as having kept nothing, which is not an error, and a profile holding
+  *only* favorites is no longer rejected as empty. The heart appears on the Read
+  info panel (kanji and word), the Kanji library card (icon-only — the row
+  already carries two labelled buttons), and every surface drawing
+  `wordRowMarkup()`. The Shelf has two forms on purpose: a **Favorites filter**
+  over the Kanji library's existing grid (the cheap reuse test this file's
+  section A asks for first — it intersects with the component picker's candidate
+  set through `filterKanji`'s single `chars` option), and a **Favorites card in
+  the Deck tab**, which exists because favorites span two types and no single
+  existing grid can show them together. Both reuse `kanjiCard()` and
+  `wordRowMarkup()` rather than inventing a layout, and the card shows a count
+  and never a target — no "of", no percentage, no empty slots implying what
+  should fill them. Newest first, which `createKnownSet`'s insertion order gives
+  for free. One pre-existing bug fixed along the way: the local-data dashboard
+  renders its per-category Clear buttons into `#profile-categories`, which lives
+  in the Settings panel, but `onMyWordsClick` — which owns
+  `[data-profile-clear]` — was bound only to `#words-panel` and
+  `#mywords-panel`, so those buttons had never worked. `APP_VERSION` bumped to
+  10.46.0.
+- **v10.45.1.** Deep-linking a tab no longer runs its renderer
   before the data exists. `applyInitialRoute()` was called synchronously right
   after `boot()`, which is `async` — so at that moment no dictionary had
   loaded, `jlpt` was still undefined, and `wireUi()` had not attached a single
@@ -585,11 +622,19 @@
   sessions. Group C is ✓ Done: a previewable/copyable/downloadable Markdown
   report shares aggregate activity, feature rhythm, profile totals, and fixed
   signal labels without exposing the raw journal or study content.
-- `IDEA_GARDEN.md` is the durable creative backlog. Radical Alchemy Groups A–C
-  and Kanji Constellation Atlas Groups A–D are ✓ Done. Kanji Genealogy and
-  Japanese Detective Board remain parked, unapproved ideas. The original list
-  order is no longer an implementation queue; continue from observed study
-  friction and request approval for every new bounded experiment.
+- `IDEA_GARDEN.md` is the durable creative backlog, reorganised 2026-08-31 by
+  what brings someone to the application rather than by when an idea was had:
+  **A. Keeping what you love** (non-study affection — favorites, a shelf, a
+  keepsake card; the newest and emptiest section), **B. In the study loop**,
+  **C. Exploring without a goal**, **D. Looking back**, and **E. Blocked on a
+  source this project does not have**. Section E is the one to read before
+  proposing anything: those directions need evidence or authored content the
+  repository does not hold, and building them anyway means inventing a judgment
+  the application refuses to make. A shipped index and the open follow-ups from
+  each shipped feature live at the end of the file. Implementation records do
+  NOT go there — they belong in this file's backlog and conventions. No list
+  order is an implementation queue; continue from observed use and request
+  approval for every new bounded experiment.
 
 ## Public repository conventions
 
@@ -703,8 +748,9 @@
   Map overlays and their responsive layouts.
 - `README.md` — concise public overview, local setup, architecture, and license
   boundaries.
-- `IDEA_GARDEN.md` — public creative backlog, selected exploration track, first
-  experiments, and principles that prevent uncontrolled feature growth.
+- `IDEA_GARDEN.md` — public creative backlog grouped by what brings someone to
+  the application, with each parked entry's first bounded experiment, the
+  decision still open, and the principles that prevent uncontrolled growth.
 - `PRIVACY.md` — public description of local storage and network requests.
 - `.github/workflows/pages.yml` — tests pushes and pull requests; deploys the
   static repository root only after tests pass on `main`.
@@ -1421,19 +1467,44 @@
 - Mix selection, score, order, and progress are ephemeral. Shuffle & restart
   clears answers and progress; known state and Radical Tree use existing paths.
 
+## Favorites conventions
+
+- A favorite means "I like this" and nothing else. It must never affect
+  coverage, unlock feedback, the review queue, an achievement, or the usage
+  journal. **The moment a favorite affects a number it has become a progress
+  mark**, which is the one thing it must not be.
+- Keep the wording in the collection register — keep, kept, favorite — never
+  learn, study, master, or complete. The Shelf shows a count and never a
+  target: no "of", no percentage, no next milestone, no empty slots.
+- Favorites are independent of known-state and of the deck. A kanji nobody can
+  read yet is a perfectly good favorite; unstarring one must never touch either
+  other set.
+- They ARE in profile backups (v4), by owner decision on 2026-08-31: they are
+  the only collection here that cannot be re-derived. Merging unions them and
+  never un-keeps, matching the known sets.
+- `refreshFavoritesEverywhere()` is deliberately much smaller than
+  `refreshKnownEverywhere()` — a favorite changes no meter, no queue and no
+  badge, so only the surfaces that actually draw a heart redraw.
+
 ## Persistent state
 
-There are exactly six localStorage keys. Radical Tree and study packs add
-none; the fifth belongs only to the optional local usage journal, and the
-sixth is the achievement ledger — added 2026-08-16, reversing the original
-five-key doctrine by the same explicit owner sign-off covered in Vocabulary
-conventions:
+There are exactly eight localStorage keys. Radical Tree and study packs add
+none; the fifth belongs only to the optional local usage journal, the sixth is
+the achievement ledger — added 2026-08-16, reversing the original five-key
+doctrine by the same explicit owner sign-off covered in Vocabulary conventions
+— and the seventh and eighth are the favorite sets, added 2026-08-31 by owner
+decision so that a collection nothing can re-derive is not lost to a browser
+reset:
 
 - `kotoba-lab:deck`
 - `kotoba-lab:known-words`
 - `kotoba-lab:known-kanji`
 - `kotoba-lab:review-log`
 - `kotoba-lab:usage-journal`
+- `kotoba-lab:favorite-kanji` — "I like this", never a progress mark. In
+  backups (v4) because nothing can re-derive it; see Favorites conventions.
+- `kotoba-lab:favorite-words` — the same, for words. Split from the kanji set
+  for the reason known-state is split.
 - `kotoba-lab:achievements` — id → unlock timestamp (ms), written by
   `js/storage.js`'s `createAchievementLog`. Unlike the usage journal, this one
   **is** included in profile backups (`BACKUP_VERSION` 3) and the full
