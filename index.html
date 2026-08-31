@@ -309,6 +309,13 @@
            the learner to name the kanji first. Selected shapes intersect (see
            js/component-lookup.js) and unusable ones are dimmed rather than
            hidden, so the picker keeps its shape as the search narrows. -->
+      <!-- The Shelf's first form, per IDEA_GARDEN.md section A: the favorites
+           set as a filter over the grid that already exists, before anything
+           bespoke is designed. -->
+      <button type="button" id="kanji-favorites" class="btn btn-ghost kanji-favorites" aria-pressed="false" title="Show only the kanji you have kept">
+        <span aria-hidden="true">♡</span> Favorites<span id="kanji-favorites-count" class="kanji-filter-count" hidden></span>
+      </button>
+
       <button type="button" id="kanji-components-toggle" class="btn btn-ghost kanji-components-toggle" aria-expanded="false" aria-controls="kanji-components">
         <span>Build from components</span><span id="kanji-components-count" class="kanji-filter-count" hidden></span>
       </button>
@@ -573,6 +580,20 @@
       <p class="hint">Fields: <code>word · reading · meaning · JLPT level · sentence</code> (tab-separated). Good for Anki — but it drops each card's schedule, so it isn't a backup. Use the backup below for that.</p>
     </div>
 
+    <!-- The Shelf. Favorites span two types, so no single existing grid can show
+         them together — this is the one place the whole collection has an
+         address. Both halves reuse renderers that already exist rather than
+         inventing a bespoke layout. -->
+    <section class="card shelf-card" id="shelf-card">
+      <div class="ui-section-header">
+        <span class="ui-section-title">Favorites</span>
+        <span class="ui-section-line"></span>
+        <span class="hint" id="shelf-count"></span>
+      </div>
+      <p class="hint">Kanji and words you kept because you liked them. Nothing here is scheduled, counted, or asked about later — it is the one collection in Kotoba Lab that is not about progress. Favorites travel in your profile backup.</p>
+      <div id="shelf-body"></div>
+    </section>
+
     <div class="card study-pack-card">
       <div class="ui-section-header">
         <span class="ui-section-title">Portable Study Packs</span>
@@ -608,7 +629,7 @@
         <span class="ui-section-line"></span>
         <span class="hint" id="mw-backup-count"></span>
       </div>
-      <p class="hint">Your local study profile includes saved cards and scheduling, known words and kanji, review history, and sentence context saved with cards. It never includes the text currently in the editor.</p>
+      <p class="hint">Your local study profile includes saved cards and scheduling, known words and kanji, your favorites, review history, and sentence context saved with cards. It never includes the text currently in the editor.</p>
       <div id="profile-summary" class="profile-summary" aria-label="Local profile summary"></div>
       <section class="profile-dashboard" aria-labelledby="profile-dashboard-title">
         <div class="profile-dashboard-head"><div><span class="label">LOCAL DATA DASHBOARD</span><h3 id="profile-dashboard-title">Inspect and manage this browser</h3></div><span id="profile-health" class="badge" data-status="stable">Healthy</span></div>
@@ -632,7 +653,7 @@
         <div id="offline-rows" class="offline-rows"></div>
       </section>
       <div class="profile-actions">
-        <button id="mw-backup-download" class="btn btn-primary" title="Download every saved card, schedule, known word and kanji, and review history as one JSON file">Download profile (.json)</button>
+        <button id="mw-backup-download" class="btn btn-primary" title="Download every saved card, schedule, known word and kanji, favorite, and review history as one JSON file">Download profile (.json)</button>
         <label class="file-btn btn">Choose profile to import<input type="file" id="mw-backup-file" accept=".json,application/json" hidden></label>
       </div>
       <section id="profile-import-preview" class="profile-import-preview" hidden aria-live="polite">

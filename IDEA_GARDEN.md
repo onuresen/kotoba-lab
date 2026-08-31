@@ -48,35 +48,41 @@ worth holding onto:
 So: collection over completion, discovery over score, presence over streak, and
 nothing that can accumulate into a number you could fall short of.
 
-### Favourites — a mark that is not a progress mark
+### Favorites — a mark that is not a progress mark  ✓ Shipped in v10.46.0
 
 One star, on any kanji or any word, meaning *I like this* — kept completely
 apart from known-state and from the review deck. A kanji you cannot read yet
-can be a favourite. A word you know perfectly well can be a favourite. Nothing
+can be a favorite. A word you know perfectly well can be a favorite. Nothing
 schedules it, nothing counts it, nothing asks about it later.
 
 This is the keystone of the whole section: a shelf, a keepsake card, and a
 personal note all need somewhere to hang, and this is it.
 
 Cheap, too. `createKnownSet(key)` in `js/storage.js` is already generic by key
-and is what backs both known-kanji and known-words, so favourites are the same
+and is what backs both known-kanji and known-words, so favorites are the same
 primitive with a different name — plus the backup format, the local-data
 dashboard, and the category reset, all of which already treat known sets as a
 kind.
 
-First experiment: the star on the Read info panel and the Kanji card only, and
-a count somewhere quiet. Do NOT surface it in coverage, achievements, or the
-friction radar — the moment a favourite affects a number it has become a
-progress mark again, which is the one thing it must not be.
+Shipped in v10.46.0, slightly wider than the written first experiment: the
+heart is on the Read info panel and the Kanji card as planned, and also on
+every surface that draws a word row, because otherwise word favorites would
+have had exactly one entry point and no way to undo from the shelf. It is
+surfaced in no meter, no achievement, and no journal event, as required.
 
-Open question before writing anything: whether favourites belong in profile
-backups. They are personal in a way known-state is not — closer to a diary
-entry than to a study record — but losing them on a browser reset would hurt
-more than losing a known list that can be re-derived by studying.
+The open question is settled: **favorites are in profile backups** (v4), by
+owner decision on 2026-08-31. They are the only collection in the application
+that cannot be re-derived — a known list comes back by studying and a deck
+comes back by reading — so losing them to a browser reset was the worse risk.
+Merging unions them and never un-keeps.
 
-### The Shelf
+What to watch now: whether anything ever asks favorites to count toward
+something. That request is the failure mode this whole section exists to
+resist, and the answer is in the selection principles below.
 
-Where favourites live: a place to browse what you kept, arranged so it reads as
+### The Shelf  ✓ Shipped in v10.46.0
+
+Where favorites live: a place to browse what you kept, arranged so it reads as
 a collection rather than a list. Sortable by when you kept it, by stroke count,
 by level — never by "progress".
 
@@ -85,11 +91,20 @@ milestone, no empty slots implying what should fill them. The Achievements tab
 deliberately renders locked badges greyed out; this must do the opposite and
 show only what is there.
 
-First experiment: reuse the Kanji library's existing card grid with the
-favourites set as its filter, before designing anything bespoke. If a plain
-filtered grid already feels good to browse, the shelf metaphor is decoration;
-if it feels like a search result, that is the evidence that it needs its own
-form.
+Shipped in v10.46.0 in two forms, on purpose. The cheap reuse test this entry
+asked for is there — a **Favorites filter** over the Kanji library's existing
+grid, which also intersects with the component picker. And a **Favorites card
+in the Deck tab**, which earns its place for a reason the entry had not
+noticed: favorites span two types, and no single existing grid can show kanji
+and words together. Both halves arrange `kanjiCard()` and `wordRowMarkup()`
+rather than inventing a layout, so the bespoke question is still open.
+
+Remaining decision, unchanged and now answerable from use: does browsing the
+filtered grid feel good, or does it feel like a search result? Only the second
+answer justifies designing a real shelf. Watch also whether the Deck tab is
+the right home — it is the "your stuff" tab, but everything else in it is
+study data, and the card's copy has to say "nothing here is scheduled" out
+loud precisely because of that.
 
 ### A kanji that finds you
 
@@ -129,7 +144,7 @@ one good card beats five configurable ones.
 
 ### Why I kept it
 
-A short personal note attached to a favourite. *Saw this on a shop sign in
+A short personal note attached to a favorite. *Saw this on a shop sign in
 Kawasaki.* *Like the way it is built.* *My name has this in it.*
 
 This is the idea that turns the application from a record of your performance
@@ -139,7 +154,7 @@ means real storage, a real backup-format decision, and a real privacy question
 that the rest of the app has never had to ask, since it has never stored a
 sentence the user wrote themselves.
 
-Parked deliberately behind Favourites and the Shelf. If nobody stars anything,
+Parked deliberately behind Favorites and the Shelf. If nobody stars anything,
 this never matters; if the shelf fills up, this is what makes it worth
 revisiting.
 
@@ -378,6 +393,7 @@ Implementation detail and conventions live in `AGENTS.md`; this is the index.
 
 | Direction | Shipped |
 |---|---|
+| Favorites + the Shelf | v10.46.0 |
 | Kanji Constellation Atlas | Groups A–D, v10.15.0 |
 | Radical Alchemy | Groups A–C, v10.18.0–v10.20.0 |
 | False-Friend Museum (homophones exhibit) | v10.41.0 |
@@ -394,7 +410,7 @@ Implementation detail and conventions live in `AGENTS.md`; this is the index.
 - Collection over completion; discovery over score; presence over streak.
   Nothing new should be able to make someone *behind*.
 - A mark that means "I like this" must never become a mark that means "I have
-  achieved this". The moment a favourite affects a number, it is a progress
+  achieved this". The moment a favorite affects a number, it is a progress
   mark.
 - Keep data local-first and make any new persistence an explicit decision.
 - Reuse Radical Tree, Relations, families, review, and usage insights before

@@ -6,9 +6,13 @@
 // `srs` card, so it can rebuild a word list but never a schedule.
 //
 // This module is that missing round-trip: one JSON file holding the deck WITH
-// its scheduling, both known-sets, and the review log. Pure — no DOM, no
-// storage, no clock except the `now` you pass — so the merge rules below can be
-// tested directly.
+// its scheduling, both known-sets, both favorite-sets, and the review log.
+// Pure — no DOM, no storage, no clock except the `now` you pass — so the merge
+// rules below can be tested directly.
+//
+// Favorites are carried deliberately (v4). They are the one collection here
+// that cannot be re-derived: a known list comes back by studying and a deck
+// comes back by reading, but nothing reconstructs which kanji someone liked.
 //
 // IMPORT MERGES, IT NEVER REPLACES. Restoring an old backup must not delete
 // cards you've saved since, and a device that's behind must not roll a device
@@ -18,7 +22,7 @@
 import { ACHIEVEMENTS } from './achievements.js';
 
 export const BACKUP_FORMAT = 'kotoba-lab-backup';
-export const BACKUP_VERSION = 3;
+export const BACKUP_VERSION = 4;
 
 // ---- shape helpers ----------------------------------------------------------
 
@@ -106,12 +110,17 @@ function cleanLog(raw) {
 
 // ---- export -----------------------------------------------------------------
 
-/** state = { deck: Entry[], knownWords: string[], knownKanji: string[], reviewLog: {day:n} } */
+/**
+ * state = { deck: Entry[], knownWords, knownKanji, favoriteKanji, favoriteWords:
+ * string[], reviewLog: {day:n}, achievements: {id:at} }
+ */
 export function backupSummary(state) {
+  const count = (list) => (Array.isArray(list) ? list.length : 0);
   return {
-    cards: Array.isArray(state?.deck) ? state.deck.length : 0,
-    knownWords: Array.isArray(state?.knownWords) ? state.knownWords.length : 0,
-    knownKanji: Array.isArray(state?.knownKanji) ? state.knownKanji.length : 0,
+    cards: count(state?.deck),
+    knownWords: count(state?.knownWords),
+    knownKanji: count(state?.knownKanji),
+    favorites: count(state?.favoriteKanji) + count(state?.favoriteWords),
     reviewDays: isObj(state?.reviewLog) ? Object.keys(state.reviewLog).length : 0,
   };
 }
@@ -121,6 +130,8 @@ export function buildBackup(state, now = Date.now(), { appVersion = '' } = {}) {
     deck: (state.deck || []).map(cleanEntry).filter(Boolean),
     knownWords: cleanStrings(state.knownWords),
     knownKanji: cleanStrings(state.knownKanji),
+    favoriteKanji: cleanStrings(state.favoriteKanji),
+    favoriteWords: cleanStrings(state.favoriteWords),
     reviewLog: cleanLog(state.reviewLog),
     achievements: cleanAchievements(state.achievements),
   };
@@ -170,11 +181,16 @@ export function inspectBackup(text) {
     deck,
     knownWords: cleanStrings(raw.knownWords),
     knownKanji: cleanStrings(raw.knownKanji),
+    // Absent in v1-v3 files, which is not an error: those profiles predate
+    // favorites entirely and import as having kept nothing.
+    favoriteKanji: cleanStrings(raw.favoriteKanji),
+    favoriteWords: cleanStrings(raw.favoriteWords),
     reviewLog: cleanLog(raw.reviewLog),
     achievements: cleanAchievements(raw.achievements),
   };
-  if (!deck.length && !state.knownWords.length && !state.knownKanji.length && !Object.keys(state.reviewLog).length) {
-    throw new Error('That backup is empty — no cards and no known words.');
+  const kept = state.favoriteKanji.length + state.favoriteWords.length;
+  if (!deck.length && !state.knownWords.length && !state.knownKanji.length && !kept && !Object.keys(state.reviewLog).length) {
+    throw new Error('That backup is empty — no cards, no known words, and nothing kept.');
   }
   return {
     state,
@@ -235,6 +251,17 @@ export function mergeState(current, incoming) {
   for (const w of incoming.knownWords || []) words.add(w);
   for (const k of incoming.knownKanji || []) kanji.add(k);
 
+  // Union, exactly like the known sets: an import must never un-keep something.
+  // Unstarring is a deliberate act on one device and there is no timestamp to
+  // tell a removal from a device that simply never had it, so the safe
+  // direction is to keep both — the same reasoning the deck's earliest-savedAt
+  // and the achievement log's earliest-timestamp rules follow.
+  const favoriteKanji = new Set(current.favoriteKanji || []);
+  const favoriteWords = new Set(current.favoriteWords || []);
+  const favoritesBefore = favoriteKanji.size + favoriteWords.size;
+  for (const k of incoming.favoriteKanji || []) favoriteKanji.add(k);
+  for (const w of incoming.favoriteWords || []) favoriteWords.add(w);
+
   // Per-day MAX, not sum: re-importing the same file must not inflate your
   // streak or double today's tally. Two devices studied on the same day is the
   // only case this under-counts, and under-counting is the safe direction.
@@ -260,6 +287,8 @@ export function mergeState(current, incoming) {
       deck: [...bySurface.values()],
       knownWords: [...words],
       knownKanji: [...kanji],
+      favoriteKanji: [...favoriteKanji],
+      favoriteWords: [...favoriteWords],
       reviewLog: log,
       achievements,
     },
@@ -269,6 +298,7 @@ export function mergeState(current, incoming) {
       cardsTotal: bySurface.size,
       wordsAdded: words.size - wordsBefore,
       kanjiAdded: kanji.size - kanjiBefore,
+      favoritesAdded: (favoriteKanji.size + favoriteWords.size) - favoritesBefore,
       daysAdded,
       achievementsAdded,
     },
@@ -282,6 +312,7 @@ export function describeMerge(stats) {
   if (stats.cardsUpdated) bits.push(`${stats.cardsUpdated} updated`);
   const known = stats.wordsAdded + stats.kanjiAdded;
   if (known) bits.push(`${known} known item${known === 1 ? '' : 's'}`);
+  if (stats.favoritesAdded) bits.push(`${stats.favoritesAdded} favorite${stats.favoritesAdded === 1 ? '' : 's'}`);
   if (stats.achievementsAdded) bits.push(`${stats.achievementsAdded} achievement${stats.achievementsAdded === 1 ? '' : 's'}`);
   if (!bits.length) return 'Already up to date — nothing new in that backup.';
   return `Imported: ${bits.join(', ')}.`;

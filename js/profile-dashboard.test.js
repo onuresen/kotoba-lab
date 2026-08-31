@@ -12,6 +12,8 @@ const state = {
   ],
   knownWords: ['日本語', '勉強'],
   knownKanji: ['日'],
+  favoriteKanji: ['河', '雫'],
+  favoriteWords: ['天の川'],
   reviewLog: { '2026-08-12': 3, '2026-08-14': 5 },
   achievements: { 'kanji-1': NOW },
 };
@@ -23,6 +25,10 @@ test('dashboard metrics distinguish new, due, and scheduled cards', () => {
   });
   assert.equal(metrics.knownWords, 2);
   assert.equal(metrics.knownKanji, 1);
+  // Two sets, but one collection to the person who made it.
+  assert.equal(metrics.favoriteKanji, 2);
+  assert.equal(metrics.favoriteWords, 1);
+  assert.equal(metrics.favorites, 3);
   assert.equal(metrics.reviewDays, 2);
   assert.equal(metrics.reviewAnswers, 8);
   assert.equal(metrics.lastReview, '2026-08-14');
@@ -38,7 +44,18 @@ test('category clearing changes only the requested collection and never mutates 
   assert.deepEqual(state.knownKanji, ['日']);
 });
 
-test('unknown categories are safe and a full reset returns the five canonical stores', () => {
+test('favorites clear as their own categories, leaving known state alone', () => {
+  const cleared = clearProfileCategory(state, 'favoriteKanji');
+  assert.deepEqual(cleared.favoriteKanji, []);
+  assert.deepEqual(cleared.favoriteWords, state.favoriteWords);
+  assert.deepEqual(cleared.knownKanji, state.knownKanji);
+  assert.deepEqual(state.favoriteKanji, ['河', '雫']);
+});
+
+test('unknown categories are safe and a full reset returns every canonical store', () => {
   assert.deepEqual(clearProfileCategory(state, 'mystery'), state);
-  assert.deepEqual(emptyProfileState(), { deck: [], knownWords: [], knownKanji: [], reviewLog: {}, achievements: {} });
+  assert.deepEqual(emptyProfileState(), {
+    deck: [], knownWords: [], knownKanji: [], favoriteKanji: [], favoriteWords: [],
+    reviewLog: {}, achievements: {},
+  });
 });

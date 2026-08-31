@@ -7,8 +7,8 @@ analytics, advertising, application backend, or cloud synchronization.
 
 - Text you paste or import is processed in the browser and is not uploaded by
   Kotoba Lab.
-- Saved cards, review scheduling, known words, known kanji, and review history
-  are stored in your browser's `localStorage`.
+- Saved cards, review scheduling, known words, known kanji, your favorites, and
+  review history are stored in your browser's `localStorage`.
 - Saved cards may include the sentence in which a word was encountered.
 - Clearing site data removes this local state. Use **Profile & Data**, opened
   from Settings in the header, if you want to retain or move it.

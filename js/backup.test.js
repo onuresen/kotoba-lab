@@ -18,7 +18,10 @@ const card = (over = {}) => ({ due: T0, interval: 1, ease: 2.5, reps: 1, lapses:
 const entry = (surface, over = {}) => ({
   surface, reading: 'よみ', gloss: 'meaning', level: 3, savedAt: T0, srs: card(), ...over,
 });
-const state = (over = {}) => ({ deck: [], knownWords: [], knownKanji: [], reviewLog: {}, achievements: {}, ...over });
+const state = (over = {}) => ({
+  deck: [], knownWords: [], knownKanji: [], favoriteKanji: [], favoriteWords: [],
+  reviewLog: {}, achievements: {}, ...over,
+});
 
 // ---- export -----------------------------------------------------------------
 
@@ -27,7 +30,7 @@ test('backup carries the srs card that TSV export drops', () => {
   assert.equal(out.format, BACKUP_FORMAT);
   assert.equal(out.version, BACKUP_VERSION);
   assert.equal(out.appVersion, '10.7.0');
-  assert.deepEqual(out.summary, { cards: 1, knownWords: 0, knownKanji: 0, reviewDays: 0 });
+  assert.deepEqual(out.summary, { cards: 1, knownWords: 0, knownKanji: 0, favorites: 0, reviewDays: 0 });
   assert.deepEqual(out.deck[0].srs, card());
 });
 
@@ -39,7 +42,7 @@ test('profile metadata is inspectable without changing the parsed state shape', 
     version: BACKUP_VERSION,
     appVersion: '10.7.0',
     exportedAt: new Date(T0).toISOString(),
-    summary: { cards: 1, knownWords: 0, knownKanji: 1, reviewDays: 1 },
+    summary: { cards: 1, knownWords: 0, knownKanji: 1, favorites: 0, reviewDays: 1 },
   });
   assert.deepEqual(backupSummary(original), inspected.meta.summary);
   assert.match(backupFilename(T0), /^kotoba-lab-profile-\d{4}-\d{2}-\d{2}\.json$/);
@@ -191,7 +194,8 @@ test('importing the same backup twice is a no-op the second time', () => {
   const twice = mergeState(once.state, parseBackup(file));
   assert.deepEqual(twice.state, once.state);
   assert.deepEqual(twice.stats, {
-    cardsAdded: 0, cardsUpdated: 0, cardsTotal: 2, wordsAdded: 0, kanjiAdded: 0, daysAdded: 0, achievementsAdded: 0,
+    cardsAdded: 0, cardsUpdated: 0, cardsTotal: 2, wordsAdded: 0, kanjiAdded: 0,
+    favoritesAdded: 0, daysAdded: 0, achievementsAdded: 0,
   });
   assert.match(describeMerge(twice.stats), /Already up to date/);
 });
@@ -228,4 +232,64 @@ test('merging achievements keeps the earlier of two unlock timestamps', () => {
   assert.equal(merged.achievements['words-1'], T0, 'a new id is simply added');
   assert.equal(stats.achievementsAdded, 1, 'kanji-1 already existed — only words-1 is new');
   assert.match(describeMerge(stats), /1 achievement/);
+});
+
+// ---- favorites ---------------------------------------------------------------
+// The one collection here that cannot be re-derived: a known list comes back by
+// studying and a deck comes back by reading, but nothing reconstructs which
+// kanji someone liked. These tests are the reason favorites are in the file.
+
+test('favorites round-trip through export and import', () => {
+  const original = state({
+    deck: [entry('本')],
+    favoriteKanji: ['河', '雫'],
+    favoriteWords: ['天の川'],
+  });
+  const back = parseBackup(serializeBackup(original, T0));
+  assert.deepEqual(back.favoriteKanji, ['河', '雫']);
+  assert.deepEqual(back.favoriteWords, ['天の川']);
+  assert.deepEqual(back, original);
+});
+
+test('a profile that has only favorites is not treated as empty', () => {
+  const only = serializeBackup(state({ favoriteKanji: ['河'] }), T0);
+  assert.deepEqual(parseBackup(only).favoriteKanji, ['河']);
+  // ...but a genuinely empty one still says so.
+  assert.throws(() => parseBackup(serializeBackup(state(), T0)), /empty/);
+});
+
+test('favorites count toward the summary as one collection', () => {
+  const s = state({ favoriteKanji: ['河', '雫'], favoriteWords: ['天の川'] });
+  assert.equal(backupSummary(s).favorites, 3);
+});
+
+test('a v3 profile written before favorites existed imports as having kept nothing', () => {
+  const legacy = inspectBackup(JSON.stringify({
+    format: BACKUP_FORMAT, version: 3, exportedAt: new Date(T0).toISOString(),
+    deck: [entry('本')], knownKanji: ['本'],
+  }));
+  assert.equal(legacy.meta.version, 3);
+  assert.deepEqual(legacy.state.favoriteKanji, []);
+  assert.deepEqual(legacy.state.favoriteWords, []);
+});
+
+test('merging unions favorites and never un-keeps anything', () => {
+  const mine = state({ favoriteKanji: ['河'], favoriteWords: ['天の川'] });
+  const theirs = state({ favoriteKanji: ['雫'], favoriteWords: ['天の川', '雪'] });
+  const { state: merged, stats } = mergeState(mine, theirs);
+  assert.deepEqual(merged.favoriteKanji.sort(), ['河', '雫'].sort());
+  assert.deepEqual(merged.favoriteWords.sort(), ['天の川', '雪'].sort());
+  assert.equal(stats.favoritesAdded, 2);
+  // An import must never remove one the other device had unstarred: there is no
+  // timestamp to tell a removal from a device that simply never had it.
+  const back = mergeState(merged, mine);
+  assert.deepEqual(back.state.favoriteKanji.sort(), merged.favoriteKanji.sort());
+  assert.equal(back.stats.favoritesAdded, 0);
+});
+
+test('an import that only adds favorites still says what it did', () => {
+  const { stats } = mergeState(state(), state({ favoriteKanji: ['河'] }));
+  assert.match(describeMerge(stats), /1 favorite/);
+  const two = mergeState(state(), state({ favoriteKanji: ['河'], favoriteWords: ['雪'] }));
+  assert.match(describeMerge(two.stats), /2 favorites/);
 });

@@ -109,6 +109,11 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   entirely in kanji you have marked known — what those kanji combine into,
   rather than what they break down from. Ranked easiest-first, and every kanji
   opens its Radical Tree. Save any of them straight into the review deck.
+- **Favorites:** a ♡ on any kanji or word meaning simply *I like this* — kept
+  apart from known-state and the review deck, so a kanji you cannot read yet
+  can be one. Nothing schedules it and nothing counts it. Filter the Kanji
+  library down to what you kept, or browse the whole collection on the
+  Favorites shelf in the Deck tab. It travels in your profile backup.
 - **Achievements:** its own tab tracks 24 achievements across kanji, reading,
   words, saved cards, review days, and review streaks. Each carries XP toward
   one of 8 levels, locked ones stay visible (grayed, with their XP value), and
@@ -177,7 +182,7 @@ nothing in the file is a release promise.
 The first section is the emptiest, and that is the finding. Every mark the
 application currently lets you make is a progress mark — *known*, *saved*,
 graded, counted — and there is no way to say simply "I like this one". A
-favourite that is deliberately not a progress mark, a shelf to browse it in,
+favorite that is deliberately not a progress mark, a shelf to browse it in,
 and a kanji card worth keeping are parked there.
 
 ## Run locally
@@ -256,13 +261,17 @@ vendor/kuromoji/         vendored tokenizer and dictionary
 serve.mjs / serve.cmd    dependency-free local server
 ```
 
-User state is stored under five `localStorage` keys. The usage journal is
-optional, off by default, and deliberately excluded from profile backups:
+User state is stored under eight `localStorage` keys. The usage journal is
+optional, off by default, and deliberately excluded from profile backups;
+everything else travels in one:
 
 - `kotoba-lab:deck`
 - `kotoba-lab:known-words`
 - `kotoba-lab:known-kanji`
+- `kotoba-lab:favorite-kanji`
+- `kotoba-lab:favorite-words`
 - `kotoba-lab:review-log`
+- `kotoba-lab:achievements`
 - `kotoba-lab:usage-journal`
 
 ## Data and licensing
