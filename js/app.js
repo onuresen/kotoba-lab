@@ -123,7 +123,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.46.0';
+const APP_VERSION = '10.47.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -261,7 +261,24 @@ async function boot() {
         refreshKnownEverywhere({ skipKanjiBrowser: true });
         toast(known ? `✓ ${w} known` : `Unmarked ${w}.`, 'success');
       },
+      isWordSaved: (w) => deck.has(w),
+      toggleWordSaved: (w) => {
+        const entry = vocabList.find((row) => row.w === w);
+        if (!entry) return deck.has(w);
+        return deck.toggle({
+          surface: w, reading: entry.r || '', gloss: entry.g || '',
+          level: Number.isFinite(entry.lvl) ? entry.lvl : null, srs: newCard(),
+        });
+      },
+      onWordSavedChange: (w, saved) => {
+        toast(saved ? 'Saved to deck — due for review now.' : 'Removed from deck.', 'success');
+        renderWords();
+        renderMyWords();
+        renderProfilePanel();
+        refreshReview();
+      },
       onOpenRelationships: (ch, trigger) => openKanjiMap(ch, trigger),
+      onSeeAllWords: (ch) => jumpToWordsFor(ch),
       wordsFor: (ch) => wordsContaining(vocabList, ch, 6),
       onError: (message) => toast(message, 'error'),
     });
@@ -822,19 +839,22 @@ let lastSel = null; // the currently-inspected kanji/word, for the action button
 // Kanji study and vocabulary study were separate everywhere else in the app.
 // Seeing 学生 next to 学 is what connects "I can draw it" to "I can read it".
 function infoWordsMarkup(char) {
-  const words = wordsContaining(vocabList, char, 6);
+  const { total, words } = wordsContaining(vocabList, char, 6);
   if (!words.length) return '';
   return `<div class="info-words">
-    <span class="label">Appears in</span>
+    <span class="label">Appears in${total > words.length ? ` · ${words.length} of ${total.toLocaleString()}` : ''}</span>
     ${words.map((word) => {
       const known = knownWords.has(word.w);
+      const saved = deck.has(word.w);
       return `<div class="info-word-row">
       <span class="jp jlpt-${levelSlug(word.lvl)} chip">${esc(word.w)}</span>
       ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
       <span class="info-word-gloss">${esc((word.g || '').split(';')[0].trim())}</span>
       <button type="button" class="info-word-known" data-word-known="${esc(word.w)}" aria-pressed="${known}" title="${known ? `Unmark ${esc(word.w)} as known` : `Mark ${esc(word.w)} as known`}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(word.w)} as known">${known ? '✓' : '○'}</button>
+      <button type="button" class="info-word-save" data-compound-save="${esc(word.w)}" aria-pressed="${saved}" title="${saved ? `Remove ${esc(word.w)} from your Review deck` : `Save ${esc(word.w)} to your Review deck`}" aria-label="${saved ? 'Remove' : 'Save'} ${esc(word.w)} ${saved ? 'from' : 'to'} your deck">${saved ? '★' : '☆'}</button>
     </div>`;
     }).join('')}
+    ${total > words.length ? `<button type="button" class="info-words-more" data-words-for="${esc(char)}">See all ${total.toLocaleString()} words with ${esc(char)} →</button>` : ''}
   </div>`;
 }
 
@@ -917,7 +937,22 @@ function showInfo(sel) {
   if (window.matchMedia('(max-width: 780px)').matches) setInfoSheet(true);
 }
 
+// "See all N words with 明 →" under a capped Appears-in list. Resets the
+// level and readable filters first — a stale one could hide the very matches
+// this exists to show — and reuses the Word Lookup tab's own search rather
+// than building a second, paginated list engine.
+function jumpToWordsFor(char) {
+  switchTab('words');
+  $('#wl-search').value = char;
+  $('#wl-level').value = '';
+  $('#wl-readable').value = 'all';
+  renderWordLookup();
+  $('#wl-search').focus();
+}
+
 function onInfoAction(e) {
+  const wordsMore = e.target.closest('.info-words-more');
+  if (wordsMore) { jumpToWordsFor(wordsMore.dataset.wordsFor); return; }
   const kChar = e.target.closest('.info-kchar');
   if (kChar) {
     // Radical-tree chips are handled by the delegated doorway below. Keeping
@@ -3382,6 +3417,10 @@ function wireUi() {
         renderMyWords();
         renderProfilePanel();
         refreshReview();
+        // The Read info panel's "Appears in" list isn't one of the views
+        // refreshed above — same "showInfo(lastSel) after a mutation" pattern
+        // the known-toggle branch below already needs for the same list.
+        if (compoundSave.closest('#info') && lastSel) showInfo(lastSel);
       }
       return;
     }

@@ -61,8 +61,11 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
   component families and identify them in a balanced interleaved session that
   automatically removes ambiguous multi-family answers.
 - **Radical Tree:** replay strokes, separate a kanji into colored components,
-  and drill into its decomposition using committed KanjiVG data. Each component
-  also lists the words it appears in, so structure and vocabulary sit together.
+  and drill into its decomposition using committed KanjiVG data. Each kanji
+  also recommends the real vocabulary it appears in — easiest first, mark any
+  of them known or save one straight to your deck, and open the full list of
+  every word containing that kanji with one tap. Structure and vocabulary sit
+  together, the same recommended-words list also on the Read tab's kanji panel.
 - **Writing practice:** draw the kanji back, stroke by stroke, on the same
   KanjiVG grid. Order, direction, placement, and count are graded and explained
   in words — *stroke 3 runs the other way: it starts at top left* — and shape

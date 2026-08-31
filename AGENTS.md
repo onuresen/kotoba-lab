@@ -2,7 +2,38 @@
 
 ## Current release and backlog
 
-- **v10.46.0 current.** **Favorites and the Shelf** are ✓ Done — the first
+- **v10.47.0 current.** "Appears in" (Read info panel, Radical Tree) is
+  ✓ Done becoming a real recommended-words section: it always showed words
+  containing the current kanji, easiest first, but only had a known toggle —
+  no way to save one, and no way to reach the words that didn't fit the cap
+  of 6. `wordsContaining()` in `js/compound-words.js` now returns `{ total,
+  words }`, matching the shape `unlockedBy()` and `buildReadableCompounds()`
+  already use in the same file, instead of a bare capped array — so every
+  caller can say "6 of 58" without a second pass over the vocabulary. Three
+  call sites updated (`infoWordsMarkup`, the Radical Tree's `wordsFor`,
+  `kanji-mystery.js`'s clue picker), all mechanical.
+  Both surfaces gained a compact ☆/★ save toggle beside the known toggle,
+  reusing the deck's existing "no sentence, no context" save shape (see
+  Vocabulary conventions) — `infoWordsMarkup`'s reuses the document-level
+  `data-compound-save` handler directly (same module, same DOM tree), and the
+  Radical Tree's is threaded through as `isWordSaved`/`toggleWordSaved`/
+  `onWordSavedChange`, mirroring the `isWordKnown`/`toggleWordKnown`/
+  `onWordKnownChange` triple already there — the overlay is injected content
+  living in `document.body`, so it needs its own click handling exactly the
+  way the known toggle already does, not the delegated one.
+  When the total exceeds what's shown, a "See all N words →" line now opens
+  the Word Lookup tab pre-filled with that kanji and its filters reset — no
+  second paginated list was built; `matchesWordQuery()`'s plain substring
+  match already returns every word containing that kanji. The Radical Tree's
+  version closes the overlay first (`onSeeAllWords`), the same pattern
+  `onOpenRelationships` already uses for `.kt-relationships`.
+  One asymmetry worth knowing, not fixed: `wordsContaining()` excludes the
+  bare kanji itself from its total (a word cannot "contain" only itself), so
+  its count can read one lower than Word Lookup's own count for the same
+  glyph, which counts the bare kanji as a legitimate substring hit. Both
+  totals are correct for what each function promises; they just promise
+  slightly different things. `APP_VERSION` bumped to 10.47.0.
+- **v10.46.0.** **Favorites and the Shelf** are ✓ Done — the first
   thing in Kotoba Lab that is not about progress. Until now every mark the
   application offered was a progress mark: *known* means "I have learned this",
   *saved* means "make me practise this", and the deck, Review, coverage, and
@@ -1251,6 +1282,29 @@
 - `unlockedBy()` must be called after the toggle, so the character already counts
   as known and the unlocked set is simply the compounds containing it whose other
   kanji were known already.
+
+### "Appears in" — words containing one kanji
+
+- `wordsContaining()` returns `{ total, words }`, the same shape `unlockedBy()`
+  and `buildReadableCompounds()` use — never a bare array. A caller that needs
+  the honest count (a "6 of 58" label, a "see all N" doorway) must never re-scan
+  the vocabulary to get it.
+- It deliberately excludes the bare kanji itself from both the list and the
+  total — a word cannot "contain" only itself. `js/word-browser.js`'s substring
+  search does not exclude it, so the two can report counts one apart for the
+  same glyph. Both are correct for what they promise; do not "fix" one to match
+  the other.
+- Every surface that shows this list gets a save toggle, not just a known
+  toggle: recognising a word and choosing to practise it are different acts,
+  and this list is exactly where a reader forms the intent to practise one seen
+  beside the kanji it belongs to. The Read info panel reuses the document-level
+  `data-compound-save` handler directly. The Radical Tree overlay cannot — it
+  is injected content living in `document.body` — so it threads
+  `isWordSaved`/`toggleWordSaved`/`onWordSavedChange` through exactly like the
+  existing `isWordKnown`/`toggleWordKnown`/`onWordKnownChange` triple.
+- When the total exceeds what is shown, offer a doorway to the rest through the
+  Word Lookup tab, pre-filled and with its filters reset. Never build a second
+  paginated word list — `js/word-browser.js` already is one.
 
 - Keep vocabulary search pure in `js/word-browser.js`, mirroring the split
   between `kanji-browser.js` and its DOM renderer in `app.js`.

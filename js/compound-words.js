@@ -41,7 +41,7 @@ function compare(a, b) {
 // kun reading as usefully as 学校 teaches the on reading.
 export function wordsContaining(vocab, char, limit = 6) {
   const target = String(char || '');
-  if ([...target].length !== 1) return [];
+  if ([...target].length !== 1) return { total: 0, words: [] };
   const cap = Math.max(0, Number(limit) || 0);
   const seen = new Set();
   const matches = [];
@@ -59,7 +59,10 @@ export function wordsContaining(vocab, char, limit = 6) {
   }
 
   matches.sort(compare);
-  return cap ? matches.slice(0, cap) : [];
+  // { total, words }, matching unlockedBy() and buildReadableCompounds() below:
+  // total reports every match so a caller can say "6 of 42" without a second
+  // pass over the vocabulary, and words is the bounded slice actually shown.
+  return { total: matches.length, words: matches.slice(0, cap) };
 }
 
 // What marking one kanji known just made readable. Call this *after* the toggle,

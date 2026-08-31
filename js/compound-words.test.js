@@ -73,19 +73,22 @@ test('words containing a kanji are found in any script, easiest first', () => {
     { w: '学', r: 'がく', lvl: 5, g: 'learning' },
     { w: '生活', r: 'せいかつ', lvl: 3, g: 'daily life' },
   ];
-  const found = wordsContaining(rows, '学');
+  const { total, words } = wordsContaining(rows, '学');
   // The bare kanji itself is excluded; 生活 does not contain it.
-  assert.deepEqual(found.map((w) => w.w), ['大学', '学校', '学ぶ']);
+  assert.deepEqual(words.map((w) => w.w), ['大学', '学校', '学ぶ']);
+  assert.equal(total, 3);
 });
 
-test('wordsContaining bounds its result and rejects non-single characters', () => {
+test('the visible list is capped while the total stays honest, and non-single characters are rejected', () => {
   const rows = [
     { w: '学校', lvl: 5 }, { w: '大学', lvl: 5 }, { w: '学生', lvl: 5 },
   ];
-  assert.equal(wordsContaining(rows, '学', 2).length, 2);
-  assert.deepEqual(wordsContaining(rows, '学校'), []);
-  assert.deepEqual(wordsContaining(rows, ''), []);
-  assert.deepEqual(wordsContaining(null, '学'), []);
+  const capped = wordsContaining(rows, '学', 2);
+  assert.equal(capped.words.length, 2);
+  assert.equal(capped.total, 3);
+  assert.deepEqual(wordsContaining(rows, '学校'), { total: 0, words: [] });
+  assert.deepEqual(wordsContaining(rows, ''), { total: 0, words: [] });
+  assert.deepEqual(wordsContaining(null, '学'), { total: 0, words: [] });
 });
 
 const unlockVocab = [
