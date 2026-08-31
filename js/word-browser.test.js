@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { searchWords, prepareWordQuery, matchesWordQuery } from './word-browser.js';
+import { searchWords, prepareWordQuery, matchesWordQuery, hasCounterSense, counterGloss } from './word-browser.js';
 
 const vocab = [
   { w: '学生', r: 'がくせい', lvl: 5, g: 'student' },
@@ -72,4 +72,68 @@ test('query preparation normalises once and flags latin input', () => {
 
 test('matchesWordQuery accepts every entry when there is no query', () => {
   assert.equal(matchesWordQuery({ w: '猫' }, null), true);
+});
+
+// ---- counters -----------------------------------------------------------
+// Real Kanjium glosses: a kanji whose other senses are entirely unrelated to
+// counting (乗 "(nth) power"; 縮 "shrink"; 門 "gate") still has to match on the
+// one clause that actually is a counter, and show only that clause.
+
+test('hasCounterSense matches on the gloss clause, not the whole gloss', () => {
+  assert.equal(hasCounterSense('counter for books'), true);
+  assert.equal(hasCounterSense('(nth) power; counter for vehicles; multiplication'), true);
+  assert.equal(hasCounterSense('wearing armour (armor); counter for suits of armour'), true);
+  assert.equal(hasCounterSense('gate; branch of learning; counter for cannons'), true);
+});
+
+test('hasCounterSense rejects an unrelated gloss and malformed input', () => {
+  assert.equal(hasCounterSense('cat'), false);
+  assert.equal(hasCounterSense('countertop; kitchen fixture'), false); // "counter" alone is not enough
+  assert.equal(hasCounterSense(''), false);
+  assert.equal(hasCounterSense(null), false);
+  assert.equal(hasCounterSense(undefined), false);
+});
+
+test('counterGloss shows the counting sense in place of an unrelated first sense', () => {
+  assert.equal(counterGloss('(nth) power; counter for vehicles; multiplication'), 'counter for vehicles');
+  assert.equal(counterGloss('gate; branch of learning; (biology) division; counter for cannons'),
+    'counter for cannons');
+});
+
+test('counterGloss joins every counting clause rather than picking one', () => {
+  // 丁's real gloss: four unrelated things it counts, no non-counter sense at all.
+  const teiGloss = 'counter for sheets, pages, leaves, etc.; counter for blocks of tofu; '
+    + 'counter for servings in a restaurant; counter for long and narrow things such as guns';
+  assert.equal(counterGloss(teiGloss), teiGloss);
+});
+
+test('counterGloss falls back to the full gloss when nothing matches', () => {
+  assert.equal(counterGloss('cat'), 'cat');
+  assert.equal(counterGloss(''), '');
+});
+
+test('searchWords composes the counter filter with term, level, and readable, like every other filter', () => {
+  const counters = [
+    { w: '丁', r: 'ちょう', lvl: null, g: 'counter for sheets, pages, leaves, etc.; counter for blocks of tofu' },
+    { w: '個', r: 'こ', lvl: 5, g: 'counter for articles; counter for military units; individual' },
+    { w: '乗', r: 'じょう', lvl: 3, g: '(nth) power; counter for vehicles; multiplication' },
+  ];
+  const notCounters = [
+    { w: '猫', r: 'ねこ', lvl: null, g: 'cat' },
+    { w: '個人', r: 'こじん', lvl: 4, g: 'individual; private person' }, // contains 個 but is not itself a counter sense
+  ];
+  const vocabWithCounters = [...counters, ...notCounters];
+
+  const { total, words } = searchWords(vocabWithCounters, { kind: 'counter' });
+  assert.deepEqual(words.map((w) => w.w).sort(), ['丁', '乗', '個'].sort());
+  assert.equal(total, 3);
+
+  // AND-composes with the JLPT filter, exactly like readable/term already do.
+  assert.deepEqual(searchWords(vocabWithCounters, { kind: 'counter', level: 5 }).words.map((w) => w.w), ['個']);
+
+  // AND-composes with a text search too.
+  assert.deepEqual(searchWords(vocabWithCounters, { kind: 'counter', term: 'vehicles' }).words.map((w) => w.w), ['乗']);
+
+  // An unrecognised kind value is not silently accepted as a filter.
+  assert.equal(searchWords(vocabWithCounters, { kind: 'nonsense' }).total, vocabWithCounters.length);
 });

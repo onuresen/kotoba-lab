@@ -291,26 +291,36 @@ translation quality for exactly those, and look honestly at the match rate
 before committing to extracting all 10,808. If coverage or quality is poor for
 common words, it will not improve for rare ones.
 
-### Counters, for free
+### Counters, for free  ✓ Shipped in v10.48.0
 
 A small reference for Japanese counter words (枚, 匹, 冊, 個…) — the thing JLPT
 learners reliably get stuck on, and something almost every general
 Japanese-course app (JA Sensei included) ships as its own section.
 
-Unlike everything else in this file that touches new data, this needs none: 44
-entries already sitting in the committed `data/jlpt-vocab.json` carry a gloss
-that literally starts "counter for…" (丁 "counter for sheets, pages, leaves…
+Unlike everything else in this file that touches new data, this needed none:
+44 entries already sitting in the committed `data/jlpt-vocab.json` carry a
+gloss with the phrase "counter for…" (丁 "counter for sheets, pages, leaves…
 counter for blocks of tofu"; 匹 "counter for small animals; counter for rolls
-of cloth…"). The list has been inside data this project already ships, unused,
+of cloth…"). The list had been inside data this project already ships, unused,
 the whole time.
 
-First experiment: a filter mode in the Kanji library or Word Lookup — `kind:
-counter` — built entirely from that existing gloss pattern, no new storage and
-no new page. Whether it deserves more than a filter is worth deciding only
-after a human reads through the 44, not a bigger regex: some "counter for…"
-glosses are a secondary sense on a word whose primary sense is something else
-entirely (乗 "(nth) power; counter for vehicles"), and those need judgment a
-pattern match cannot supply.
+Shipped as the first experiment described: a `kind: all | counter` filter in
+Word Lookup, composing with the existing search, JLPT, and readable filters
+exactly like they already compose with each other — no new storage, no new
+page. The human read-through this entry asked for happened before writing any
+code, and settled the "secondary sense" question differently than the entry
+originally expected: rather than hand-picking which of the 44 "deserved" to be
+called a counter — 乗's is buried behind "(nth) power", 門's behind "gate" —
+all 44 are shown, unfiltered by how central the sense is to that kanji's
+identity. Silently dropping some would have been inventing exactly the
+importance judgment this project has refused to invent everywhere else (see
+the phonetic-signal lab, the component picker's ordering rule). What each row
+shows is not the word's usual first sense but only its counting clause(s),
+extracted from the gloss — so 門's row reads "counter for cannons" alone, never
+paired with "gate" in a way that could read as a claim about how 門 is usually
+used. The count line says outright that this is "every dictionary sense that
+says 'counter for…', not a curated top list", so nobody mistakes it for a
+textbook's chosen-for-you set.
 
 ### Grade, frequency, and part of speech
 
@@ -548,6 +558,7 @@ Implementation detail and conventions live in `AGENTS.md`; this is the index.
 
 | Direction | Shipped |
 |---|---|
+| Counters, for free | v10.48.0 |
 | Favorites + the Shelf | v10.46.0 |
 | Kanji Constellation Atlas | Groups A–D, v10.15.0 |
 | Radical Alchemy | Groups A–C, v10.18.0–v10.20.0 |

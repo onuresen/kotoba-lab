@@ -2391,7 +2391,12 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 /* ---- word lookup --------------------------------------------------------------- */
 .wl-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .wl-controls .input { flex: 1 1 220px; min-width: 0; }
-.wl-controls .select { flex: 0 0 auto; }
+/* .select's own base rule (ui-base.css) sets width:100%, which flex-basis:auto
+   defers to — so without this override every select here stacks onto its own
+   full-width row regardless of flex:0 0 auto. Pre-existing on #wl-level and
+   #wl-readable; only became visible once a third select (#wl-kind) joined
+   them and there were three stacked rows instead of two. */
+.wl-controls .select { flex: 0 0 auto; width: auto; }
 .compound-kana {
   font-family: var(--font-display); font-size: 20px; line-height: 1.1;
   padding: 2px 1px; color: var(--text2);

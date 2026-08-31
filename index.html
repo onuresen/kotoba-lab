@@ -546,6 +546,13 @@
           <option value="readable">Readable now</option>
           <option value="unreadable">Not yet readable</option>
         </select>
+        <!-- Every dictionary entry whose own gloss says "counter for…" — a
+             plain read of committed data, not a curated top list. See
+             counterGloss() / hasCounterSense() in js/word-browser.js. -->
+        <select id="wl-kind" class="select" aria-label="Filter by word kind" title="Only words whose dictionary gloss says “counter for…” — every one committed, not a curated top list">
+          <option value="all">All words</option>
+          <option value="counter">Counters</option>
+        </select>
       </div>
       <div id="wl-results" class="compound-list"></div>
     </div>

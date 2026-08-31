@@ -30,7 +30,7 @@ import { isKanji } from './script.js';
 import { cacheNameFor } from './offline-cache.js';
 import { parseRoute, routeToHash } from './routing.js';
 import { buildReadableCompounds, wordsContaining, isReadableCompound, unlockedBy } from './compound-words.js';
-import { searchWords } from './word-browser.js';
+import { searchWords, counterGloss } from './word-browser.js';
 import { buildAchievements, evaluateNewlyUnlocked } from './achievements.js';
 import { forecast as studyForecast } from './study-weather.js';
 import { createKanjiTree } from './kanjitree.js';
@@ -123,7 +123,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.47.0';
+const APP_VERSION = '10.48.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -946,6 +946,7 @@ function jumpToWordsFor(char) {
   $('#wl-search').value = char;
   $('#wl-level').value = '';
   $('#wl-readable').value = 'all';
+  $('#wl-kind').value = 'all';
   renderWordLookup();
   $('#wl-search').focus();
 }
@@ -2542,7 +2543,12 @@ const WORD_LOOKUP_LIMIT = 30;
 // stay visually identical and gain features together. `justUnlocked` marks a
 // row that became readable only since the previous render, for the brush
 // reveal below — every other row renders exactly as before.
-function wordRowMarkup(word, justUnlocked = false) {
+// `glossOverride` shows a different sense than the word's own first/only one
+// — currently only the Counters view (see word-browser.js's counterGloss()),
+// where the word's usual gloss is very often unrelated to why it is being
+// shown at all (乗's own first sense is "(nth) power", not the counter for
+// vehicles three clauses later). Every other caller leaves this unset.
+function wordRowMarkup(word, justUnlocked = false, glossOverride = null) {
   const saved = deck.has(word.w);
   const known = knownWords.has(word.w);
   const fav = favoriteWords.has(word.w);
@@ -2552,7 +2558,7 @@ function wordRowMarkup(word, justUnlocked = false) {
         : `<span class="compound-kana">${esc(char)}</span>`)).join('')}</div>
       <div class="compound-meta">
         ${word.r ? `<span class="rd">${esc(word.r)}</span>` : ''}
-        <span class="compound-gloss">${esc(word.g)}</span>
+        <span class="compound-gloss">${esc(glossOverride || word.g)}</span>
       </div>
       <span class="badge" data-status="${word.lvl == null ? 'archive' : 'reference'}">${levelName(word.lvl)}</span>
       <button type="button" class="compound-known" data-word-known="${esc(word.w)}" title="${known ? `Unmark ${esc(word.w)} as known` : `Mark ${esc(word.w)} as known — dims it while reading and updates your coverage meter`}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(word.w)} as known">${known ? '✓ Known' : 'Mark known'}</button>
@@ -2642,23 +2648,26 @@ function renderWordLookup() {
   if (!host || !count) return;
 
   const levelValue = $('#wl-level').value;
+  const kind = $('#wl-kind').value;
   const { total, words } = searchWords(vocabList, {
     term: $('#wl-search').value,
     level: levelValue === '' ? null : Number(levelValue),
     readable: $('#wl-readable').value,
+    kind,
     isReadable: (word) => isReadableCompound(word, (char) => knownKanji.has(char)),
     limit: WORD_LOOKUP_LIMIT,
   });
 
   count.textContent = total
-    ? `${total.toLocaleString()} match${total === 1 ? '' : 'es'}${total > words.length ? ` · showing ${words.length}` : ''}`
+    ? `${total.toLocaleString()} match${total === 1 ? '' : 'es'}${total > words.length ? ` · showing ${words.length}` : ''}${kind === 'counter' ? ' · every dictionary sense that says "counter for…", not a curated top list' : ''}`
     : 'No matches';
 
   // Explicit call, not a bare `.map(wordRowMarkup)`: Array.map's index would
   // otherwise land in the `justUnlocked` parameter and flag every row past
-  // the first as newly unlocked.
+  // the first as newly unlocked. Counters mode shows the counting sense in
+  // place of the word's own (often unrelated) first sense — see counterGloss().
   host.innerHTML = words.length
-    ? words.map((w) => wordRowMarkup(w)).join('')
+    ? words.map((w) => wordRowMarkup(w, false, kind === 'counter' ? counterGloss(w.g) : null)).join('')
     : '<p class="hint">No vocabulary matches that search. Try a reading, or part of an English meaning.</p>';
 }
 
@@ -3380,6 +3389,7 @@ function wireUi() {
   });
   $('#wl-level').addEventListener('change', renderWordLookup);
   $('#wl-readable').addEventListener('change', renderWordLookup);
+  $('#wl-kind').addEventListener('change', renderWordLookup);
   $('#mw-clear-known').addEventListener('click', () => {
     if (!confirm('Clear all known words and kanji? Only a backup file can bring them back.')) return;
     knownWords.clear(); knownKanji.clear();
