@@ -158,6 +158,59 @@ Parked deliberately behind Favorites and the Shelf. If nobody stars anything,
 this never matters; if the shelf fills up, this is what makes it worth
 revisiting.
 
+Two other Japanese-study apps reviewed for comparison (Kanji Study, JA Sensei)
+both attach exactly this note to *every* kanji or word, not gated behind
+marking one a favorite first. Worth widening the scope to match: a note field
+reachable from the Read info panel and the Radical Tree directly, independent
+of the ♡ toggle — liking something and having something to say about it are
+different acts, and gating the second behind the first would lose notes on a
+kanji someone has plenty to say about but, for whatever reason, never stars.
+
+### Your own words for it
+
+Replace or set alongside the dictionary's own meaning with your own, in your
+own words — not a note beside the kanji, an editable field in its place.
+Kanji Study shows exactly this: a pencil icon sitting right on the Meaning row.
+
+This is a different act from a note (above): a note is commentary kept beside
+the dictionary's own answer; this is a personal mnemonic standing in for it,
+for the kanji whose dictionary gloss ("eternity; eternal") never sticks the
+way your own image of it would.
+
+The honesty question is sharper here than for a note. Every other surface in
+this application shows kanjidic's meaning as fact, and several features
+(Alchemy's evidence, the Daily Mystery's clues, the Kanji Contrast Lab) depend
+on it staying exactly that — a fact, never something a learner silently
+overwrote. If this is built, a personal override must stay visibly a personal
+override everywhere it appears, and must never leak into any surface that
+treats the dictionary meaning as evidence.
+
+First experiment: a small, clearly-labelled "Your words" field beside — never
+replacing — the dictionary gloss on the Read info panel only, saved per kanji
+under its own storage key. Prove the labelling stays honest there before it
+appears anywhere else.
+
+### More than one shelf
+
+Favorites is one collection. Both reference apps let you build several — named,
+purpose-built lists ("Business terms", "Chapter 3", "N2 review") added to
+straight from a kanji or word's own card.
+
+The natural next step if Favorites gets used the way this whole section hopes
+— and a real step up in weight, not a small extension. It needs list creation
+and deletion, a picker on every card instead of one heart, and a decision about
+what a list means once a learner's sense of it has moved on but its contents
+have not. `createKnownSet(key)` stops being reusable as-is the moment there is
+more than a fixed handful of keys: a named, learner-created list needs its own
+small schema — an id, a label, a member set — not one `localStorage` key per
+list invented on the fly.
+
+Deliberately not attempted until Favorites has been used for a while. One
+collection with no target was section A's whole thesis; several collections
+reopen the question of whether they stay a personal library or start turning
+into homework assigned to yourself ("finish the N2 review list"). That risk is
+exactly why this waits.
+
 ### Ambient strokes
 
 The Radical Tree animation, unattended: kanji drawn one after another, slowly,
@@ -208,6 +261,118 @@ First experiment: exact match only, pass/fail, no near-miss note. A "one mora
 off" message sounds friendly and is a similarity judgment in disguise; if it is
 wanted later, define it as an explicit rule (one kana substitution, or a
 long-vowel or sokuon difference) rather than a distance score.
+
+### Real sentences for every word
+
+An authored example sentence for a dictionary word, with reading and
+translation, shown wherever that word appears — even one never yet met while
+reading. JA Sensei shows three per word, each with its own audio.
+
+This is the one gap Context-First Cards (v10.43.0) cannot close: cloze needs a
+sentence the reader actually met the word in, so a word never yet encountered
+in pasted text has nothing to cloze. A committed example-sentence corpus would
+give every one of the 10,808 vocabulary entries a sentence on day one — in
+Word Lookup, in the Kanji tab's recommended-words list (v10.47.0), everywhere
+a bare word and gloss sit today.
+
+Unlike section E, this needs no invented judgment — a real source exists.
+Tatoeba is an open, actively maintained Japanese–English sentence corpus,
+individually CC BY 2.0 FR licensed per sentence pair, already the standard
+source other dictionary tools use for exactly this. But it is a genuinely new
+dataset, not a re-extraction of anything already committed: matching sentences
+to this project's specific 10,808 words, keeping only pairs both sides agree
+on, and carrying correct per-sentence attribution is real data-engineering
+work — closer in shape to the KanjiVG pipeline (`tools/build-kanjivg.mjs`, a
+pinned release, a checksum, an `npm run … :check` script) than to a code
+change.
+
+First experiment: pick 50 common words, hand-verify Tatoeba's coverage and
+translation quality for exactly those, and look honestly at the match rate
+before committing to extracting all 10,808. If coverage or quality is poor for
+common words, it will not improve for rare ones.
+
+### Counters, for free  ✓ Shipped in v10.48.0
+
+A small reference for Japanese counter words (枚, 匹, 冊, 個…) — the thing JLPT
+learners reliably get stuck on, and something almost every general
+Japanese-course app (JA Sensei included) ships as its own section.
+
+Unlike everything else in this file that touches new data, this needed none:
+44 entries already sitting in the committed `data/jlpt-vocab.json` carry a
+gloss with the phrase "counter for…" (丁 "counter for sheets, pages, leaves…
+counter for blocks of tofu"; 匹 "counter for small animals; counter for rolls
+of cloth…"). The list had been inside data this project already ships, unused,
+the whole time.
+
+Shipped as the first experiment described: a `kind: all | counter` filter in
+Word Lookup, composing with the existing search, JLPT, and readable filters
+exactly like they already compose with each other — no new storage, no new
+page. The human read-through this entry asked for happened before writing any
+code, and settled the "secondary sense" question differently than the entry
+originally expected: rather than hand-picking which of the 44 "deserved" to be
+called a counter — 乗's is buried behind "(nth) power", 門's behind "gate" —
+all 44 are shown, unfiltered by how central the sense is to that kanji's
+identity. Silently dropping some would have been inventing exactly the
+importance judgment this project has refused to invent everywhere else (see
+the phonetic-signal lab, the component picker's ordering rule). What each row
+shows is not the word's usual first sense but only its counting clause(s),
+extracted from the gloss — so 門's row reads "counter for cannons" alone, never
+paired with "gate" in a way that could read as a claim about how 門 is usually
+used. The count line says outright that this is "every dictionary sense that
+says 'counter for…', not a curated top list", so nobody mistakes it for a
+textbook's chosen-for-you set.
+
+### Grade, frequency, and part of speech
+
+Three real dictionary facts Kanji Study shows that Kotoba Lab's own kanji card
+does not: Jōyō grade (the Ministry of Education's own 1–6 school-grade
+assignment, a different axis from JLPT level), a frequency-of-use rank from a
+newspaper corpus, and — for vocabulary — part of speech per word ("noun",
+"transitive verb").
+
+None of these are invented, and none need a new license. `data/ATTRIBUTION.md`
+says the quiet part outright: the vocabulary build already "stripped
+part-of-speech tags" from the source EDICT data for concise display, and
+KANJIDIC — the same Kanjium/EDRDG source `kanjidic.json` already comes from —
+carries both grade and frequency fields upstream. This project already holds a
+license broad enough for exactly this use.
+
+What is actually missing is narrower, and more honest, than "the data doesn't
+exist": there is no committed, reproducible build script for `kanjidic.json`
+or `jlpt-vocab.json` at all. Unlike KanjiVG, which has
+`tools/build-kanjivg.mjs`, a pinned release, and an `npm run kanjivg:check`
+script, the vocabulary and kanji dictionary files were built once, outside
+this repository, from a copy of the Kanjium database, and only the derived
+JSON was ever committed. Adding grade, frequency, or part of speech means
+re-acquiring that source (or the KANJIDIC2/JMdict XML it derives from) and
+writing the missing pipeline — `tools/build-vocab.mjs`, in the same shape —
+not a small code change.
+
+First experiment, once the source is in hand: grade and frequency on the Kanji
+library card and the Radical Tree info panel only, sorted by neither — sort
+order is where "frequency" quietly turns into an "importance" this project has
+never asserted about a kanji, and the component picker's own ordering
+principle (order by what can be counted, never by "importance") should hold
+here too.
+
+### Browsing without closing the door
+
+Previous/next through the current filtered kanji list without leaving the
+Radical Tree overlay — step to the next result in a JLPT band, a search, or a
+family, the way Kanji Study's kanji strip stays on screen while the detail
+view below it changes.
+
+Today, browsing ten kanji from a search means opening Radical Tree, closing
+it, and reopening it nine more times. The Kanji library already computes the
+exact filtered-and-sorted list Radical Tree would page through —
+`filterKanji()` in `js/kanji-browser.js` — so this is threading an index
+through an existing array, not building a second one.
+
+First experiment: scope it to the one launch point that actually has an
+ordered list behind it — opening Radical Tree from the Kanji library grid.
+Every other doorway into Radical Tree (a word's kanji chip, a Relations node,
+the Daily Mystery's answer card) opens one specific kanji with no natural
+"next", and should keep behaving exactly as it does now.
 
 ### Old known kanji
 
@@ -393,6 +558,7 @@ Implementation detail and conventions live in `AGENTS.md`; this is the index.
 
 | Direction | Shipped |
 |---|---|
+| Counters, for free | v10.48.0 |
 | Favorites + the Shelf | v10.46.0 |
 | Kanji Constellation Atlas | Groups A–D, v10.15.0 |
 | Radical Alchemy | Groups A–C, v10.18.0–v10.20.0 |

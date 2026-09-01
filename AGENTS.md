@@ -2,7 +2,38 @@
 
 ## Current release and backlog
 
-- **v10.47.0 current.** "Appears in" (Read info panel, Radical Tree) is
+- **v10.48.0 current.** **Counters** is ✓ Done, from the idea garden's own
+  "Counters, for free" entry (added the same session): a `kind: all | counter`
+  filter in Word Lookup that finds every vocabulary entry whose own dictionary
+  gloss says "counter for…". Confirmed by hand before writing any code: 44
+  entries in `data/jlpt-vocab.json` carry the phrase.
+  New pure `hasCounterSense(gloss)`/`counterGloss(gloss)` in
+  `js/word-browser.js`: glosses are semicolon-separated senses, so a kanji
+  whose OTHER senses are entirely unrelated to counting still matches
+  correctly on the one clause that is — 乗's first sense is "(nth) power", not
+  its counter-for-vehicles sense three clauses later; 門's is "gate", not
+  "counter for cannons". `counterGloss()` shows only the matching clause(s),
+  joined, in place of the word's usual (often irrelevant) first sense — 丁's
+  entry is four unrelated counted-object categories with no non-counter sense
+  at all, and picking only the first would have hidden three of the four.
+  `wordRowMarkup()` gained an optional third `glossOverride` argument for
+  exactly this; every existing call site is unaffected since none pass one.
+  DELIBERATELY NOT CURATED: all 44 are shown, nothing hand-picked out as
+  "too obscure" or "too archaic" (some clearly are, e.g. 門's cannon-counting
+  sense) — see AGENTS.md's Word Lookup conventions below for why a curated
+  subset would have been inventing a judgment this project has refused
+  everywhere else. `searchWords()`'s `kind` option composes with `term`,
+  `level`, and `readable` exactly like every other filter, and the honest
+  count line says outright what the filter actually is ("every dictionary
+  sense that says 'counter for…', not a curated top list") so nobody mistakes
+  it for a textbook's chosen-for-you list. One pre-existing CSS bug fixed
+  along the way: `.wl-controls .select` set `flex: 0 0 auto` but never
+  overrode `.select`'s own base `width: 100%` (`ui-base.css`), which
+  `flex-basis: auto` defers to — so `#wl-level` and `#wl-readable` were
+  already stacking onto their own full-width rows instead of sitting inline
+  with the search box; adding a third select (`#wl-kind`) just made the
+  three-row stack impossible to miss. `APP_VERSION` bumped to 10.48.0.
+- **v10.47.0.** "Appears in" (Read info panel, Radical Tree) is
   ✓ Done becoming a real recommended-words section: it always showed words
   containing the current kanji, easiest first, but only had a known toggle —
   no way to save one, and no way to reach the words that didn't fit the cap
@@ -1320,6 +1351,25 @@
   `isReadableCompound()` rather than a second definition.
 - Every vocabulary list uses the shared `wordRowMarkup()` so the compound card
   and the lookup stay identical and gain features together.
+
+### Counters
+
+- `hasCounterSense()`/`counterGloss()` match on the dictionary's own gloss text
+  (a semicolon-separated clause containing "counter for") — never a hand-picked
+  list. All matches are shown; none are excluded for being obscure, archaic, or
+  a minor sense of a kanji whose main identity is something else entirely
+  (門 "gate" also, rarely, counts cannons — it stays in). Silently dropping any
+  of them would be inventing exactly the kind of importance judgment this
+  project refuses everywhere else — see the phonetic-signal lab and the
+  component picker's own ordering rule for the same stance elsewhere.
+- The count line must say plainly that this is every matching dictionary sense
+  and not a curated list. A textbook-style "here are the counters that
+  matter" framing would be a claim this project cannot back with evidence.
+- `counterGloss()` shows every counting clause a word's gloss states, joined —
+  never just the first. Some entries (丁) have no non-counter sense at all;
+  truncating to one clause would silently drop real information.
+- `wordRowMarkup()`'s `glossOverride` parameter exists for this and only this.
+  Do not reuse it to hide or reorder a word's ordinary senses elsewhere.
 
 ### Review direction
 

@@ -35,6 +35,34 @@ function compare(a, b) {
   return a.w < b.w ? -1 : 1;
 }
 
+// Counters (枚, 匹, 冊…) read straight out of the dictionary's own gloss text,
+// not a curated list. Kanjium's glosses are semicolon-separated senses, so a
+// kanji with several unrelated meanings — 縮 "shrink" / "counter for suits of
+// armour", 門 "gate" / "counter for cannons" — still matches on the one clause
+// that actually says so, never on its other, unrelated senses.
+const COUNTER_CLAUSE = /counter for\b/i;
+
+function counterClauses(gloss) {
+  return String(gloss || '')
+    .split(';')
+    .map((clause) => clause.trim())
+    .filter((clause) => COUNTER_CLAUSE.test(clause));
+}
+
+export function hasCounterSense(gloss) {
+  return counterClauses(gloss).length > 0;
+}
+
+// What a Counters view shows in place of the word's usual first sense, which
+// is very often unrelated (乗's first sense is "(nth) power", not the counter
+// for vehicles three clauses later). Every counting use the entry's own gloss
+// states, joined — 丁 alone counts sheets, tofu, restaurant servings, and long
+// narrow objects, and picking only one clause would hide the other three.
+export function counterGloss(gloss) {
+  const clauses = counterClauses(gloss);
+  return clauses.length ? clauses.join('; ') : String(gloss || '');
+}
+
 export function matchesWordQuery(entry, query) {
   if (!query) return true;
   const surface = String(entry.w || '');
@@ -63,6 +91,7 @@ export function searchWords(vocab, options = {}) {
     ? options.readable
     : 'all';
   const isReadable = typeof options.isReadable === 'function' ? options.isReadable : null;
+  const kind = options.kind === 'counter' ? 'counter' : 'all';
   const limit = Math.max(1, Number(options.limit) || 40);
 
   const matches = [];
@@ -72,6 +101,7 @@ export function searchWords(vocab, options = {}) {
     const word = entry?.w;
     if (!word || seen.has(word)) continue;
     if (level !== null && entry.lvl !== level) continue;
+    if (kind === 'counter' && !hasCounterSense(entry.g)) continue;
     if (!matchesWordQuery(entry, query)) continue;
     if (readable !== 'all' && isReadable) {
       const can = isReadable(word);

@@ -128,6 +128,9 @@ export a backup. See [PRIVACY.md](PRIVACY.md) for the details.
 - **Word lookup:** search all 10,808 committed vocabulary entries by word,
   reading, or English meaning, filter by JLPT level or by whether every kanji in
   the word is one you already know, and save any result straight into review.
+  A Counters filter finds every entry whose own dictionary gloss says
+  "counter for…" — every one committed, never a curated top list — and shows
+  the counting sense itself rather than the word's usual first meaning.
 - **Bookmarkable views:** each workspace has its own address, so `#kanji` opens
   the Kanji library and the browser's back button steps back through the views
   you visited instead of leaving the app.
