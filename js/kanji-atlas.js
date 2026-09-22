@@ -521,12 +521,13 @@ export function createKanjiAtlasView({
       onOpenTree(item.char, event.target.closest('[data-ka-action]'));
     }
   });
-  document.addEventListener('keydown', (event) => {
+  const onKeydown = (event) => {
     if (event.key === 'Escape' && focusMode) {
       event.preventDefault();
       setFocus(false, { restoreFocus: true });
     }
-  });
+  };
+  document.addEventListener('keydown', onKeydown);
   return {
     open,
     update: () => root && render({ preserveScroll: true, preserveSelection: true }),
@@ -535,5 +536,10 @@ export function createKanjiAtlasView({
     selectedChar: () => selected,
     graph: () => graph,
     setFocus,
+    // No caller recreates this view today (app.js guards construction with
+    // `if (!relationsAtlas)`), so this document-level listener currently
+    // lives for the page's lifetime. destroy() is here so that stays true by
+    // choice rather than by the absence of a way to undo it.
+    destroy: () => document.removeEventListener('keydown', onKeydown),
   };
 }

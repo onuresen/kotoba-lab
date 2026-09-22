@@ -63,11 +63,28 @@ export function counterGloss(gloss) {
   return clauses.length ? clauses.join('; ') : String(gloss || '');
 }
 
+// searchWords() re-normalises the same 10,808 entries' readings on every
+// keystroke; a query, by contrast, is normalised once (see prepareWordQuery
+// below). Caching each entry's own readingForm(entry.r) the first time it's
+// needed turns every search after the first into a plain substring scan
+// instead of 10,808 fresh normalisations. Keyed by entry object identity, so
+// this stays correct however many distinct vocab arrays (real data, test
+// fixtures) call in — no result depends on which array an entry came from.
+const readingFormCache = new WeakMap();
+function cachedReadingForm(entry) {
+  let form = readingFormCache.get(entry);
+  if (form === undefined) {
+    form = readingForm(entry.r);
+    readingFormCache.set(entry, form);
+  }
+  return form;
+}
+
 export function matchesWordQuery(entry, query) {
   if (!query) return true;
   const surface = String(entry.w || '');
   if (surface.includes(query.raw)) return true;
-  if (query.reading && readingForm(entry.r).includes(query.reading)) return true;
+  if (query.reading && cachedReadingForm(entry).includes(query.reading)) return true;
   if (query.latin && String(entry.g || '').toLowerCase().includes(query.latin)) return true;
   return false;
 }

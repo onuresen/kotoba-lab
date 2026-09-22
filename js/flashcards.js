@@ -6,8 +6,8 @@ import { levelName } from './jlpt.js';
 import { kanaToRomaji } from './reading-forms.js';
 
 // Pick study candidates from word-frequency rows: dictionary words at or above
-// a chosen difficulty, plus (optionally) ungraded words. `minLevel` uses the
-// 5..1 scale, so "N4 and harder" = minLevel 4 meaning level <= 4.
+// a chosen difficulty, plus (optionally) ungraded words. `maxLevel` uses the
+// 5..1 scale, so "N4 and harder" = maxLevel 4 meaning level <= 4.
 export function pickStudyWords(wordRows, { hardestFirst = true, maxLevel = 4, includeUngraded = true } = {}) {
   const picked = wordRows.filter((r) => {
     if (r.level == null) return includeUngraded;

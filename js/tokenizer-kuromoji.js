@@ -17,8 +17,6 @@
 // app.js keeps the instant dictionary segmenter as the default and only loads
 // this when the user asks for precision.
 
-import { isKanji } from './script.js';
-
 // ---- helpers ----------------------------------------------------------------
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -41,7 +39,7 @@ function katakanaToHiragana(s) {
   return out;
 }
 
-function buildIndex(vocab) {
+export function buildIndex(vocab) {
   const m = new Map(); // surface / lemma -> { lvl, g }
   for (const e of vocab) if (!m.has(e.w)) m.set(e.w, { lvl: e.lvl, g: e.g || null });
   return m;
@@ -54,7 +52,12 @@ function posToKind(pos) {
   return 'word';                                       // 名詞/動詞/形容詞/副詞/…
 }
 
-function mapTokens(raw, idx) {
+// Exported (only) for tests: loadKuromojiTokenizer needs a real kuromoji
+// build + vendored dictionary to run, which this test suite has no browser
+// or 18MB dictionary to provide. mapTokens is the pure part — the shape
+// contract it must uphold (js/tokenizer.js's Token, minus the four optional
+// morphology fields) is exactly what's worth testing directly.
+export function mapTokens(raw, idx) {
   // 1) map to intermediate items (keep POS detail for the merge pass)
   const items = raw.map((k) => ({
     surface: k.surface_form,
@@ -95,11 +98,10 @@ function mapTokens(raw, idx) {
 
   // 3) finalize into the shared Token shape; attach JLPT level + gloss by lemma/surface
   return merged.map((m) => {
-    const hasKanji = [...m.surface].some(isKanji);
     const info = idx.get(m.lemma) || idx.get(m.surface) || null;
     return {
       surface: m.surface,
-      reading: hasKanji ? (m.reading || null) : null,
+      reading: m.reading || null,
       level: info ? info.lvl : null,
       gloss: info ? info.g : null,
       kind: m.kind,

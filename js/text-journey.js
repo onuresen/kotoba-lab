@@ -1,4 +1,4 @@
-import { sentenceAt } from './context.js';
+import { buildSentenceIndex, sentenceAtIndexed } from './context.js';
 
 const pct = (value, total) => total ? Math.round((value / total) * 100) : 0;
 
@@ -6,6 +6,10 @@ export function buildTextJourney(kRows, tokens, catalog, isKnown, options = {}) 
   const limit = Number.isInteger(options.limit) ? options.limit : 6;
   const rows = Array.isArray(kRows) ? kRows : [];
   const allTokens = Array.isArray(tokens) ? tokens : [];
+  // Every unresolved-kanji row scans the same token list for occurrences, so
+  // the join + per-token offset walk context.js needs is done once here
+  // rather than once per occurrence (see buildSentenceIndex's own comment).
+  const sentenceIndex = buildSentenceIndex(allTokens);
   const byChar = new Map((Array.isArray(catalog) ? catalog : []).map((row) => [row.char, row]));
   const total = rows.reduce((sum, row) => sum + row.n, 0);
   const known = rows.reduce((sum, row) => sum + (isKnown?.(row.ch) ? row.n : 0), 0);
@@ -21,7 +25,7 @@ export function buildTextJourney(kRows, tokens, catalog, isKnown, options = {}) 
         wordSeen.add(token.surface);
         words.push({ surface: token.surface, reading: token.reading, gloss: token.gloss });
       }
-      const context = sentenceAt(allTokens, index);
+      const context = sentenceAtIndexed(sentenceIndex, index);
       if (context?.text && !contextSeen.has(context.text)) {
         contextSeen.add(context.text);
         contexts.push(context);
