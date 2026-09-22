@@ -39,7 +39,7 @@ function katakanaToHiragana(s) {
   return out;
 }
 
-function buildIndex(vocab) {
+export function buildIndex(vocab) {
   const m = new Map(); // surface / lemma -> { lvl, g }
   for (const e of vocab) if (!m.has(e.w)) m.set(e.w, { lvl: e.lvl, g: e.g || null });
   return m;
@@ -52,7 +52,12 @@ function posToKind(pos) {
   return 'word';                                       // 名詞/動詞/形容詞/副詞/…
 }
 
-function mapTokens(raw, idx) {
+// Exported (only) for tests: loadKuromojiTokenizer needs a real kuromoji
+// build + vendored dictionary to run, which this test suite has no browser
+// or 18MB dictionary to provide. mapTokens is the pure part — the shape
+// contract it must uphold (js/tokenizer.js's Token, minus the four optional
+// morphology fields) is exactly what's worth testing directly.
+export function mapTokens(raw, idx) {
   // 1) map to intermediate items (keep POS detail for the merge pass)
   const items = raw.map((k) => ({
     surface: k.surface_form,

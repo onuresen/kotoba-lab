@@ -64,7 +64,16 @@ export function parseStudyPack(text) {
   }
   const exportedAt = typeof raw.exportedAt === 'string' && Number.isFinite(Date.parse(raw.exportedAt)) ? Date.parse(raw.exportedAt) : null;
   const pack = buildStudyPack({ title: raw.title, source: raw.source, items: raw.kanji }, exportedAt ?? 0, { appVersion: raw.appVersion });
-  if (exportedAt == null) pack.exportedAt = '';
+  if (exportedAt == null) {
+    // A present-but-unparsable exportedAt is a sign of a hand-edited or
+    // otherwise malformed file, distinct from an older/simpler file that
+    // never had the field — worth a console note even though it's not
+    // serious enough to reject the whole import.
+    if (raw.exportedAt != null && raw.exportedAt !== '') {
+      console.warn('Study pack import: exportedAt was present but not a valid date; treating it as unknown.', raw.exportedAt);
+    }
+    pack.exportedAt = '';
+  }
   if (!pack.kanji.length) throw new Error('That study pack contains no readable kanji.');
   return pack;
 }

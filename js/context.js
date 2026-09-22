@@ -19,20 +19,30 @@ export const MAX_CONTEXT_CHARS = 140;
 const ELLIPSIS = '…';
 
 /**
- * The sentence containing tokens[index].
- *
- * Returns `{ text, start, end }` — `start`/`end` locate the word INSIDE `text`,
- * so the card can emphasise the exact occurrence rather than the first string
- * match (the same word often appears twice in one sentence). Returns null when
- * there is no usable context.
+ * Precompute the joined text and each token's start offset once, so a caller
+ * that looks up many sentences from the same token list (e.g. one context per
+ * occurrence of a kanji, across every occurrence in a long text) doesn't
+ * re-join and re-walk the whole text on every lookup. `sentenceAt` builds one
+ * of these itself for a single lookup; `sentenceAtIndexed` takes one in so
+ * repeated lookups stay O(1) to set up instead of O(tokens) each.
  */
-export function sentenceAt(tokens, index, { maxChars = MAX_CONTEXT_CHARS } = {}) {
+export function buildSentenceIndex(tokens) {
+  const list = Array.isArray(tokens) ? tokens : [];
+  const offsets = new Array(list.length);
+  let text = '';
+  for (let i = 0; i < list.length; i++) {
+    offsets[i] = text.length;
+    text += list[i].surface;
+  }
+  return { tokens: list, text, offsets };
+}
+
+/** Same result as `sentenceAt(tokens, index, opts)`, from a precomputed index. */
+export function sentenceAtIndexed({ tokens, text, offsets }, index, { maxChars = MAX_CONTEXT_CHARS } = {}) {
   if (!Array.isArray(tokens) || !Number.isInteger(index)) return null;
   if (index < 0 || index >= tokens.length) return null;
 
-  const text = tokens.map((t) => t.surface).join('');
-  let from = 0;
-  for (let i = 0; i < index; i++) from += tokens[i].surface.length;
+  const from = offsets[index];
   const to = from + tokens[index].surface.length;
   if (to === from) return null;
 
@@ -45,6 +55,18 @@ export function sentenceAt(tokens, index, { maxChars = MAX_CONTEXT_CHARS } = {})
   if (hi < text.length) hi++; // keep the 。 / ？ / ！
 
   return window(text.slice(lo, hi), from - lo, to - lo, maxChars);
+}
+
+/**
+ * The sentence containing tokens[index].
+ *
+ * Returns `{ text, start, end }` — `start`/`end` locate the word INSIDE `text`,
+ * so the card can emphasise the exact occurrence rather than the first string
+ * match (the same word often appears twice in one sentence). Returns null when
+ * there is no usable context.
+ */
+export function sentenceAt(tokens, index, opts = {}) {
+  return sentenceAtIndexed(buildSentenceIndex(tokens), index, opts);
 }
 
 // Trim surrounding whitespace and, if still too long, keep a window around the

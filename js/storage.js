@@ -27,20 +27,26 @@ function writeJSON(key, value) {
 export function createKnownSet(key) {
   let items = new Set(readJSON(key, []));
   const persist = () => writeJSON(key, [...items]);
+  // Same reasoning as createDeck's `sorted` cache below: callers commonly
+  // call all() twice in a row (once for .length, once to .map() it), and
+  // this stays valid until the next mutation below.
+  let list = null;
+  const invalidate = () => { list = null; };
   return {
     has: (s) => items.has(s),
     toggle(s) {
       const now = !items.has(s);
       if (now) items.add(s); else items.delete(s);
+      invalidate();
       persist();
       return now;
     },
     count: () => items.size,
-    all: () => [...items],
+    all: () => list || (list = [...items]),
     // Overwrite wholesale — used to write back a merged backup (see backup.js).
     // The merging happens there; this just lands the result in one write.
-    replaceAll(list) { items = new Set(list); persist(); },
-    clear() { items = new Set(); persist(); },
+    replaceAll(newList) { items = new Set(newList); invalidate(); persist(); },
+    clear() { items = new Set(); invalidate(); persist(); },
   };
 }
 
@@ -50,6 +56,13 @@ export function createKnownSet(key) {
 export function createDeck(key) {
   let entries = new Map(Object.entries(readJSON(key, {})));
   const persist = () => writeJSON(key, Object.fromEntries(entries));
+  // all() is called several times per render pass (refreshReview,
+  // renderReviewStats, renderMyWords, …), and re-sorting the whole deck each
+  // time is pure waste when nothing changed since the last call. Every
+  // mutator below goes through this same closure, so invalidating the cache
+  // there is exhaustive — there's no other way for `entries` to change.
+  let sorted = null;
+  const invalidate = () => { sorted = null; };
   return {
     has: (surface) => entries.has(surface),
     get: (surface) => entries.get(surface) || null,
@@ -57,6 +70,7 @@ export function createDeck(key) {
       const now = !entries.has(entry.surface);
       if (now) entries.set(entry.surface, { ...entry, savedAt: Date.now() });
       else entries.delete(entry.surface);
+      invalidate();
       persist();
       return now;
     },
@@ -66,14 +80,15 @@ export function createDeck(key) {
       if (!prev) return null;
       const next = { ...prev, ...patch };
       entries.set(surface, next);
+      invalidate();
       persist();
       return next;
     },
-    remove(surface) { entries.delete(surface); persist(); },
+    remove(surface) { entries.delete(surface); invalidate(); persist(); },
     count: () => entries.size,
-    all: () => [...entries.values()].sort((a, b) => b.savedAt - a.savedAt),
-    replaceAll(list) { entries = new Map(list.map((e) => [e.surface, e])); persist(); },
-    clear() { entries = new Map(); persist(); },
+    all: () => sorted || (sorted = [...entries.values()].sort((a, b) => b.savedAt - a.savedAt)),
+    replaceAll(list) { entries = new Map(list.map((e) => [e.surface, e])); invalidate(); persist(); },
+    clear() { entries = new Map(); invalidate(); persist(); },
   };
 }
 
