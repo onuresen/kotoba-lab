@@ -17,8 +17,6 @@
 // app.js keeps the instant dictionary segmenter as the default and only loads
 // this when the user asks for precision.
 
-import { isKanji } from './script.js';
-
 // ---- helpers ----------------------------------------------------------------
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -95,11 +93,10 @@ function mapTokens(raw, idx) {
 
   // 3) finalize into the shared Token shape; attach JLPT level + gloss by lemma/surface
   return merged.map((m) => {
-    const hasKanji = [...m.surface].some(isKanji);
     const info = idx.get(m.lemma) || idx.get(m.surface) || null;
     return {
       surface: m.surface,
-      reading: hasKanji ? (m.reading || null) : null,
+      reading: m.reading || null,
       level: info ? info.lvl : null,
       gloss: info ? info.g : null,
       kind: m.kind,

@@ -50,6 +50,7 @@ export function createUsageJournal({ storage = globalThis.localStorage, now = ()
     state = emptyState();
   }
   let sessionRecorded = false;
+  let lastPrunedKey = null;
 
   const persist = () => {
     try { storage?.setItem(USAGE_STORAGE_KEY, JSON.stringify(state)); } catch { /* session-only fallback */ }
@@ -57,8 +58,11 @@ export function createUsageJournal({ storage = globalThis.localStorage, now = ()
   const today = () => {
     const key = dayKey(now());
     if (!state.days[key]) state.days[key] = { sessions: 0, activeMinutes: 0, events: {} };
-    const keys = Object.keys(state.days).sort();
-    for (const old of keys.slice(0, Math.max(0, keys.length - keepDays))) delete state.days[old];
+    if (lastPrunedKey !== key) {
+      const keys = Object.keys(state.days).sort();
+      for (const old of keys.slice(0, Math.max(0, keys.length - keepDays))) delete state.days[old];
+      lastPrunedKey = key;
+    }
     return state.days[key];
   };
 
