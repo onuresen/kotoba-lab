@@ -410,7 +410,7 @@ export function createKanjiAtlasView({
     }).join('');
     const stars = layout.map((star) => `<div class="ka-star-position" style="--ka-x:${star.x}%;--ka-y:${star.y}%">
       <button type="button" class="ka-star" data-ka-char="${esc(star.char)}" data-known="${isKnown(star.char)}" data-root="${star.isRoot}" data-selected="${star.char === selected}" aria-pressed="${star.char === selected}" aria-label="Inspect ${esc(star.char)}, ${esc(star.meaning)}">
-        <span class="ka-star-glyph">${esc(star.char)}</span><span class="ka-star-copy"><strong>${esc(star.meaning)}</strong><small>${levelLabel(star.jlpt)} · ${star.strokes || '—'} strokes</small></span>
+        <span class="ka-star-glyph">${esc(star.char)}</span><span class="ka-star-copy"><strong>${esc(star.meaning)}</strong><small>${levelLabel(star.jlpt)} · ${star.strokes || '—'} stroke${star.strokes === 1 ? '' : 's'}</small></span>
       </button></div>`).join('');
     stage.innerHTML = `<div class="ka-sky"><svg class="ka-lines ka-component-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>
       <svg class="ka-lines ka-reading-routes" data-visible="${showRoutes}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${readingRoutes}</svg>

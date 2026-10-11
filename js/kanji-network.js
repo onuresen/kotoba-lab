@@ -151,7 +151,7 @@ function nodeMarkup(node, known, { mobile = false } = {}) {
 function detailMarkup(node, root, expanded) {
   if (!node) return '<p class="hint">Select a kanji to inspect this branch.</p>';
   const reason = node.relation?.reasons?.filter((row) => row.kind !== 'stroke').map((row) => row.label).join(' · ') || 'Network root';
-  return `<div class="kn-detail-head"><span>${esc(node.char)}</span><div><h3>${esc(node.item.meaning || 'Meaning unavailable')}</h3><p>${levelLabel(node.item.jlpt)} · ${node.item.strokes || '—'} strokes</p></div></div>
+  return `<div class="kn-detail-head"><span>${esc(node.char)}</span><div><h3>${esc(node.item.meaning || 'Meaning unavailable')}</h3><p>${levelLabel(node.item.jlpt)} · ${node.item.strokes || '—'} stroke${node.item.strokes === 1 ? '' : 's'}</p></div></div>
     <p class="kn-detail-reason">${esc(reason)}</p>
     <div class="kn-detail-actions">
       ${node.depth === 1 ? `<button type="button" class="btn btn-ghost" data-kn-expand="${esc(node.char)}">${expanded ? 'Collapse branch' : 'Expand branch'}</button>` : ''}

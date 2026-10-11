@@ -96,14 +96,20 @@ body {
    which would fade out the bar's own opaque background/blur along with the
    tabs and leave a see-through strip at each edge. Each fade only appears
    when app.js's updateTabsScrollFade() finds real content past that edge
-   (scrollLeft/scrollWidth), never as a static decoration a bar that already
-   shows everything would still carry. */
+   (the first/last tab's own bounding box), never as a static decoration a bar that already
+   shows everything would still carry.
+   Sticky flex items, not position: absolute. .tabs is itself the scroll
+   container, so an absolute child scrolls with the content: once the bar
+   scrolled, the right fade drifted into the middle and washed out whichever
+   tab sat there (usually the active one). Negative margins (width + gap)
+   keep them from taking any room in the row. */
 .tabs::before, .tabs::after {
-  content: ''; position: absolute; top: 0; bottom: 0; z-index: 1; width: 28px;
+  content: ''; position: sticky; z-index: 1; flex: 0 0 28px; align-self: stretch;
+  margin-block: -5px calc(-5px - env(safe-area-inset-bottom));
   pointer-events: none; opacity: 0; transition: opacity .15s var(--ease);
 }
-.tabs::before { left: 0; background: linear-gradient(to right, color-mix(in srgb, var(--surface) 94%, transparent), transparent); }
-.tabs::after { right: 0; background: linear-gradient(to left, color-mix(in srgb, var(--surface) 94%, transparent), transparent); }
+.tabs::before { left: 0; margin-inline-end: -30px; background: linear-gradient(to right, color-mix(in srgb, var(--surface) 94%, transparent), transparent); }
+.tabs::after { right: 0; margin-inline-start: -30px; background: linear-gradient(to left, color-mix(in srgb, var(--surface) 94%, transparent), transparent); }
 .tabs.can-scroll-left::before { opacity: 1; }
 .tabs.can-scroll-right::after { opacity: 1; }
 
@@ -289,6 +295,9 @@ main.wrap { padding-top: 20px; padding-bottom: 28px; display: flex; flex-directi
 .dist-bar { display: flex; height: 14px; border: 2px solid var(--surface-raised); border-radius: var(--r-pill); overflow: hidden; margin: 8px 0 10px; background: var(--surface-sunken); box-shadow: inset 0 1px 4px var(--ink-shadow-soft); }
 .dist-bar .seg { background: var(--jl); box-shadow: inset 0 1px 0 var(--paper-glow); }
 .dist-legend, .legend { display: flex; flex-wrap: wrap; gap: 10px 14px; }
+/* Own display beats the UA [hidden] rule; without this the grammar-layer key
+   showed even with the layer off. */
+.legend[hidden] { display: none; }
 .lg { font-size: 11px; color: var(--text2); display: inline-flex; align-items: center; gap: 5px; }
 .lg b { color: var(--text); font-family: var(--font-mono); }
 .sw { width: 11px; height: 11px; border-radius: 3px; background: var(--jl); display: inline-block; }
@@ -768,6 +777,10 @@ kbd {
 .kanji-search { display: flex; flex-direction: column; gap: 6px; }
 .kanji-search .input { width: 100%; }
 .kanji-filter-block { display: flex; flex-direction: column; gap: 7px; }
+/* JLPT levels, Favorites and the component picker's toggle share one row on
+   desktop instead of three; the picker itself still opens full width below. */
+.kanji-quick-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 18px; }
+.kanji-quick-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .kanji-levels { display: flex; flex-wrap: wrap; gap: 6px; }
 .kanji-level { padding: 5px 11px; }
 .kanji-level.is-active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); }
@@ -784,6 +797,7 @@ kbd {
   display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)) auto;
   gap: 10px; align-items: end;
 }
+.kanji-filter-row > .btn { min-height: 37px; } /* match the selects beside it */
 
 /* Component lookup. Unlike "More filters" — which only collapses on phones,
    because four selects fit a desktop toolbar — this panel stays collapsible at
@@ -1037,9 +1051,7 @@ kbd {
    a third label does not fit a card this size. Vermilion when filled, because
    this is the one place in the app where red means affection rather than
    "unknown / above your level" — and it is a glyph, not a status wash. */
-.kanji-card-fav { padding-inline: 8px; font-size: 13px; line-height: 1; }
 .kanji-card-fav.is-fav { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
-.compound-fav { padding-inline: 9px; }
 .compound-fav.is-fav { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 .act-fav.is-fav { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 .kanji-favorites { display: inline-flex; align-items: center; gap: 7px; width: fit-content; }
@@ -1052,20 +1064,23 @@ kbd {
 .shelf-group .kanji-grid { margin-top: 2px; }
 .shelf-group .compound-list { margin-top: 2px; }
 
-.kanji-card-known {
+.kanji-card-known, .kanji-card-fav {
   min-height: 30px; padding: 4px 9px;
   color: var(--text2); font: 600 11px/1 var(--font-body); cursor: pointer;
   background: var(--surface-sunken);
   border: 1px solid var(--border); border-radius: var(--r-pill);
   transition: transform .18s var(--ease), border-color .18s var(--ease), background .18s var(--ease), color .18s var(--ease);
 }
-.kanji-card-known:hover, .kanji-card-known:focus-visible { transform: translateY(-2px); border-color: var(--border-strong); color: var(--text); }
-.kanji-card-known:active { transform: translateY(0) scale(.97); }
+.kanji-card-known:hover, .kanji-card-known:focus-visible,
+.kanji-card-fav:hover, .kanji-card-fav:focus-visible { transform: translateY(-2px); border-color: var(--border-strong); color: var(--text); }
+.kanji-card-known:active, .kanji-card-fav:active { transform: translateY(0) scale(.97); }
 .kanji-card-known[aria-pressed="true"] {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   border-color: var(--accent-glow);
 }
+
+.kanji-card-fav { padding-inline: 9px; font-size: 13px; line-height: 1; }
 
 .kanji-card-map {
   min-height: 30px; padding: 4px 9px;
@@ -1084,6 +1099,8 @@ kbd {
   .kanji-intro p { display: none; }
   .kanji-search .input, .kanji-filter-row .select { min-height: 44px; }
   .kanji-filter-block { min-width: 0; gap: 5px; }
+  .kanji-quick-row { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 13px; }
+  .kanji-quick-actions { flex-direction: column; }
   .kanji-levels {
     margin-right: -14px; padding: 1px 14px 6px 0; flex-wrap: nowrap; overflow-x: auto;
     scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch;
@@ -1143,6 +1160,8 @@ kbd {
   .alchemy-vessel { width: 72px; min-height: 91px; padding: 14px 7px 9px; }
   .alchemy-vessel-icon { inset: 4px; width: 64px; height: 83px; }
   .alchemy-vessel strong { font-size: 34px; }
+  /* "INGREDIENT II" at the desktop label size is wider than a 72px jar. */
+  .alchemy-vessel .label { margin: 0; font-size: 8px; letter-spacing: .3px; line-height: 1.25; text-align: center; }
   .alchemy-vessel-left { left: 10px; }
   .alchemy-vessel-right { right: 10px; }
   .alchemy-plus-left { left: 84px; }
@@ -1453,6 +1472,7 @@ body.kt-open { overflow: hidden; }
   border-radius: var(--r-pill); animation: kt-spin .7s linear infinite;
 }
 .kt-body { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(250px, .8fr); }
+.kt-body[hidden] { display: none; }
 .kt-stage { min-height: 520px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px; }
 .kt-glyph { width: min(360px, 68vw); aspect-ratio: 1; color: var(--text); border-radius: var(--r-lg); }
 .kt-glyph[role="button"] { cursor: pointer; }
@@ -1956,9 +1976,18 @@ p.hint { margin: 8px 0 0; }
   .relations-kind span { min-height: 40px; }
   .relations-filter-summary { margin-top: -5px; }
   .relations-status { margin-inline: 2px; }
-  .input-card { padding: 14px; }
+  /* One grid for the whole card, so Import and Clear share a row under the
+     full-width sample strip instead of Clear squeezing the strip and Import
+     sitting alone. `dense` lets Import (later in the DOM) fill Clear's row. */
+  .input-card { padding: 14px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-auto-flow: row dense; row-gap: 10px; }
+  .input-card > *, .samples-row, .tok-row .check, #precise-status { grid-column: 1 / -1; }
+  .input-actions, .tok-row { display: contents; }
+  .tok-row .file-btn { grid-column: 1; }
+  #clear { grid-column: 3; }
+  #precise-status:empty { display: none; }
+  .tok-row .check { flex-wrap: wrap; column-gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .tok-row .check .hint { flex-basis: 100%; padding-left: 22px; }
   .jp-input { min-height: 168px; resize: vertical; }
-  .input-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
   .samples-row { min-width: 0; display: block; }
   .samples-row > .label { display: block; margin-bottom: 6px; }
   .samples {
@@ -1973,7 +2002,9 @@ p.hint { margin: 8px 0 0; }
 
   .read-toolbar { padding: 10px 14px; gap: 10px; overflow: hidden; }
   .read-toolbar .check { min-height: 44px; flex: 0 0 auto; }
-  .legend { min-width: 0; flex: 1 1 0; display: flex; gap: 10px; flex-wrap: nowrap; overflow-x: auto; padding-block: 6px; scrollbar-width: none; }
+  /* Wraps instead of a hidden sideways scroll: nothing hinted that the key
+     continued past the card edge, so the last levels just looked cut off. */
+  .legend { min-width: 0; flex: 1 1 100%; display: flex; gap: 6px 12px; flex-wrap: wrap; padding-block: 6px; }
   .legend .lg { flex: 0 0 auto; }
   .legend::-webkit-scrollbar { display: none; }
   .reading-card { padding: 16px 14px; }
@@ -2005,13 +2036,13 @@ p.hint { margin: 8px 0 0; }
   .info-actions .btn { min-height: 44px; }
 
   /* Review becomes a focused one-card phone workspace. */
-  #review-panel > .card:first-child { padding: 14px; }
-  #review-panel > .card:first-child .ui-section-header {
+  #review-panel > .srs-today { padding: 14px; }
+  #review-panel > .srs-today .ui-section-header {
     display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 10px;
   }
-  #review-panel > .card:first-child .ui-section-title { grid-column: 1 / -1; }
-  #review-panel > .card:first-child .ui-section-line { display: none; }
-  #review-panel > .card:first-child .label.inline { min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
+  #review-panel > .srs-today .ui-section-title { grid-column: 1 / -1; }
+  #review-panel > .srs-today .ui-section-line { display: none; }
+  #review-panel > .srs-today .label.inline { min-width: 0; display: flex; flex-direction: column; align-items: stretch; gap: 5px; }
   #review-panel .select { width: 100%; min-height: 44px; }
   #review-panel .stat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; margin-top: 14px; }
   #review-panel .stat { min-width: 0; }
@@ -2096,10 +2127,11 @@ p.hint { margin: 8px 0 0; }
   .known-chip:hover, .known-chip:active, .kanji-contrast-choice:hover,
   .kanji-contrast-choice:active, .kt-component-open:hover,
   .kt-component-open:focus-visible, .kt-component-open:active,
-  .kanji-card-known:hover, .kanji-card-known:focus-visible, .kanji-card-known:active {
+  .kanji-card-known:hover, .kanji-card-known:focus-visible, .kanji-card-known:active,
+  .kanji-card-fav:hover, .kanji-card-fav:focus-visible, .kanji-card-fav:active {
     transform: none !important;
   }
-  .kanji-card-known { transition: none; }
+  .kanji-card-known, .kanji-card-fav { transition: none; }
   .srs-stage[data-feedback]::after { display: none; }
   .alchemy-bubbles, .alchemy-stage::after { display: none; }
 }
@@ -2212,7 +2244,16 @@ p.hint { margin: 8px 0 0; }
 }
 
 @media (max-width: 780px) {
-  .compound-row { flex-wrap: wrap; }
+  /* Same two-line shape for every row: word + meaning, then level and the
+     three actions. Flex-wrap broke each row at a different point depending
+     on how long its gloss was, so the list looked ragged. */
+  .compound-row {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: center; gap: 8px 10px;
+  }
+  .compound-row > .compound-meta { grid-column: 2 / -1; }
+  .compound-row > .badge { grid-column: 1; justify-self: center; }
+  .compound-row > .compound-known, .compound-row > .compound-save { width: 100%; }
   .compound-kanji { min-height: 44px; min-width: 34px; }
   .compound-gloss { white-space: normal; }
 }
@@ -2221,7 +2262,7 @@ p.hint { margin: 8px 0 0; }
   .compound-kanji { transition: none; }
 }
 
-.compound-save, .compound-known {
+.compound-save, .compound-known, .compound-fav {
   flex: 0 0 auto; min-height: 30px; padding: 4px 10px;
   color: var(--text2); font: 600 11px/1 var(--font-body); cursor: pointer;
   background: var(--surface);
@@ -2229,7 +2270,8 @@ p.hint { margin: 8px 0 0; }
   transition: border-color .18s var(--ease), background .18s var(--ease), color .18s var(--ease);
 }
 .compound-save:hover, .compound-save:focus-visible,
-.compound-known:hover, .compound-known:focus-visible { color: var(--text); border-color: var(--border-strong); }
+.compound-known:hover, .compound-known:focus-visible,
+.compound-fav:hover, .compound-fav:focus-visible { color: var(--text); border-color: var(--border-strong); }
 .compound-save[aria-pressed="true"], .compound-known[aria-pressed="true"] {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
@@ -2237,12 +2279,14 @@ p.hint { margin: 8px 0 0; }
   animation: confirm-pop .28s var(--ease) both;
 }
 
+.compound-fav { padding-inline: 10px; font-size: 13px; }
+
 @media (max-width: 780px) {
-  .compound-save, .compound-known { min-height: 44px; }
+  .compound-save, .compound-known, .compound-fav { min-height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .compound-save, .compound-known { transition: none; }
+  .compound-save, .compound-known, .compound-fav { transition: none; }
 }
 
 /* ---- kanji to vocabulary ------------------------------------------------------ */
@@ -2403,7 +2447,9 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 }
 
 @media (max-width: 780px) {
-  .wl-controls .input, .wl-controls .select { flex: 1 1 100%; min-height: 44px; }
+  .wl-controls .input { flex: 1 1 100%; min-height: 44px; }
+  /* Two filters per row instead of three full-width rows of selects. */
+  .wl-controls .select { flex: 1 1 40%; min-width: 0; min-height: 44px; }
 }
 
 /* ---- false-friend museum ----------------------------------------------------

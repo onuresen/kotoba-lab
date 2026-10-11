@@ -2,7 +2,33 @@
 
 ## Current release and backlog
 
-- **v10.48.0 current.** **Counters** is ✓ Done, from the idea garden's own
+- **v10.49.0 current.** UI polish and bug fixes before a Play Store update.
+  No new features. Bugs fixed:
+  - Phone tab bar: the edge fades were `position: absolute` inside the bar,
+    which is its own scroll container, so they scrolled with the tabs and
+    washed out the middle of the bar (usually the active tab). Now sticky
+    flex items with negative margins.
+  - Review's phone layout for the "Today" card keyed off
+    `#review-panel > .card:first-child`, but the weather card was later put
+    above it, so the rule never matched. Now `.srs-today`.
+  - `[hidden]` was beaten by an element's own `display` in three places:
+    the grammar-layer legend (shown even with the layer off), `.btn`
+    (Mix families stayed visible when ineligible), and `.kt-body`.
+  - ♡ buttons on kanji cards and word rows had no base style and rendered
+    as raw browser buttons. They now share the Known/Save pill style.
+  - Read info sheet said "no reading/meaning" for ungraded dictionary words
+    while showing their reading and meaning. It now says
+    "Dictionary word, not on a JLPT list."
+  - "1 strokes", "1 words", "1 days" now singular (`plural()` in app.js,
+    inline in the self-contained view modules).
+  UI changes: phone text box puts Import and Clear on one row under a
+  full-width sample strip; phone Read legend wraps instead of hiding past
+  the card edge; Alchemy jar labels fit on phones; phone word rows use one
+  fixed two-line grid; phone Word Lookup filters sit two per row; desktop
+  Kanji library puts JLPT levels, Favorites and Build from components on
+  one row; Reset filters matches the select height; "Any" readability
+  option reads "Readable or not". `APP_VERSION` bumped to 10.49.0.
+- **v10.48.0.** **Counters** is ✓ Done, from the idea garden's own
   "Counters, for free" entry (added the same session): a `kind: all | counter`
   filter in Word Lookup that finds every vocabulary entry whose own dictionary
   gloss says "counter for…". Confirmed by hand before writing any code: 44
