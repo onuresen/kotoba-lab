@@ -1461,7 +1461,10 @@ body.kt-open { overflow: hidden; }
 .kt-heading h2 { margin: 1px 0 0; font-family: var(--font-display); font-size: 21px; }
 .kt-back { justify-self: start; }
 .kt-back[hidden] { display: none; }
-.kt-close { justify-self: end; }
+/* Fixed columns: with Back hidden, auto-placement slid the title into the
+   first column and Close into the middle of the header. */
+.kt-heading { grid-column: 2; }
+.kt-close { grid-column: 3; justify-self: end; }
 .kt-status {
   min-height: 300px; display: flex; align-items: center; justify-content: center; gap: 10px;
   color: var(--text2); font-size: 13px;
@@ -1911,7 +1914,9 @@ body.krm-open { overflow: hidden; }
   .kt-heading .label { display: none; }
   .kt-heading h2 { font-size: 17px; }
   .kt-back, .kt-close { min-height: 44px; padding-inline: 12px; }
-  .kt-body { grid-template-columns: 1fr; }
+  /* minmax(0, …): a plain 1fr cannot shrink below its widest unbroken line,
+     which pushed the phone overlay past the screen edge. */
+  .kt-body { grid-template-columns: minmax(0, 1fr); }
   .kt-stage { min-height: 330px; justify-content: flex-start; padding: 12px 12px 16px; }
   .kt-glyph { width: min(230px, 64vw); }
   .kt-trace, .kt-trace-tools { width: min(260px, 74vw); }
@@ -2377,10 +2382,15 @@ tr:hover .freq-map, .freq-map:focus-visible { opacity: 1; }
 
 /* Vocabulary inside the Radical Tree: the tree says what a kanji is made of,
    this says where it is used. */
-.kt-info-words { display: grid; gap: 5px; margin-top: 14px; }
+.kt-info-words { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; margin-top: 14px; }
 .kt-info-word { display: flex; align-items: baseline; gap: 7px; }
-.kt-info-word .jp { font-family: var(--font-display); font-size: 16px; color: var(--text); }
+.kt-info-word .jp { flex: 0 0 auto; font-family: var(--font-display); font-size: 16px; color: var(--text); white-space: nowrap; }
+.kt-info-word .rd { flex: 0 0 auto; max-width: 35%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* min-width: 0 lets the ellipsis work; a flex item will not shrink below its
+   text otherwise, so a long gloss pushed the row off screen and squeezed
+   大学 onto two lines. */
 .kt-info-word small {
+  min-width: 0; /* the gloss gives way; the reading is capped instead (above) */
   font-size: 11px; color: var(--text3);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }

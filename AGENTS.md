@@ -2,7 +2,19 @@
 
 ## Current release and backlog
 
-- **v10.49.0 current.** UI polish and bug fixes before a Play Store update.
+- **v10.49.1 current.** Radical Tree layout fixes found in a pre-release
+  sweep. All three predate v10.49.0.
+  - Phones: `.kt-body`'s one-column grid was `1fr`, which cannot shrink below
+    its widest unbroken line, so a long "Appears in" gloss made the overlay
+    ~480px wide on a 390px screen ("Replay strokes" cut off). Now
+    `minmax(0, 1fr)`, and the same for `.kt-info-words`.
+  - "Appears in" rows: the gloss had an ellipsis but no `min-width: 0`, so it
+    never shrank; 大学 broke onto two lines and the buttons left the row. The
+    word never shrinks, the reading is capped at 35% of the row, and the
+    gloss takes what is left.
+  - Header: with Back hidden, auto-placement put the title in column 1 and
+    Close in the middle. `.kt-heading` and `.kt-close` now have fixed columns.
+- **v10.49.0.** UI polish and bug fixes before a Play Store update.
   No new features. Bugs fixed:
   - Phone tab bar: the edge fades were `position: absolute` inside the bar,
     which is its own scroll container, so they scrolled with the tabs and
