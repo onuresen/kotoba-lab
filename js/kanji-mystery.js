@@ -141,7 +141,7 @@ function buildClues(item, structureIndex, vocab, random, describe) {
   const radicalMeaning = describe ? describe(radical) : '';
 
   return [
-    { kind: 'strokes', label: 'Strokes', text: `${item.strokes} strokes.` },
+    { kind: 'strokes', label: 'Strokes', text: `${item.strokes} stroke${item.strokes === 1 ? '' : 's'}.` },
     { kind: 'level', label: 'Level', text: `It is graded ${levelText(item.jlpt)}.` },
     {
       kind: 'radical',

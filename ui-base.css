@@ -107,6 +107,9 @@
   transition: background 0.18s var(--ease), color 0.18s var(--ease), border-color 0.18s var(--ease),
               box-shadow 0.22s var(--ease), transform 0.16s var(--ease), filter 0.18s var(--ease);
 }
+/* .btn's own display beats the UA [hidden] rule, so a hidden button
+   (e.g. Mix families when no family qualifies) stayed on screen. */
+.btn[hidden] { display: none; }
 .btn:hover  { border-color: var(--accent); background: var(--accent-dim); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
 .btn:active { transform: translateY(1px) scale(0.985); box-shadow: none; }
 .btn:focus-visible {

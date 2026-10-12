@@ -109,6 +109,8 @@ delete window.__kotobaBootFallback;
 
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// "1 stroke", not "1 strokes". Locale-formatted, like the counts it replaces.
+const plural = (n, word) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Plays a brief "leaving" animation on `el` (see .known-chip[data-leaving],
@@ -123,7 +125,7 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.48.0';
+const APP_VERSION = '10.49.0';
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',
@@ -913,7 +915,7 @@ function showInfo(sel) {
         ${info.on ? `<div><span class="label">On'yomi</span>${esc(info.on)}</div>` : ''}
         ${info.kun ? `<div><span class="label">Kun'yomi</span>${esc(info.kun)}</div>` : ''}
       </div>` : ''}
-      ${info?.strokes ? `<p class="hint">${info.strokes} strokes</p>` : ''}
+      ${info?.strokes ? `<p class="hint">${plural(info.strokes, 'stroke')}</p>` : ''}
       ${!info ? `<p class="hint">Not in the kanji dictionary (very rare character).</p>` : ''}
       ${infoWordsMarkup(sel.ch)}
       <div class="info-actions">${knownBtn(knownKanji.has(sel.ch))}${favBtn(favoriteKanji.has(sel.ch), sel.ch)}<button type="button" class="btn btn-ghost" data-kanji-map="${esc(sel.ch)}">Relationship Map</button></div>`;
@@ -924,9 +926,11 @@ function showInfo(sel) {
         <span class="badge" data-status="${sel.level == null ? 'archive' : 'reference'}">${levelName(sel.level)}</span></div>
       ${sel.reading ? `<p class="info-reading">${esc(sel.reading)}</p>` : ''}
       ${sel.gloss ? `<p class="info-gloss">${esc(sel.gloss)}</p>` : ''}
-      <p class="hint">${sel.level == null
-        ? 'Not in the vocab seed — segmented by script run, so no reading/meaning.'
-        : 'Dictionary word, JLPT ' + levelName(sel.level) + '.'}</p>
+      <p class="hint">${sel.level != null
+        ? 'Dictionary word, JLPT ' + levelName(sel.level) + '.'
+        : sel.gloss
+          ? 'Dictionary word, not on a JLPT list.'
+          : 'Not in the vocab seed — segmented by script run, so no reading/meaning.'}</p>
       ${infoGrammarMarkup(sel.index)}
       <div class="info-actions">${knownBtn(knownWords.has(sel.surface))}${saveBtn(deck.has(sel.surface))}${favBtn(favoriteWords.has(sel.surface), sel.surface)}</div>
       ${kanjiChars.length ? `<div class="info-kchars">
@@ -1125,13 +1129,13 @@ function kanjiCard(item) {
   const reading = [item.on && `On ${item.on}`, item.kun && `Kun ${item.kun}`].filter(Boolean).join(' · ');
   const known = knownKanji.has(item.char);
   const fav = favoriteKanji.has(item.char);
-  const aria = `Open ${item.char} — ${item.meaning || 'meaning unavailable'}, ${level}, ${item.strokes} strokes`;
+  const aria = `Open ${item.char} — ${item.meaning || 'meaning unavailable'}, ${level}, ${plural(item.strokes, 'stroke')}`;
   return `<div class="kanji-card-wrap jlpt-${levelSlug(item.jlpt)}"><button type="button" class="kanji-card" data-kanji-tree="${esc(item.char)}" data-known="${known}" aria-label="${esc(aria)}">
     <span class="kanji-card-glyph">${esc(item.char)}</span>
     <span class="kanji-card-copy">
       <strong>${esc(item.meaning || 'Meaning unavailable')}</strong>
       <span class="kanji-card-reading">${esc(reading || 'No readings listed')}</span>
-      <span class="kanji-card-meta" data-strokes="${item.strokes}">${item.strokes} strokes${known ? ' · ✓ Known' : ''}</span>
+      <span class="kanji-card-meta" data-strokes="${item.strokes}">${plural(item.strokes, 'stroke')}${known ? ' · ✓ Known' : ''}</span>
     </span>
     <span class="badge" data-status="${item.jlpt == null ? 'archive' : 'reference'}">${level}</span>
   </button><div class="kanji-card-actions"><button type="button" class="kanji-card-known" data-kanji-known="${esc(item.char)}" title="${known ? `Unmark ${esc(item.char)} as known` : `Mark ${esc(item.char)} as known — updates your coverage meter and Words you can now read`}" aria-pressed="${known}" aria-label="${known ? 'Unmark' : 'Mark'} ${esc(item.char)} as known"><span aria-hidden="true">✓</span> Known</button><button type="button" class="kanji-card-fav${fav ? ' is-fav' : ''}" data-kanji-fav="${esc(item.char)}" title="${fav ? `Remove ${esc(item.char)} from your favorites` : `Keep ${esc(item.char)} as a favorite — nothing schedules it and nothing counts it`}" aria-pressed="${fav}" aria-label="${fav ? 'Remove' : 'Keep'} ${esc(item.char)} ${fav ? 'from' : 'as'} a favorite">${fav ? '♥' : '♡'}</button><button type="button" class="kanji-card-map" data-kanji-map="${esc(item.char)}" title="Open the Relationship Map for ${esc(item.char)}" aria-label="Open relationship map for ${esc(item.char)}"><span aria-hidden="true">↗</span> Map</button></div></div>`;
@@ -1234,7 +1238,7 @@ function renderKanjiStudy(focusAction = '') {
           <p><span class="label">On’yomi</span>${esc(item.on || '—')}</p>
           <p><span class="label">Kun’yomi</span>${esc(item.kun || '—')}</p>
         </div>
-        <p class="hint">${item.strokes} strokes · ${esc(level)}</p>
+        <p class="hint">${plural(item.strokes, 'stroke')} · ${esc(level)}</p>
       </div>
     </div>
     <div class="kanji-study-actions">
@@ -1455,7 +1459,7 @@ function renderKanjiAlchemy(focusTarget = '') {
         </div>
         ${answer ? `<div class="alchemy-reveal" data-correct="${answer.correct}">
           <div class="alchemy-verdict">${alchemyIcon(answer.correct ? 'seal' : 'crucible', 'alchemy-verdict-icon')}<div><span class="label">Transmutation result</span><strong>${answer.correct ? 'Formula balanced' : `Not quite — ${esc(question.ingredients.join(' ＋ '))} forms ${esc(question.target.char)}`}</strong></div></div>
-          <div class="alchemy-recipe"><span class="alchemy-recipe-glyph jlpt-${levelSlug(question.target.jlpt)}">${esc(question.target.char)}</span><div><strong>${esc(question.target.meaning)}</strong><p>${question.target.strokes} strokes · ${esc(level)}</p><p>On’yomi ${esc(question.target.on || '—')} · Kun’yomi ${esc(question.target.kun || '—')}</p></div></div>
+          <div class="alchemy-recipe"><span class="alchemy-recipe-glyph jlpt-${levelSlug(question.target.jlpt)}">${esc(question.target.char)}</span><div><strong>${esc(question.target.meaning)}</strong><p>${plural(question.target.strokes, 'stroke')} · ${esc(level)}</p><p>On’yomi ${esc(question.target.on || '—')} · Kun’yomi ${esc(question.target.kun || '—')}</p></div></div>
           <p class="alchemy-evidence">KanjiVG lists <strong>${esc(question.ingredients[0])}</strong> and <strong>${esc(question.ingredients[1])}</strong> as the two direct labelled components of <strong>${esc(question.target.char)}</strong>. This describes visual structure, not historical etymology.</p>
         </div>` : '<p class="hint alchemy-hint">Select with the buttons or keys 1–4. Every answer comes from an unambiguous two-component pair in the committed KanjiVG index.</p>'}
       </div>
@@ -2297,7 +2301,7 @@ function renderProfileDashboard(state) {
     { key: 'knownKanji', glyph: '漢', title: 'Known kanji', count: metrics.knownKanji, detail: 'Kanji coverage and study context' },
     { key: 'favoriteKanji', glyph: '愛', title: 'Favorite kanji', count: metrics.favoriteKanji, detail: 'Kept because you liked them, not studied' },
     { key: 'favoriteWords', glyph: '愛', title: 'Favorite words', count: metrics.favoriteWords, detail: 'Kept because you liked them, not studied' },
-    { key: 'reviewLog', glyph: '復', title: 'Review history', count: metrics.reviewDays, detail: `${metrics.reviewAnswers} answers across ${metrics.reviewDays} days` },
+    { key: 'reviewLog', glyph: '復', title: 'Review history', count: metrics.reviewDays, detail: `${plural(metrics.reviewAnswers, 'answer')} across ${plural(metrics.reviewDays, 'day')}` },
   ];
   $('#profile-categories').innerHTML = categories.map((category) => `<article class="profile-category">
     <span class="profile-category-glyph" aria-hidden="true">${category.glyph}</span>
@@ -2637,7 +2641,7 @@ function patchKanjiCardKnown(button, char) {
   const card = wrap.querySelector('.kanji-card');
   if (card) card.dataset.known = String(known);
   const meta = wrap.querySelector('.kanji-card-meta');
-  if (meta) meta.textContent = `${meta.dataset.strokes} strokes${known ? ' · ✓ Known' : ''}`;
+  if (meta) meta.textContent = `${plural(Number(meta.dataset.strokes), 'stroke')}${known ? ' · ✓ Known' : ''}`;
 }
 
 // Vocabulary lookup: the counterpart to the Kanji library's search, so a word
@@ -2725,7 +2729,7 @@ function renderFalseFriendMuseum() {
 // see AGENTS.md for why. Both still read the same stores, so anything that
 // changes known state or the deck must refresh whichever of the two it touches.
 function renderWords() {
-  $('#mw-known-count').textContent = `${knownWords.count()} words · ${knownKanji.count()} kanji`;
+  $('#mw-known-count').textContent = `${plural(knownWords.count(), 'word')} · ${knownKanji.count()} kanji`;
   $('#mw-known-words').innerHTML = knownWords.all().length
     ? knownWords.all().map((w) => `<span class="known-chip"><span class="known-chip-label">${esc(w)}</span><button type="button" class="known-rm" data-kind="word" data-key="${esc(w)}" title="Unmark ${esc(w)} as known" aria-label="Unmark known word ${esc(w)}">×</button></span>`).join('')
     : `<span class="hint">None marked yet.</span>`;
@@ -3016,10 +3020,10 @@ function exportFlashcards(dl) {
   const tsv = toTSV(rows, { romaji: $('#flash-romaji').checked });
   if (dl) {
     download('kotoba-flashcards.tsv', tsv);
-    toast(`Exported ${rows.length} words (TSV).`, 'success');
+    toast(`Exported ${plural(rows.length, 'word')} (TSV).`, 'success');
   } else {
     navigator.clipboard.writeText(tsv)
-      .then(() => toast(`Copied ${rows.length} words to clipboard.`, 'success'))
+      .then(() => toast(`Copied ${plural(rows.length, 'word')} to clipboard.`, 'success'))
       .catch(() => toast('Clipboard blocked — use Download instead.', 'error'));
   }
 }

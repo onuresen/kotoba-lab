@@ -170,7 +170,7 @@ export function createKanjiMap({
         ${nodes}
         <article class="krm-center" data-known="${center.known}">
           <span class="krm-center-glyph">${esc(center.char)}</span>
-          <div><h3>${esc(center.meaning || 'Meaning unavailable')}</h3><p>${center.strokes || '—'} strokes · ${levelLabel(center.jlpt)}${center.inText ? ' · In current text' : ''}</p></div>
+          <div><h3>${esc(center.meaning || 'Meaning unavailable')}</h3><p>${center.strokes || '—'} stroke${center.strokes === 1 ? '' : 's'} · ${levelLabel(center.jlpt)}${center.inText ? ' · In current text' : ''}</p></div>
           <div class="krm-center-readings"><span><b>On</b>${esc(center.on || '—')}</span><span><b>Kun</b>${esc(center.kun || '—')}</span></div>
           <div class="krm-center-actions">
             ${typeof toggleKnown === 'function' ? `<button type="button" class="btn btn-ghost krm-known" data-known="${center.known}">${center.known ? '✓ Known' : 'Mark known'}</button>` : ''}

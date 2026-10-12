@@ -292,6 +292,7 @@
         </label>
       </div>
 
+      <div class="kanji-quick-row">
       <div class="kanji-filter-block">
         <span class="label">JLPT level</span>
         <div class="kanji-levels" role="group" aria-label="Filter by JLPT level">
@@ -312,6 +313,7 @@
       <!-- The Shelf's first form, per IDEA_GARDEN.md section A: the favorites
            set as a filter over the grid that already exists, before anything
            bespoke is designed. -->
+      <div class="kanji-quick-actions">
       <button type="button" id="kanji-favorites" class="btn btn-ghost kanji-favorites" aria-pressed="false" title="Show only the kanji you have kept">
         <span aria-hidden="true">♡</span> Favorites<span id="kanji-favorites-count" class="kanji-filter-count" hidden></span>
       </button>
@@ -319,6 +321,8 @@
       <button type="button" id="kanji-components-toggle" class="btn btn-ghost kanji-components-toggle" aria-expanded="false" aria-controls="kanji-components">
         <span>Build from components</span><span id="kanji-components-count" class="kanji-filter-count" hidden></span>
       </button>
+      </div>
+      </div>
       <div id="kanji-components" class="kanji-components" hidden>
         <div class="kanji-components-head">
           <label class="label kanji-components-find">Find a component
@@ -469,7 +473,7 @@
   <section class="panel" data-panel="review" id="review-panel">
     <div class="card study-weather" id="study-weather"></div>
 
-    <div class="card">
+    <div class="card srs-today">
       <div class="ui-section-header">
         <span class="ui-section-title">Today</span>
         <span class="ui-section-line"></span>
@@ -542,7 +546,7 @@
           <option value="1">N1</option>
         </select>
         <select id="wl-readable" class="select" aria-label="Filter by whether you can read it" title="Readable means every kanji in the word is one you have marked known">
-          <option value="all">Any</option>
+          <option value="all">Readable or not</option>
           <option value="readable">Readable now</option>
           <option value="unreadable">Not yet readable</option>
         </select>
