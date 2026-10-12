@@ -125,7 +125,11 @@ function leaveThen(el, after) {
   setTimeout(after, 180);
 }
 const alchemyIcon = (name, className = '') => `<svg class="alchemy-icon ${className}" viewBox="0 0 64 64" aria-hidden="true"><use href="assets/alchemy/alchemy-icons.svg#${name}"></use></svg>`;
-const APP_VERSION = '10.49.1';
+const APP_VERSION = '10.49.2';
+// Shown at the foot of Settings so an installed copy (e.g. the Play Store
+// app) can be checked against the latest release at a glance. Set here, not
+// in index.html, so APP_VERSION stays the one place the number lives.
+{ const el = document.getElementById('app-version'); if (el) el.textContent = `Kotoba Lab v${APP_VERSION}`; }
 const TAB_USAGE_EVENTS = Object.freeze({
   analyze: 'tab.analyze', read: 'tab.read', kanji: 'tab.kanji',
   relations: 'tab.relations', review: 'tab.review', mywords: 'tab.mywords',

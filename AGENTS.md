@@ -2,7 +2,11 @@
 
 ## Current release and backlog
 
-- **v10.49.1 current.** Radical Tree layout fixes found in a pre-release
+- **v10.49.2 current.** The version now shows at the foot of Settings
+  (`#app-version`, "Kotoba Lab v10.49.2"), so the Play Store install can be
+  checked against the latest release. The text is set from `APP_VERSION` in
+  `js/app.js`, never typed into `index.html`, so a bump changes it for free.
+- **v10.49.1.** Radical Tree layout fixes found in a pre-release
   sweep. All three predate v10.49.0.
   - Phones: `.kt-body`'s one-column grid was `1fr`, which cannot shrink below
     its widest unbroken line, so a long "Appears in" gloss made the overlay
